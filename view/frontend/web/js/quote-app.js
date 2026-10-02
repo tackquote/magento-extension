@@ -478,13 +478,16 @@ define([
             var title, body;
 
             if (data.awaitingApproval) {
-                // A company pending approval is NOT a finished signup. A plain success here
-                // would leave the buyer waiting for access nobody granted.
-                title = $t('Request received — your account needs approval');
+                // TackQuote answers awaitingApproval for EVERY company request (1.4.1):
+                // it no longer says whether the company name matched an existing
+                // account, so this copy must not claim the account IS under review.
+                title = $t('Request received');
                 body = $t(
-                    'We have your quote request. Your company account is being reviewed, ' +
-                    'and we will email you as soon as it is approved.'
+                    'If your company account needs approval, we will email you when it is ready.'
                 );
+                if (data.quoteNumber) {
+                    body = fill($t('Your reference is %1.'), data.quoteNumber) + ' ' + body;
+                }
             } else {
                 title = $t('Quote request sent');
                 body = data.quoteNumber ?

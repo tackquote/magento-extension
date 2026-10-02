@@ -574,3 +574,18 @@ magento2/
     ├── web/css/dashboard.css                   Admin dashboard styles
     └── web/css/config-test-connection.css      "Verify" result pill (was an inline <style>)
 ```
+
+## Changelog
+
+### 1.4.1
+
+- **The "request received" confirmation no longer says more than TackQuote
+  knows.** TackQuote now answers `awaitingApproval: true` for every quote
+  request made on behalf of a company, so that a shopper typing a company name
+  can no longer learn whether that company is already a customer. The
+  confirmation used to say "Your company account is being reviewed", which is
+  now false for a company that needs no approval. It reads "Request received —
+  If your company account needs approval, we will email you when it is ready",
+  and still shows the quote reference when there is one. New phrases are in
+  `i18n/en_US.csv`.
+
