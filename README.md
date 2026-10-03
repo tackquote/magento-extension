@@ -437,6 +437,17 @@ bin/magento setup:di:compile
 bin/magento cache:flush
 ```
 
+In **production mode**, also deploy the module's storefront CSS/JS (it ships
+`view/frontend/web/`) after `setup:di:compile` and before the final `cache:flush`:
+
+```bash
+bin/magento setup:static-content:deploy en_US   # list every locale your store views use
+```
+
+Adobe's deployment flow is compile first, then generate static view files
+(<https://experienceleague.adobe.com/en/docs/commerce-operations/configuration-guide/deployment/examples/example-using-cli>).
+Developer and default mode serve static files on demand, so they skip this step.
+
 The path-repository and copy-from-checkout options below are for maintainers working
 from a checkout of this repository, not for merchant distribution.
 
