@@ -3,7 +3,7 @@
 # Build the installable Magento 2 artifact, reproducibly: dist/tack-magento2.zip.
 #
 # Split out of the hub repository's scripts/package-all.sh
-# (https://github.com/ackm04/tack-ecommerce-extensions) when this module moved to
+# (https://github.com/tackquote/tack-ecommerce-extensions) when this module moved to
 # its own repository. The published v1.1.0 asset once had a `magento2/` top-level
 # directory instead of `Vendor/Module/`, so Magento could never discover the
 # module. The manual-install path is app/code/<Vendor>/<Module>/, so the artifact

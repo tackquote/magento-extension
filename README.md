@@ -1,6 +1,6 @@
 # TackQuote for Magento 2
 
-> Part of the TackQuote integrations family. All platforms are indexed in the hub repository: [ackm04/tack-ecommerce-extensions](https://github.com/ackm04/tack-ecommerce-extensions) (TackQuote integrations index).
+> Part of the TackQuote integrations family. All platforms are indexed in the hub repository: [tackquote/tack-ecommerce-extensions](https://github.com/tackquote/tack-ecommerce-extensions) (TackQuote integrations index).
 
 A Magento 2 Composer module (`tackquote/module-quotes`, module name `TackQuote_Quotes`)
 that adds B2B quoting to the storefront: a **"Request a Quote"** button on product pages, a

@@ -4,7 +4,7 @@ name: Release ZIP
 # pushed.
 #
 # Mirrors the release workflow of the hub repository this extension was split
-# out of (https://github.com/ackm04/tack-ecommerce-extensions). The zips are built
+# out of (https://github.com/tackquote/tack-ecommerce-extensions). The zips are built
 # by scripts/package.sh -- never by hand. Hand-built release zips drifted from the
 # repository before: the published v1.1.0 Magento asset had a `magento2/`
 # top-level directory instead of `Vendor/Module/`, so Magento could never
