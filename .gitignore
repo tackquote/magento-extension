@@ -1,0 +1,6 @@
+.DS_Store
+# Build output from scripts/package.sh.
+dist/
+# `composer install` for the require-dev tooling (phpcs, phpunit); never committed.
+vendor/
+composer.lock

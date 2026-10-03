@@ -1,0 +1,47 @@
+name: Release ZIP
+
+# Publishes the Magento 2 artifact(s) (tack-magento2.zip) as GitHub Release assets when a v* tag is
+# pushed.
+#
+# Mirrors the release workflow of the hub repository this extension was split
+# out of (https://github.com/ackm04/tack-ecommerce-extensions). The zips are built
+# by scripts/package.sh -- never by hand. Hand-built release zips drifted from the
+# repository before: the published v1.1.0 Magento asset had a `magento2/`
+# top-level directory instead of `Vendor/Module/`, so Magento could never
+# discover the module. Uploading `dist/*.zip` rather than named files keeps this
+# step immune to an asset being renamed in scripts/package.sh.
+#
+# To cut a release: push a `v*` tag to this repository. This workflow does the
+# rest.
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+
+      - name: Lint PHP
+        run: |
+          find . -path ./dist -prune -o -path ./vendor -prune -o -name '*.php' -print0 \
+            | xargs -0 -n1 -P4 php -l
+
+      - name: Build release artifact(s)
+        run: bash scripts/package.sh dist
+
+      - name: Attach ZIPs to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+          generate_release_notes: true
