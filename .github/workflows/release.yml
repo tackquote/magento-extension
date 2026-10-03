@@ -37,6 +37,9 @@ jobs:
           find . -path ./dist -prune -o -path ./vendor -prune -o -name '*.php' -print0 \
             | xargs -0 -n1 -P4 php -l
 
+      - name: Validate composer.json
+        run: composer validate --no-check-publish --no-check-lock
+
       - name: Build release artifact(s)
         run: bash scripts/package.sh dist
 
