@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # README/release contract — fails CI if a merchant-facing README regresses on
-# either of the two defects that shipped in tackquote/tack-ecommerce-extensions#20:
+# either of the two defects that shipped in the retired hub's issue #20 (archived):
 #
 #   1. A version-pinned release asset URL (`releases/download/vX.Y.Z/...`).
 #      These go stale the moment the next release ships. In the hub repo, which
@@ -22,7 +22,7 @@
 #      string reappears in a README, someone is re-describing an endpoint that
 #      was never real instead of citing the platform-specific one.
 #
-# Copied from the hub repository (https://github.com/tackquote/tack-ecommerce-extensions)
+# Copied from the hub repository (tackquote/tack-ecommerce-extensions, retired 2026-10-04)
 # when this extension moved to its own repository; it scans this repository root.
 #
 # Usage: scripts/check-release-claims.sh [file ...]   (default: every README*.md)
@@ -72,7 +72,7 @@ fi
 
 if [ "$fail" -ne 0 ]; then
   echo
-  echo "See tackquote/tack-ecommerce-extensions#20 for why these are load-bearing checks."
+  echo "See the retired hub's issue #20 (archived) for why these are load-bearing checks."
   exit 1
 fi
 
