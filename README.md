@@ -1,11 +1,13 @@
 # TackQuote for Magento 2
 
+> Part of the TackQuote integrations family. All platforms are indexed in the hub repository: [ackm04/tack-ecommerce-extensions](https://github.com/ackm04/tack-ecommerce-extensions) (TackQuote integrations index).
+
 A Magento 2 Composer module (`tackquote/module-quotes`, module name `TackQuote_Quotes`)
 that adds B2B quoting to the storefront: a **"Request a Quote"** button on product pages, a
 multi-product **quote list** with its own drawer, and an admin dashboard with a connection
 test. Submissions create real quote requests — and, where the seller's policy allows it,
 real buyer companies — in TackQuote. It is the Magento counterpart to the TackQuote
-WooCommerce plugin (`wordpress/tackquote/`).
+WooCommerce plugin.
 
 Magento's product catalog sync, inventory pull, quote-to-checkout and order import are
 handled entirely outside this module, by
@@ -387,7 +389,7 @@ way.
 without guessing versions, and `autoload-dev` is what makes `Test/` loadable:
 
 ```bash
-composer install                     # inside magento2/ (this directory)
+composer install                     # at the repository root
 vendor/bin/phpcs                     # picks up ./phpcs.xml -> the Magento2 standard
 vendor/bin/phpunit -c Test/Unit/phpunit.xml
 ```
@@ -413,8 +415,9 @@ so the suite has to be run from inside a Magento installation, not from this dir
 ## Installation
 
 Distribution authority: the public GitHub release asset is
-[`tack-magento2.zip`](https://github.com/ackm04/tack-ecommerce-extensions/releases/latest/download/tack-magento2.zip).
-This monorepo directory is build/source only. No Magento Marketplace or Packagist listing
+[`tack-magento2.zip`](https://github.com/tackquote/magento-extension/releases/latest/download/tack-magento2.zip).
+It is built by `scripts/package.sh` (see *Building the release zip* below); this repository
+is build/source only. No Magento Marketplace or Packagist listing
 is claimed.
 
 The zip's top-level directory is `TackQuote/Quotes/`, so unzip it **into `app/code`**
@@ -435,7 +438,7 @@ bin/magento cache:flush
 ```
 
 The path-repository and copy-from-checkout options below are for maintainers working
-from this monorepo, not for merchant distribution.
+from a checkout of this repository, not for merchant distribution.
 
 This module is **not published to Packagist or the Magento Marketplace**.
 
@@ -448,7 +451,7 @@ In your Magento store's root `composer.json`:
   "repositories": {
     "tackquote-quotes": {
       "type": "path",
-      "url": "../path/to/tack-ecommerce-extensions/magento2"
+      "url": "../path/to/magento-extension"
     }
   }
 }
@@ -466,12 +469,23 @@ bin/magento cache:flush
 
 ```bash
 mkdir -p app/code/TackQuote/Quotes
-cp -r /path/to/tack-ecommerce-extensions/magento2/* app/code/TackQuote/Quotes/
+cp -r /path/to/magento-extension/* app/code/TackQuote/Quotes/
 bin/magento module:enable TackQuote_Quotes
 bin/magento setup:upgrade
 bin/magento setup:di:compile
 bin/magento cache:flush
 ```
+
+### Building the release zip
+
+```bash
+bash scripts/package.sh          # writes dist/tack-magento2.zip (pass a directory to override)
+```
+
+The zip nests the module as `TackQuote/Quotes/` and leaves out `Test/` and the repository
+scaffolding (`scripts/`, `.github/`, the repo-level `LICENSE`); `LICENSE.txt` ships. Pushing a
+`v*` tag runs the same script in `.github/workflows/release.yml` and attaches the zip to the
+GitHub release.
 
 ### Configure
 
@@ -510,7 +524,7 @@ bin/magento cache:flush
 ## File map
 
 ```
-magento2/
+magento-extension/                              (repository root)
 ├── registration.php                            Module registration
 ├── composer.json                               Package metadata (tackquote/module-quotes)
 ├── LICENSE.txt                                 GPL-2.0 text (required in the package)
