@@ -19,6 +19,9 @@
 @tq-overview-state-column__width: 9rem;
 @tq-overview-off__color: @color-brownie;
 @tq-overview-off__background: @color-white-fog2;
+//  The admin paints every .message on one yellow (@alert__background-color) and varies only
+//  the icon; the Overview's positive lines get a light green so the colour matches the check.
+@tq-overview-success__background: #e5efd3;
 
 //
 //  Common
@@ -40,6 +43,10 @@
 
     .message[hidden] {
         display: none;
+    }
+
+    .message-success {
+        background: @tq-overview-success__background;
     }
 
     //  Before mage/backend/tabs has run, show only the first panel (no flash of all seven)
