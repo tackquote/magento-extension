@@ -1,17 +1,36 @@
 <?xml version="1.0"?>
 <!--
-  TackQuote admin dashboard layout.
+  TackQuote > Overview.
+
+  Built from the admin's own parts so the page looks and behaves like the rest of Magento:
+  - page.main.actions: the standard page actions bar (as the core Dashboard's "Reload Data"),
+    with "Settings" as the one primary action and "Test connection" as a secondary one;
+  - content: status messages, then one horizontal tab per settings area (mage/backend/tabs,
+    the widget behind the core Dashboard's tabs), each tab built from admin__page-section blocks.
+
+  Styles come from view/adminhtml/web/css/source/_module.less, which the admin theme compiles
+  into its own stylesheet; no extra stylesheet is linked here.
 -->
 <page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" layout="admin-1column"
       xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
-    <head>
-        <css src="TackQuote_Quotes::css/dashboard.css"/>
-    </head>
     <body>
+        <referenceContainer name="page.main.actions">
+            <block class="Magento\Backend\Block\Template"
+                   name="tackquote.overview.actions"
+                   template="TackQuote_Quotes::overview/actions.phtml">
+                <arguments>
+                    <argument name="overview" xsi:type="object">TackQuote\Quotes\ViewModel\Adminhtml\Overview</argument>
+                </arguments>
+            </block>
+        </referenceContainer>
         <referenceContainer name="content">
-            <block class="TackQuote\Quotes\Block\Adminhtml\Dashboard"
+            <block class="Magento\Backend\Block\Template"
                    name="tackquote.dashboard"
                    template="TackQuote_Quotes::dashboard.phtml">
+                <arguments>
+                    <argument name="overview" xsi:type="object">TackQuote\Quotes\ViewModel\Adminhtml\Overview</argument>
+                    <argument name="cron_status" xsi:type="object">TackQuote\Quotes\ViewModel\Adminhtml\CronStatus</argument>
+                </arguments>
                 <!-- Connect with TackQuote: connection state, Connect / Disconnect. -->
                 <block class="TackQuote\Quotes\Block\Adminhtml\ConnectCard"
                        name="tackquote.connect.card"

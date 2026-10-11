@@ -1,116 +1,92 @@
 <?php
 /**
- * "Connect with TackQuote" card (Dashboard) and its compact form (configuration).
+ * "Connect with TackQuote" (Overview, Connection tab) and its compact form (configuration).
  *
- * Full mode: two real POST forms carrying the admin form key.
- * Compact mode (inside the configuration <form>, where a nested form is not
- * allowed): buttons that build and submit the same POST on click, through a
- * script rendered by SecureHtmlRenderer so a CSP without 'unsafe-inline' can
- * nonce it. Disconnect asks for confirmation in both modes.
+ * Full mode: one admin__page-section-item with two real POST forms carrying the admin form
+ * key. "Connect" is a secondary action, because the page's one primary action is "Settings"
+ * (Admin Pattern Library, Buttons); Disconnect is a default action.
+ * Compact mode (inside the configuration <form>, where a nested form is not allowed): buttons
+ * that build and submit the same POST on click.
+ *
+ * Behaviour lives in TackQuote_Quotes/js/connect-card, loaded through data-mage-init, so the
+ * card carries no inline script. Disconnect asks for confirmation in both modes. The state is
+ * shown with the admin's own grid-severity badges.
  *
  * @var \TackQuote\Quotes\Block\Adminhtml\ConnectCard $block
  * @var \Magento\Framework\Escaper $escaper
- * @var \Magento\Framework\View\Helper\SecureHtmlRenderer $secureRenderer
  * @package TackQuote_Quotes
  */
 
 $state = $block->getConnectionState();
 $canConnect = $block->canConnect();
+$compact = $block->isCompact();
 $confirm = __('Disconnect this store from TackQuote? A key that Connect created is also revoked in TackQuote.');
+$init = ['TackQuote_Quotes/js/connect-card' => []];
 ?>
-<section class="tq-connect<?= $block->isCompact() ? ' tq-connect--compact' : ' tq-card' ?>"
-         aria-labelledby="tq-connect-heading-<?= $block->isCompact() ? 'c' : 'd' ?>">
-    <?php if (!$block->isCompact()): ?>
-        <h2 class="tq-card__title" id="tq-connect-heading-d"><?= $escaper->escapeHtml(__('Connect with TackQuote')) ?></h2>
+<div class="tq-connect<?= $compact ? ' tq-connect--compact' : ' admin__page-section-item' ?>"
+     aria-labelledby="tq-connect-heading-<?= $compact ? 'c' : 'd' ?>"
+     role="group"
+     data-mage-init="<?= $escaper->escapeHtmlAttr(json_encode($init)) ?>">
+    <?php if (!$compact): ?>
+        <h3 class="admin__page-section-item-title" id="tq-connect-heading-d">
+            <span class="title"><?= $escaper->escapeHtml(__('Connect with TackQuote')) ?></span>
+        </h3>
     <?php else: ?>
-        <span class="tq-connect__sr" id="tq-connect-heading-c"><?= $escaper->escapeHtml(__('Connect with TackQuote')) ?></span>
+        <span class="tq-overview__sr" id="tq-connect-heading-c"><?= $escaper->escapeHtml(__('Connect with TackQuote')) ?></span>
     <?php endif; ?>
-    <p class="tq-connect__state">
-        <span class="tq-pill tq-pill--<?= $state === '' ? 'warn' : 'ok' ?>"><?= $escaper->escapeHtml($block->getStateLabel()) ?></span>
-    </p>
-    <p class="tq-connect__intro"><?= $escaper->escapeHtml($block->getIntro()) ?></p>
-
-    <?php if (!$canConnect): ?>
-        <p class="tq-card__note">
-            <?= $escaper->escapeHtml(__('Ask an admin with access to the TackQuote settings to connect this store.')) ?>
+    <div class="admin__page-section-item-content">
+        <p class="tq-connect__state">
+            <span class="tq-overview__state <?= $state === '' ? 'grid-severity-minor' : 'grid-severity-notice' ?>">
+                <span><?= $escaper->escapeHtml($block->getStateLabel()) ?></span>
+            </span>
         </p>
-    <?php elseif ($block->isCompact()): ?>
-        <div class="tq-connect__actions">
-            <button type="button" class="action-default scalable primary tq-connect__post"
-                    data-url="<?= $escaper->escapeHtmlAttr($block->getStartUrl()) ?>">
-                <?= $escaper->escapeHtml($block->getConnectLabel()) ?>
-            </button>
-            <?php if ($block->isConnected()): ?>
-                <button type="button" class="action-default scalable tq-connect__post"
-                        data-url="<?= $escaper->escapeHtmlAttr($block->getDisconnectUrl()) ?>"
-                        data-confirm="<?= $escaper->escapeHtmlAttr($confirm) ?>">
-                    <?= $escaper->escapeHtml(__('Disconnect')) ?>
+        <p class="tq-connect__intro"><?= $escaper->escapeHtml($block->getIntro()) ?></p>
+
+        <?php if (!$canConnect): ?>
+            <p class="tq-overview__note">
+                <?= $escaper->escapeHtml(__('Ask an admin with access to the TackQuote settings to connect this store.')) ?>
+            </p>
+        <?php elseif ($compact): ?>
+            <div class="tq-connect__actions">
+                <button type="button" class="action-default scalable primary tq-connect__post"
+                        data-url="<?= $escaper->escapeHtmlAttr($block->getStartUrl()) ?>">
+                    <span><?= $escaper->escapeHtml($block->getConnectLabel()) ?></span>
                 </button>
-            <?php endif; ?>
-        </div>
-    <?php else: ?>
-        <div class="tq-connect__actions">
-            <form method="post" action="<?= $escaper->escapeUrl($block->getStartUrl()) ?>">
-                <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($block->getFormKey()) ?>"/>
-                <button type="submit" class="tq-btn tq-btn--primary"><?= $escaper->escapeHtml($block->getConnectLabel()) ?></button>
-            </form>
-            <?php if ($block->isConnected()): ?>
-                <form method="post" action="<?= $escaper->escapeUrl($block->getDisconnectUrl()) ?>"
-                      class="tq-connect__disconnect" data-confirm="<?= $escaper->escapeHtmlAttr($confirm) ?>">
+                <?php if ($block->isConnected()): ?>
+                    <button type="button" class="action-default scalable tq-connect__post"
+                            data-url="<?= $escaper->escapeHtmlAttr($block->getDisconnectUrl()) ?>"
+                            data-confirm="<?= $escaper->escapeHtmlAttr($confirm) ?>">
+                        <span><?= $escaper->escapeHtml(__('Disconnect')) ?></span>
+                    </button>
+                <?php endif; ?>
+            </div>
+        <?php else: ?>
+            <div class="tq-connect__actions">
+                <form method="post" action="<?= $escaper->escapeUrl($block->getStartUrl()) ?>">
                     <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($block->getFormKey()) ?>"/>
-                    <button type="submit" class="tq-btn tq-btn--secondary"><?= $escaper->escapeHtml(__('Disconnect')) ?></button>
+                    <button type="submit" class="action-secondary">
+                        <span><?= $escaper->escapeHtml($block->getConnectLabel()) ?></span>
+                    </button>
                 </form>
-            <?php endif; ?>
-        </div>
-    <?php endif; ?>
+                <?php if ($block->isConnected()): ?>
+                    <form method="post" action="<?= $escaper->escapeUrl($block->getDisconnectUrl()) ?>"
+                          class="tq-connect__disconnect" data-confirm="<?= $escaper->escapeHtmlAttr($confirm) ?>">
+                        <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($block->getFormKey()) ?>"/>
+                        <button type="submit" class="action-default">
+                            <span><?= $escaper->escapeHtml(__('Disconnect')) ?></span>
+                        </button>
+                    </form>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
 
-    <p class="tq-card__note">
-        <?= $escaper->escapeHtml(__('Opens TackQuote in this window. TackQuote creates an API key for this store and sends it back to this store directly. Your store must use https.')) ?>
-    </p>
-    <details class="tq-connect__more">
-        <summary><?= $escaper->escapeHtml(__('Learn more')) ?></summary>
-        <p><?= $escaper->escapeHtml(__('Pressing the button sends TackQuote this store\'s address, its Admin address, the store name, the module and Magento versions, the store language, a random value and a one-way code challenge. No customer, order or product data.')) ?></p>
-        <p><?= $escaper->escapeHtml(__('TackQuote will be able to create quote requests from this store and receive wholesale and net-terms applications. The key is stored encrypted, like a pasted key. Disconnect removes it from this store and revokes a key that Connect created.')) ?></p>
-    </details>
-</section>
-<?php
-$script = <<<'JS'
-(function () {
-    'use strict';
-
-    function post(url) {
-        var form = document.createElement('form'),
-            key = document.createElement('input');
-        form.method = 'post';
-        form.action = url;
-        key.type = 'hidden';
-        key.name = 'form_key';
-        key.value = window.FORM_KEY || '';
-        form.appendChild(key);
-        document.body.appendChild(form);
-        form.submit();
-    }
-
-    document.querySelectorAll('.tq-connect__post').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            var message = btn.getAttribute('data-confirm');
-            if (message && !window.confirm(message)) {
-                return;
-            }
-            btn.disabled = true;
-            post(btn.getAttribute('data-url'));
-        });
-    });
-
-    document.querySelectorAll('form.tq-connect__disconnect').forEach(function (form) {
-        form.addEventListener('submit', function (event) {
-            var message = form.getAttribute('data-confirm');
-            if (message && !window.confirm(message)) {
-                event.preventDefault();
-            }
-        });
-    });
-}());
-JS;
-?>
-<?= /* @noEscape */ $secureRenderer->renderTag('script', [], $script, false) ?>
+        <p class="tq-overview__note">
+            <?= $escaper->escapeHtml(__('Opens TackQuote in this window. TackQuote creates an API key for this store and sends it back to this store directly. Your store must use https.')) ?>
+        </p>
+        <details class="tq-connect__more">
+            <summary><?= $escaper->escapeHtml(__('Learn more')) ?></summary>
+            <p><?= $escaper->escapeHtml(__('Pressing the button sends TackQuote this store\'s address, its Admin address, the store name, the module and Magento versions, the store language, a random value and a one-way code challenge. No customer, order or product data.')) ?></p>
+            <p><?= $escaper->escapeHtml(__('TackQuote will be able to create quote requests from this store and receive wholesale and net-terms applications. The key is stored encrypted, like a pasted key. Disconnect removes it from this store and revokes a key that Connect created.')) ?></p>
+        </details>
+    </div>
+</div>
