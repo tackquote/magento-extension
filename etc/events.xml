@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<!--
+  GLOBAL events. Only the order note for B2B checkout enforcement lives here: it acts on a
+  flag that only the storefront and Web API areas ever set (Model\Enforce\CustomPriceApplier),
+  so it is inert in the admin and everywhere else.
+
+  `sales_model_service_quote_submit_before` is dispatched by
+  Magento\Quote\Model\QuoteManagement::submitQuote() with `order` and `quote`, before the order
+  is placed and saved.
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Event/etc/events.xsd">
+    <event name="sales_model_service_quote_submit_before">
+        <observer name="tackquote_account_price_order_comment"
+                  instance="TackQuote\Quotes\Observer\AccountPriceOrderComment"/>
+    </event>
+</config>

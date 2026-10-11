@@ -19,6 +19,7 @@ use Magento\Store\Model\Store;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use TackQuote\Quotes\Model\B2bDisplay\Presenter;
+use TackQuote\Quotes\Model\Enforce\PriceEnforcementSwitch;
 
 /**
  * @covers \TackQuote\Quotes\Model\B2bDisplay\Presenter
@@ -30,6 +31,9 @@ class PresenterTest extends TestCase
 
     /** @var PriceCurrencyInterface&MockObject */
     private $priceCurrency;
+
+    /** @var PriceEnforcementSwitch&MockObject */
+    private $priceEnforcement;
 
     /** @var array<int, array> Every format() call's arguments. */
     private $formatCalls = [];
@@ -48,6 +52,7 @@ class PresenterTest extends TestCase
             return '$' . number_format((float) $args[0], 2);
         });
         $this->priceCurrency->expects($this->never())->method('convertAndFormat');
+        $this->priceEnforcement = $this->createMock(PriceEnforcementSwitch::class);
     }
 
     private function product(?float $regular): Product
@@ -66,7 +71,7 @@ class PresenterTest extends TestCase
 
     private function presenter(): Presenter
     {
-        return new Presenter($this->catalogHelper, $this->priceCurrency);
+        return new Presenter($this->catalogHelper, $this->priceCurrency, $this->priceEnforcement);
     }
 
     private static function facts(array $overrides): array
@@ -133,7 +138,7 @@ class PresenterTest extends TestCase
             )
             ->willReturn(8.8);
 
-        $out = (new Presenter($helper, $this->priceCurrency))->present(
+        $out = (new Presenter($helper, $this->priceCurrency, $this->priceEnforcement))->present(
             self::facts(['accountPrice' => ['unitPrice' => 8.0, 'currency' => 'USD']]),
             $this->product(11.0),
             $this->createMock(Store::class),
@@ -223,6 +228,23 @@ class PresenterTest extends TestCase
         self::assertSame(['text' => $note], $withTable['cartNote']);
         self::assertNull($badgeAndLimitOnly['cartNote'], 'no price shown, nothing to qualify');
         self::assertStringNotContainsString("\u{2014}", $note);
+    }
+
+    public function testTheCartNoteIsGoneOnceTheCartChargesAccountPrices(): void
+    {
+        $store = $this->createMock(Store::class);
+        $store->method('getId')->willReturn(3);
+        $this->priceEnforcement->method('isOn')->with(3)->willReturn(true);
+
+        $out = $this->presenter()->present(
+            self::facts(['accountPrice' => ['unitPrice' => 8.0, 'currency' => 'USD']]),
+            $this->product(10.0),
+            $store,
+            'USD'
+        );
+
+        self::assertNull($out['cartNote'], 'the cart charges the account price, so "for now" is false');
+        self::assertNotNull($out['accountPrice']);
     }
 
     public function testTheBadgeCarriesTheGroupNameAsText(): void

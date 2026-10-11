@@ -21,6 +21,10 @@
                 <enable_buyer_group_badge>0</enable_buyer_group_badge>
                 <customer_groups></customer_groups>
             </b2b>
+            <b2b_checkout>
+                <enforce_prices>0</enforce_prices>
+                <enforce_order_limits>0</enforce_order_limits>
+            </b2b_checkout>
             <quote_request>
                 <enable_quote_page>0</enable_quote_page>
                 <enable_target_price>0</enable_target_price>

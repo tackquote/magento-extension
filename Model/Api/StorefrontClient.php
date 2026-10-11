@@ -14,6 +14,10 @@
  *   buyer-group      ?buyerEmail=                           -> BuyerGroupResult
  *   price-access     ?buyerEmail=                           -> PriceAccessResult
  *
+ * One POST outside `/storefront/v1` is also made here, for B2B checkout: the batched
+ * `/storefront-pricing/resolve` (resolvePricing(), its own docblock has the contract), under the
+ * same authentication rule below.
+ *
  * `price-access` (StorefrontV1Controller::priceAccess, storefront-v1.controller.ts:211-220,
  * `@Throttle` 60/min, `Cache-Control: private, no-store`) is read by quote-only mode's
  * "except approved wholesale accounts" scope through Model\QuoteOnly\WholesaleApproval, not
@@ -77,6 +81,25 @@ class StorefrontClient
 
     /** The upload route; a POST, so it is not one of ROUTES (the GET allow-list). */
     private const PATH_QUOTE_UPLOAD = '/storefront/v1/quote-upload';
+
+    /**
+     * The batched cart-pricing route; a POST outside `/storefront/v1`, so it is not one of
+     * ROUTES. The only other path this client will call.
+     */
+    public const PATH_RESOLVE_PRICING = '/storefront-pricing/resolve';
+
+    /**
+     * The server's cap on one resolve request (ResolveStorefrontPricingDto `@ArrayMaxSize(50)`,
+     * tack apps/api/src/modules/pricing-rules/dto/storefront-pricing.dto.ts:89). Sending 51 is a
+     * 400 for the whole batch, so more than this is refused here before any I/O.
+     */
+    public const RESOLVE_MAX_ITEMS = 50;
+
+    /**
+     * A cart or the order submit is waiting: the WooCommerce plugin's 5 s for the same route
+     * (Tack_Wholesale_Pricing::TIMEOUT). Past that the store's own price is charged.
+     */
+    private const RESOLVE_TIMEOUT_SECONDS = 5;
 
     /**
      * One file is at most 5 MB and a shopper is waiting: longer than a read, still bounded,
@@ -299,6 +322,99 @@ class StorefrontClient
             }
 
             return $out;
+        }
+
+        return ['ok' => true, 'status' => $status, 'data' => $decoded];
+    }
+
+    /**
+     * What TackQuote would charge this buyer for these lines: `POST /storefront-pricing/resolve`.
+     *
+     * WIRE CONTRACT — tack apps/api/src/modules/pricing-rules/storefront-pricing.controller.ts
+     * (`resolve`, :76-171) and dto/storefront-pricing.dto.ts:
+     *
+     *   body {buyerEmail?: string, items: [{sku: string (<=128), quantity: int >= 1}] (1..50)}
+     *   X-Api-Key only (ApiKeyGuard reads `x-api-key` first, common/guards/api-key.guard.ts:103)
+     *   -> 201 {buyerMatched: bool, items: [{sku, quantity, unitPrice: number|null, source}]}
+     *
+     * ONE request for the whole cart, never one per line. The route is the one the WooCommerce
+     * plugin prices its cart with (Tack_Wholesale_Pricing::resolve()). It is a READ: the DTO has
+     * no price field, and the server never creates a buyer for an unknown email.
+     *
+     * The answer carries no currency and no `accountSpecific` flag; Model\Enforce\PriceResolver
+     * decides what may be charged from `source` and `buyerMatched` and checks the currency
+     * separately. This method only transports.
+     *
+     * LOGGING — the HTTP status only. Never the key, the email, the SKUs or the body.
+     *
+     * @param array<int, array{sku: string, quantity: int}> $items
+     * @param string $buyerEmail The signed-in customer's own email address.
+     * @param int|null $storeId
+     * @return array{ok: bool, status: int, data?: array}
+     */
+    public function resolvePricing(array $items, string $buyerEmail, ?int $storeId = null): array
+    {
+        if ($items === [] || count($items) > self::RESOLVE_MAX_ITEMS || trim($buyerEmail) === '') {
+            return ['ok' => false, 'status' => 0];
+        }
+
+        $apiKey = $this->config->getApiKey($storeId);
+        if ($apiKey === '') {
+            return ['ok' => false, 'status' => 0];
+        }
+
+        $lines = [];
+        foreach ($items as $item) {
+            $sku = is_array($item) && is_string($item['sku'] ?? null) ? $item['sku'] : '';
+            $quantity = is_array($item) && is_int($item['quantity'] ?? null) ? $item['quantity'] : 0;
+            if ($sku === '' || $quantity < 1) {
+                // One bad line would be a 400 for the whole batch (StorefrontPriceItemDto).
+                return ['ok' => false, 'status' => 0];
+            }
+            $lines[] = ['sku' => $sku, 'quantity' => $quantity];
+        }
+
+        $curl = $this->curlFactory->create();
+        $curl->setTimeout(self::RESOLVE_TIMEOUT_SECONDS);
+        // setHeaders() REPLACES the header set: exactly these, and no Authorization.
+        $curl->setHeaders([
+            'X-Api-Key' => $apiKey,
+            'Content-Type' => 'application/json',
+            'Accept' => 'application/json',
+            'User-Agent' => 'TackQuote-Magento2',
+        ]);
+
+        try {
+            $curl->post(
+                $this->config->getApiBaseUrl($storeId) . self::PATH_RESOLVE_PRICING,
+                (string) $this->json->serialize(['buyerEmail' => trim($buyerEmail), 'items' => $lines])
+            );
+        } catch (\Exception $e) {
+            $this->logger->warning('TackQuote storefront-pricing resolve request failed to complete.');
+
+            return ['ok' => false, 'status' => 0];
+        }
+
+        $status = (int) $curl->getStatus();
+        if ($status < 200 || $status >= 300) {
+            $this->logger->warning(sprintf('TackQuote storefront-pricing resolve answered HTTP %d.', $status));
+
+            return ['ok' => false, 'status' => $status];
+        }
+
+        $decoded = null;
+        $body = (string) $curl->getBody();
+        if ($body !== '') {
+            try {
+                $decoded = $this->json->unserialize($body);
+            } catch (\Exception $e) {
+                $decoded = null;
+            }
+        }
+        if (!is_array($decoded)) {
+            $this->logger->warning('TackQuote storefront-pricing resolve answered a body that is not JSON.');
+
+            return ['ok' => false, 'status' => $status];
         }
 
         return ['ok' => true, 'status' => $status, 'data' => $decoded];

@@ -151,8 +151,9 @@
                 <label>B2B Display (signed-in customers)</label>
                 <comment><![CDATA[Shows a signed-in customer what TackQuote holds for their
                     account, read live from TackQuote and never stored in the page cache.
-                    <strong>Display only:</strong> the cart and checkout still charge
-                    Magento's own prices. The customer's email address, the product SKU and
+                    <strong>Display only:</strong> the cart and checkout charge Magento's own
+                    prices unless "Charge account prices in the cart" under B2B Checkout is on.
+                    The customer's email address, the product SKU and
                     the store currency are sent to TackQuote to look the account up.]]></comment>
                 <field id="enable_account_price" translate="label comment" type="select" sortOrder="10"
                        showInDefault="1" showInWebsite="1" showInStore="0">
@@ -162,24 +163,26 @@
                         store price struck through when the account price is lower. Shown only
                         for a price TackQuote holds for this customer's account, and not on
                         configurable, bundle or grouped products.<br>
-                        <strong>The cart does not charge this price yet</strong>: checkout
-                        still uses Magento's own price. Turn this on only if you honour the
-                        account price another way (for example by quote).]]></comment>
+                        The cart charges this price only when "Charge account prices in the
+                        cart" under B2B Checkout is on; otherwise checkout uses Magento's own
+                        price, and the shopper is told so beside it.]]></comment>
                 </field>
                 <field id="enable_quantity_breaks" translate="label comment" type="select" sortOrder="20"
                        showInDefault="1" showInWebsite="1" showInStore="0">
                     <label>Show volume pricing table</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                     <comment>The customer's quantity breaks (quantity and unit price). Like the
-                        account price, these are not charged in the Magento cart yet, and are not
-                        shown on configurable, bundle or grouped products.</comment>
+                        account price, these are charged in the cart only when "Charge account
+                        prices in the cart" under B2B Checkout is on, and are not shown on
+                        configurable, bundle or grouped products.</comment>
                 </field>
                 <field id="enable_order_limits" translate="label comment" type="select" sortOrder="30"
                        showInDefault="1" showInWebsite="1" showInStore="0">
                     <label>Show order limits notice</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                     <comment>"Order between X and Y units of this product." A notice only: the
-                        limit is not enforced in the Magento cart yet.</comment>
+                        cart enforces the limit when "Enforce order limits" under B2B Checkout is
+                        on.</comment>
                 </field>
                 <field id="enable_buyer_group_badge" translate="label comment" type="select" sortOrder="40"
                        showInDefault="1" showInWebsite="1" showInStore="0">
@@ -199,6 +202,40 @@
                         on. Selecting the groups you place approved trade customers in
                         keeps a new account that typed someone else's address from seeing
                         that buyer's prices. NOT LOGGED IN is never shown B2B data.]]></comment>
+                </field>
+            </group>
+            <group id="b2b_checkout" translate="label comment" type="text" sortOrder="26"
+                   showInDefault="1" showInWebsite="1" showInStore="0">
+                <label>B2B Checkout (signed-in customers)</label>
+                <comment><![CDATA[Makes the cart and checkout follow TackQuote for signed-in
+                    customers in the B2B customer groups above (empty: every signed-in
+                    customer). Guests, the admin order editor and API integrations are never
+                    affected. The customer's email address, the cart's SKUs and quantities and
+                    the cart currency are sent to TackQuote.]]></comment>
+                <field id="enforce_prices" translate="label comment" type="select" sortOrder="10"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Charge account prices in the cart</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment><![CDATA[Each cart line is charged the price TackQuote holds for
+                        this customer's account at that quantity, asked for the whole cart in
+                        one request and asked again when the order is placed. Only a price from
+                        the customer's price book, in the cart's currency, is charged; anything
+                        else keeps Magento's price. Applies to simple, virtual and downloadable
+                        products, not to configurable or bundle lines.<br>
+                        Not applied when catalog prices are entered including tax
+                        (Stores &gt; Configuration &gt; Sales &gt; Tax), because TackQuote prices
+                        are net. If TackQuote cannot be reached when the order is placed, the
+                        store's price is charged and the order notes it.]]></comment>
+                </field>
+                <field id="enforce_order_limits" translate="label comment" type="select" sortOrder="20"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Enforce order limits</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment><![CDATA[Refuses adding to the cart, changing a quantity, or placing
+                        an order that breaks the minimum or maximum quantity TackQuote sets for a
+                        product, with the same wording as the order limits notice. Order total
+                        limits are checked when the order is placed. If TackQuote cannot be
+                        reached, nothing is refused.]]></comment>
                 </field>
             </group>
             <group id="storefront" translate="label" type="text" sortOrder="20"
