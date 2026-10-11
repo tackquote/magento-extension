@@ -39,3 +39,50 @@
     background: #fef2f2;
     color: #b91c1c;
 }
+
+/* Connect with TackQuote, compact (Block\Adminhtml\System\Config\ConnectButton). */
+.tq-connect--compact .tq-connect__sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+.tq-connect--compact .tq-connect__state,
+.tq-connect--compact .tq-connect__intro {
+    margin: 0 0 8px;
+}
+
+.tq-connect--compact .tq-pill {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #f1f5f9;
+    color: #0f172a;
+}
+
+.tq-connect--compact .tq-pill--ok {
+    background: #ecfdf5;
+    color: #047857;
+}
+
+.tq-connect--compact .tq-pill--warn {
+    background: #fffbeb;
+    color: #b45309;
+}
+
+.tq-connect--compact .tq-connect__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.tq-connect--compact .tq-card__note {
+    margin: 0 0 4px;
+    color: #475569;
+}

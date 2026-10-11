@@ -180,6 +180,10 @@ token. Target prices travel on the quote request's lines (or in its note).
   stores sitting misconfigured.
   The controller distinguishes *disabled*, *no key set* and *configured but rejected*,
   because those need completely different fixes.
+- **Connect with TackQuote** (see the section below): a card on the Dashboard, and a compact
+  one beside the API key field in **Stores → Configuration → TackQuote**, show how the store
+  is connected (*Connected via Connect with TackQuote*, *Connected via API key* or *Not
+  connected*) and offer **Connect with TackQuote** and **Disconnect**.
 - Two separate ACL resources on purpose (`etc/acl.xml`): `TackQuote_Quotes::dashboard`
   (under a top-level `TackQuote_Quotes::tackquote`) backs the menu and connection test, so
   day-to-day TackQuote access can be granted **without** store-configuration rights;
@@ -196,6 +200,7 @@ view.
 | --- | --- | --- |
 | Connection | **Enable TackQuote** | Master switch. |
 | Connection | **TackQuote API Base URL** | Default `https://api.tackquote.com/v1`. Include `/v1`, no trailing slash. |
+| Connection | **Connect with TackQuote** | Button (no stored value): gets the API key below without copying it. See *Connect with TackQuote*. |
 | Connection | **TackQuote API Key** | Stored encrypted (`Magento\Config\Model\Config\Backend\Encrypted`) and decrypted on read. Needs the `quotes:write` scope. |
 | Connection | **Verify** | Inline "Test connection" button. |
 | Request a Quote button | **Show quote button on product pages** | Single-product request button. |
@@ -237,6 +242,9 @@ seller JWT:
 | `GET /v1/integrations/magento/registration-config` | none | The seller's registration policy, to render the form. Exposes form shape only. |
 | `POST /v1/integrations/magento/quote-requests` | `quotes:write` | Register the buyer/company and create the quote. Carries `lineItems[].targetPrice` and `uploadIds` / `uploadToken` only when `ping` lists `targetPrice` / `attachments`. |
 | `POST /v1/storefront/v1/quote-upload` | `quotes:write` | Attachments: one file's raw bytes, server to server, `X-Api-Key` only (`Model/Api/StorefrontClient.php`). |
+| `POST /v1/storefront-connect/magento/requests` | no key | Connect with TackQuote: open a connect request (server to server). |
+| `POST /v1/storefront-connect/magento/exchange` | no key | Connect with TackQuote: redeem the one-time code with the PKCE verifier for the API key. |
+| `POST /v1/integrations/magento/plugin-key/revoke` | none | Disconnect: revokes the key the request presents, and only that key. |
 | `GET /v1/storefront/v1/wholesale-price` | none | B2B display: the signed-in customer's account price for one SKU. |
 | `GET /v1/storefront/v1/quantity-breaks` | none | B2B display: the customer's quantity-break ladder for one SKU. |
 | `GET /v1/storefront/v1/order-limits` | none | B2B display: quantity limits for one SKU. |
@@ -252,6 +260,51 @@ That controller is separate from `MagentoController`, which is JWT-guarded and d
 opposite direction (Tack → the store: connect, sync, checkout). Quotes are tagged with the
 `source` this module sends (`magento`) plus `plugin-request`, and the store's currency is
 forwarded rather than assumed.
+
+`ping` also answers `connectedVia` (`connect` or `api_key`), how the presented key was
+issued; the module records the same fact itself, so it does not depend on it.
+
+## Connect with TackQuote
+
+Connect this store by signing in to TackQuote and approving, instead of copying an API key.
+The WooCommerce plugin has the same flow; the TackQuote side is shared
+(`apps/api/src/modules/integrations/storefront-connect/` and `magento/connect/` in tack).
+Pasting a key keeps working exactly as before.
+
+1. **Start.** An admin presses **Connect with TackQuote** (Dashboard or configuration). The
+   controller (`Controller/Adminhtml/Connect/Start.php`) is POST-only, so Magento checks the
+   admin form key first, and needs both `TackQuote_Quotes::connect` and
+   `TackQuote_Quotes::config`. The store's base URL must be https (see below). The module
+   makes a PKCE code verifier and a random `state` (`Model/Connect/Pkce.php`, RFC 7636 S256)
+   and asks TackQuote, server to server, to open a connect request naming the store, its
+   Admin address and its return route `tackquote/connect/callback`, with the verifier's
+   challenge. The verifier, encrypted with the installation's crypt key, and the state's
+   SHA-256 are kept in Magento's flag table for this admin user for 15 minutes
+   (`Model/Connect/PendingConnect.php`). The browser goes to the consent page TackQuote
+   answered with, only after `Model/Connect/ConnectUrlPolicy.php` accepted it (https,
+   `app.tackquote.com` for the default API URL, the Magento consent page, this request).
+2. **Approve.** On TackQuote the admin signs in (or creates an account) and approves or
+   cancels.
+3. **Return.** TackQuote sends the browser back to `tackquote/connect/callback`
+   (`Controller/Adminhtml/Connect/Callback.php`). The pending connect of this admin user is
+   taken once and the `state` compared; only then is the one-time code exchanged, server to
+   server, with the verifier for an API key carrying `quotes:write` and `buyers:write` (the
+   wholesale and net-terms application forms); never `orders:write`. The key is saved where a
+   pasted key is, at the default scope, encrypted (`Model/Connect/KeyStore.php`), and tested.
+   The Dashboard says whether the test passed.
+4. **Disconnect** (`Controller/Adminhtml/Connect/Disconnect.php`, POST) revokes the key in
+   TackQuote when Connect issued it, then removes it from this store. A pasted key is only
+   removed from this store; revoke it in TackQuote yourself.
+
+**What is sent to TackQuote:** this store's base URL, its Admin address, the store name, the
+module and Magento versions, the store locale, the random state and the code challenge. No
+customer, order or product data.
+
+**HTTPS.** Connect needs the store's base URL (`web/secure/base_url`, or
+`web/unsecure/base_url` when *Use Secure URLs in Admin* is off) to be https. The one
+exception is a development store on plain http whose host is `localhost`, a single-label
+name, a `.local`, `.localhost`, `.test` or `.internal` name, or a private IP address, the same
+rule as the WooCommerce plugin; TackQuote applies it again.
 
 ## Quote-only mode (B2B catalog)
 
@@ -664,6 +717,18 @@ lookups a minute.
 - **B2B display placement on custom themes.** The placeholder sits after
   `product.info.price` in `product.info.main`. UNVERIFIED on themes that move or remove
   that container (Hyvä included); it then lands at the end of `product.info.main`.
+- **Connect with TackQuote writes the default scope only.** A website-scope API key, where
+  one is set, still overrides it on that website's storefront; Disconnect does not remove a
+  website-scope key.
+- **Connect and a custom Admin URL on another host.** TackQuote only returns the browser to
+  the store's own host, so a store whose Admin runs on a separate custom admin URL
+  (`admin/url/use_custom`) cannot use Connect yet; paste an API key. UNVERIFIED on a store.
+- **The return needs the same Admin session.** With *Add Secret Key to URLs* on (the
+  default), the return route carries that session's secret key. If the session ends during
+  the 15 minutes, Magento shows its sign-in page and the connect is refused; press the
+  button again.
+- **Connect needs a TackQuote server with Magento Connect.** An older server answers 404,
+  which the module reports as "does not support Connect with TackQuote for Magento".
 - No Magento Marketplace listing or Packagist publication (see Installation).
 
 ## Requirements
@@ -803,7 +868,9 @@ GitHub release.
 1. Go to **Stores → Configuration → TackQuote → TackQuote Settings**.
 2. Set **Enable TackQuote** to Yes.
 3. Set **TackQuote API Base URL** (default `https://api.tackquote.com/v1`).
-4. Paste a TackQuote **API Key**, generated in TackQuote under Settings → Developer → API
+4. Press **Connect with TackQuote** (above the API key field, or on TackQuote → Dashboard),
+   sign in to TackQuote and approve: the key is saved for you. Or paste a TackQuote
+   **API Key**, generated in TackQuote under Settings → Developer → API
    Keys (or the "Inbound API key" section of Settings → Integrations → Magento in the
    seller portal). The key needs the `quotes:write` scope — that is the only scope this
    module's endpoints enforce, so do not grant it more.
@@ -848,7 +915,7 @@ magento-extension/                              (repository root)
 │                                               (regenerate with i18n:collect-phrases)
 ├── etc/module.xml                              Module declaration + sequence
 ├── etc/config.xml                              Defaults: B2B display + price-on-request off
-├── etc/acl.xml                                 Admin ACL: dashboard tree + config resource
+├── etc/acl.xml                                 Admin ACL: dashboard tree, connect, config resource
 ├── etc/crontab.xml                             Warms the registration policy every 5 min
 ├── etc/adminhtml/events.xml                    Flush the policy when settings are saved
 ├── etc/adminhtml/menu.xml                      TackQuote sidebar menu (Dashboard, Settings)
@@ -869,6 +936,13 @@ magento-extension/                              (repository root)
 ├── Model/B2bDisplay/ResponseMapper.php         TackQuote answers -> facts, fail closed
 ├── Model/B2bDisplay/DataProvider.php           Asks the switched-on routes, short per-customer cache
 ├── Model/B2bDisplay/Presenter.php              Formats money (tax basis, no conversion) + sentences
+├── Model/Connect/ConnectService.php            Connect with TackQuote: start, return, disconnect
+├── Model/Connect/ConnectApi.php                The Connect calls to TackQuote (fresh Curl per call)
+├── Model/Connect/ConnectUrlPolicy.php          https rule + which consent URL may be opened
+├── Model/Connect/PendingConnect.php            Verifier (encrypted) + state hash, flag table, single use
+├── Model/Connect/KeyStore.php                  Saves the key encrypted at the default scope, clears it
+├── Model/Connect/Pkce.php                      RFC 7636 verifier, state, S256 challenge
+├── Model/Connect/StoreInfo.php                 What the start request says about this store
 ├── Model/RegistrationConfigProvider.php        Fetches + caches the seller's policy
 ├── Model/ProductQuoteResolver.php              Server-side SKU -> priced line item
 ├── Model/ProductOptionRequirement.php          "Does this product need a selection first?"
@@ -906,12 +980,17 @@ magento-extension/                              (repository root)
 ├── Block/B2bDisplay.php                        Product-page B2B placeholder (no customer data)
 ├── Block/Adminhtml/Dashboard.php               Dashboard status + setup checklist
 ├── Block/Adminhtml/System/Config/TestConnection.php   Inline config-screen test button
+├── Block/Adminhtml/ConnectCard.php             Connect card: state, Connect, Disconnect
+├── Block/Adminhtml/System/Config/ConnectButton.php    Compact Connect card in the config screen
 ├── Controller/Quote/Submit.php                 Storefront quote-request POST handler
 ├── Controller/Quote/Upload.php                 Attachment upload: validate, send to TackQuote
 ├── Controller/Quote/Index.php                  The full quote page (404 while switched off)
 ├── Controller/B2b/Display.php                  Signed-in customer's B2B data (POST, form key)
 ├── Controller/Adminhtml/Dashboard/Index.php    Admin dashboard page
 ├── Controller/Adminhtml/Connection/Test.php    Admin "Test connection" AJAX endpoint
+├── Controller/Adminhtml/Connect/Start.php      Connect with TackQuote (POST, form key)
+├── Controller/Adminhtml/Connect/Callback.php   Return from TackQuote (GET, secret key, state)
+├── Controller/Adminhtml/Connect/Disconnect.php Disconnect (POST, form key)
 ├── Cron/WarmRegistrationConfig.php             Keeps the policy out of the render path
 ├── Cron/WarmServerCapabilities.php             Keeps the capability list out of the render path
 ├── Observer/FlushRegistrationConfig.php        Invalidates the policy on a settings save
@@ -941,6 +1020,7 @@ magento-extension/                              (repository root)
     ├── layout/adminhtml_system_config_edit.xml Loads the config-screen control stylesheet
     ├── templates/dashboard.phtml               Dashboard markup + test-connection JS
     ├── templates/system/config/test-connection.phtml   Config-screen button markup
+    ├── templates/connect-card.phtml            Connect card (Dashboard + compact config)
     ├── web/css/dashboard.css                   Admin dashboard styles
     └── web/css/config-test-connection.css      "Verify" result pill (was an inline <style>)
 ```
@@ -989,6 +1069,14 @@ magento-extension/                              (repository root)
   the cart and checkout are unchanged. An optional customer-group filter limits who sees
   it. The admin Dashboard shows the four switches as On/Off. New phrases are in
   `i18n/en_US.csv`.
+- **Connect with TackQuote:** connect the store by signing in to TackQuote and approving,
+  instead of copying an API key (Dashboard card, and beside the API key field). PKCE (S256)
+  protected; the verifier stays on the server, encrypted, for 15 minutes; the key is saved
+  encrypted at the default scope and tested. **Disconnect** revokes a Connect key in
+  TackQuote and removes it from the store. The connection state (Connect, API key, not
+  connected) is shown on the Dashboard. The key carries `quotes:write` and `buyers:write`.
+  New ACL resource `TackQuote_Quotes::connect`. Needs
+  https (development hosts excepted) and a TackQuote server with Magento Connect.
 - **README:** the note on connecting TackQuote to this store said TackQuote sends the
   integration access token as a Bearer token and asked merchants to enable Magento's
   standalone-Bearer setting. TackQuote signs with OAuth 1.0a using all four Integration

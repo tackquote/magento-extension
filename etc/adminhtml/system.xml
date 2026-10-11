@@ -36,11 +36,21 @@
                         trailing slash. Change only for a staging/custom deployment.
                     </comment>
                 </field>
+                <!--
+                  Connect with TackQuote: get the API key below without copying it. A button, not
+                  a stored value (frontend_model only); it writes the default-scope key itself.
+                -->
+                <field id="connect_with_tackquote" translate="label" sortOrder="25"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Connect with TackQuote</label>
+                    <frontend_model>TackQuote\Quotes\Block\Adminhtml\System\Config\ConnectButton</frontend_model>
+                </field>
                 <field id="api_key" translate="label comment" type="obscure" sortOrder="30"
                        showInDefault="1" showInWebsite="1" showInStore="0">
                     <label>TackQuote API Key</label>
                     <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
-                    <comment><![CDATA[Create an API key in TackQuote under
+                    <comment><![CDATA[Filled in for you by <strong>Connect with TackQuote</strong>
+                        above, or paste one: create an API key in TackQuote under
                         <strong>Settings &gt; Developer &gt; API Keys</strong> with the
                         <code>quotes:write</code> scope, then paste it here. Stored encrypted
                         using Magento's crypt key.<br>

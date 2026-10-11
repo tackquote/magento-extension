@@ -301,3 +301,29 @@
   background: var(--tq-red-soft);
   color: var(--tq-red);
 }
+
+/* Connect with TackQuote card (Block\Adminhtml\ConnectCard). */
+.tq-admin .tq-connect__state {
+  margin: 0 0 8px;
+}
+
+.tq-admin .tq-connect__intro {
+  margin: 0 0 12px;
+  color: var(--tq-slate-600);
+}
+
+.tq-admin .tq-connect__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.tq-admin .tq-connect__actions form {
+  margin: 0;
+}
+
+.tq-admin .tq-connect__more summary {
+  cursor: pointer;
+  color: var(--tq-slate-600);
+}

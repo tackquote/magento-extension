@@ -213,8 +213,8 @@ class Dashboard extends Template
                 'label' => (string) __('API key is set'),
                 'ok' => $hasKey,
                 'hint' => (string) __(
-                    'Create a key in TackQuote under Settings > Developer > API Keys, '
-                    . 'with the quotes:write scope.'
+                    'Press Connect with TackQuote above, or create a key in TackQuote under '
+                    . 'Settings > Developer > API Keys with the quotes:write scope and paste it in Settings.'
                 ),
             ],
             [

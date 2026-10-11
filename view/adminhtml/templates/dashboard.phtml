@@ -54,6 +54,8 @@ foreach ($checklist as $item) {
     </div>
 
     <div class="tq-grid">
+        <?= $block->getChildHtml('connect_card') ?>
+
         <section class="tq-card">
             <h2 class="tq-card__title"><?= $escaper->escapeHtml(__('Setup')) ?></h2>
             <ul class="tq-checklist">

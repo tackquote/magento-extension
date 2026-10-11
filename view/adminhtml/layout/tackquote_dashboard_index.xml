@@ -11,7 +11,12 @@
         <referenceContainer name="content">
             <block class="TackQuote\Quotes\Block\Adminhtml\Dashboard"
                    name="tackquote.dashboard"
-                   template="TackQuote_Quotes::dashboard.phtml"/>
+                   template="TackQuote_Quotes::dashboard.phtml">
+                <!-- Connect with TackQuote: connection state, Connect / Disconnect. -->
+                <block class="TackQuote\Quotes\Block\Adminhtml\ConnectCard"
+                       name="tackquote.connect.card"
+                       as="connect_card"/>
+            </block>
         </referenceContainer>
     </body>
 </page>
