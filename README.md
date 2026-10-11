@@ -312,6 +312,41 @@ and a custom CSS field. Everything is optional; the defaults (`etc/config.xml`) 
 look the storefront always had, and with every setting at its default the module prints no
 CSS at all.
 
+- **Blends with the theme first.** The storefront controls carry Magento's own markup
+  contract, so the active theme styles them: "Request a Quote" is `action primary tocart`
+  (the classes of Add to Cart) and sits first, under Add to Cart, at the same height and font;
+  "Add to Quote" is `action secondary` beside it (primary when it is the only quote control);
+  listing tiles use `action tocart secondary` so the theme's tile button rule sizes them like
+  the tile's Add to Cart (primary look where that button is hidden by quote-only); the cart
+  button is sized like "Proceed to Checkout"; the launcher is an `action primary` button; the
+  drawer has the minicart look (panel border and shadow, items between rules,
+  `input-text qty` boxes, the theme's close and trash icons, a large full-width
+  `action primary`); the quote page is a `table-wrapper > data table` with `col name|qty|
+  target|actions` cells (each with `data-th`, for the theme's phone layout), a
+  `fieldset > field` message and an `actions-toolbar` with `action primary` and
+  `action secondary`; the quote form keeps `fieldset > field > label/control`; the B2B price
+  row is a `price-box` with `old-price` and `price` spans and the breaks a `data table`.
+- **LESS, compiled with the theme's variables.** `view/frontend/web/css/source/_module.less`
+  (there is no hand-written `.css` any more) is imported by Magento's LESS pipeline
+  (`//@magento_import 'source/_module.less'`) into the theme's `styles-m.css`/`styles-l.css`
+  for Blank and every Blank-derived theme, Luma included. It uses the theme's variables
+  (`@button-primary__*`, `@button__border-radius`, `@border-color__base`, `@text__color__muted`,
+  `@error__color`, `@page__background-color`, `@primary__color`, `@font-weight__*`,
+  `@indent__*`, `@screen__s`/`@screen__m`, `@icon-remove`, `@icon-trash`) and mixins
+  (`.lib-button-l()`, `.lib-button-s()`, `.lib-button-primary()`, `.lib-button()`,
+  `.lib-button-as-link()`, `.lib-button-reset()`, `.lib-icon-font()`, `.lib-css()`,
+  `.lib-font-size()`, `.lib-visually-hidden()`, `.media-width()`), so a theme that recolours
+  or resizes its buttons recolours and resizes these too. Common rules sit in
+  `& when (@media-common = true)`. The module's own tokens (`@tackquote__gap`,
+  `@tackquote__rule-color`, `@tackquote__muted-color`, `@tackquote__error-color`,
+  `@tackquote__panel-*`, `@tackquote__launcher-offset`, `@tackquote__drawer-width`) default to
+  theme variables and can be overridden in a theme's `_extend.less`. After an upgrade, run
+  `bin/magento setup:static-content:deploy` (production mode) or clear `pub/static/frontend`
+  and `var/view_preprocessed` (developer mode) so the theme CSS is rebuilt.
+- **Hyva and other non-LESS themes: theme classes only, UNVERIFIED.** A theme that does not
+  run Magento's LESS pipeline does not compile `_module.less`, so only the classes above
+  apply. The quote list and form also need RequireJS and `Magento_Ui/js/modal/modal`, which
+  Hyva does not load; a Hyva compatibility module would be needed and none exists yet.
 - **How it reaches the page.** `ViewModel/Styling.php` reads the group and hands it to two
   templates through `view/frontend/layout/default.xml`: `quote-list.phtml` (launcher text,
   side and size, as the modifier classes `tackquote-app--launcher-left` and
@@ -320,7 +355,7 @@ CSS at all.
   can hash it for `style-src`.
 - **CSS custom properties.** `--tackquote-accent`, `--tackquote-accent-text` (black or white,
   whichever has the higher WCAG 2 contrast on the accent, the WooCommerce formula) and
-  `--tackquote-launcher-offset` (default `20px` in `request-quote.css`). The accent repaints
+  `--tackquote-launcher-offset` (default `20px` in `_module.less`, `@tackquote__launcher-offset`). The accent repaints
   this module's own buttons only (product page, listing tiles, quote list, launcher, quote
   form, quote page, cart button, quote-only notice) and the B2B account price and group
   badge; selectors are scoped with `html:root body .action…`, never `!important`, so a
@@ -652,7 +687,7 @@ sibling, so the quote controls finally render where the file always claimed — 
 the add-to-cart form rather than below the social links.
 
 Category and search tiles keep their cart button in the DOM and hidden by CSS
-(`view/frontend/web/css/request-quote.css`), because that button is hard-coded in
+(`view/frontend/web/css/source/_module.less`), because that button is hard-coded in
 `Magento_Catalog::product/list.phtml:108` rather than rendered as a removable block, and
 overriding that template would clobber every theme. **That hiding is cosmetic only** — the
 server refuses the POST regardless.
@@ -1567,7 +1602,7 @@ magento-extension/                              (repository root)
 │   │                                           quote page, cart copy, attachments
 │   ├── web/js/cart-seed.js                     Cart items -> quote-list rows (pure; Test/Js)
 │   ├── web/js/b2b-display.js                   Fills the B2B placeholder (text only)
-│   └── web/css/request-quote.css               Storefront styles
+│   └── web/css/source/_module.less             Storefront styles (LESS, theme variables)
 └── view/adminhtml/
     ├── layout/tackquote_dashboard_index.xml    Overview layout (page actions + content)
     ├── templates/dashboard.phtml               Overview: messages, tabs, sections, tables
@@ -1602,6 +1637,22 @@ magento-extension/                              (repository root)
     jobs, the Overview says that the quote form's company and custom fields and its
     attachment control appear after the first cron run (`ViewModel/Adminhtml/CronStatus.php`).
   - No configuration path changed.
+- **Storefront blends with the theme.** The quote buttons, quote list drawer and launcher,
+  quote page, quote form, cart button and B2B display now use the theme's own classes and are
+  styled from `view/frontend/web/css/source/_module.less` with the theme's LESS variables and
+  mixins; `view/frontend/web/css/request-quote.css` and its `<css>` entry in `default.xml` are
+  removed. "Request a Quote" is the theme's primary button under Add to Cart, "Add to Quote" a
+  secondary one beside it; the accent color's "Add to Quote" rule follows that split
+  (`Model/Styling/StyleRules.php`, no config path or variable name changed). The drawer takes
+  the minicart look, and the quote page cells get `col` names and `data-th` labels. Rebuild
+  static content after upgrading. See *Storefront styling*.
+- **B2B display waits for the customer section.** When Magento's `customer` section is empty
+  and the `section_data_ids` cookie has no `customer` entry (it was never loaded in this
+  session, for example after signing in through a plain form POST), `b2b-display.js` reloads
+  it once before deciding the visitor is a guest.
+- **Line length.** Lines over 120 characters in the account net terms and wholesale templates,
+  `quote-app.js` and the Pay on net terms checkout template are wrapped; the rendered output
+  and every phrase are unchanged.
 - **Admin Overview, styling and seven languages** (WooCommerce 1.11.0 parity).
   - **Overview** (TackQuote → Overview, was Dashboard): a tab row and one card per settings
     area in the WooCommerce plugin's order (Connection, Storefront, B2B pricing, Buyer groups,

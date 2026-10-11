@@ -3,7 +3,12 @@
         <input type="radio"
                name="payment[method]"
                class="radio"
-               data-bind="attr: {'id': getCode()}, value: getCode(), checked: isChecked, click: selectPaymentMethod, visible: isRadioButtonVisible()"/>
+               data-bind="
+                    attr: {'id': getCode()},
+                    value: getCode(),
+                    checked: isChecked,
+                    click: selectPaymentMethod,
+                    visible: isRadioButtonVisible()"/>
         <label class="label" data-bind="attr: {'for': getCode()}">
             <span data-bind="text: getTitle()"></span>
         </label>
@@ -20,7 +25,9 @@
             </label>
             <div class="control">
                 <input type="text" class="input-text" autocomplete="off"
-                       data-bind="attr: {'id': getCode() + '_po_number', 'maxlength': getPoMaxLength()}, value: poNumber"/>
+                       data-bind="
+                            attr: {'id': getCode() + '_po_number', 'maxlength': getPoMaxLength()},
+                            value: poNumber"/>
             </div>
         </div>
         <!-- /ko -->
@@ -38,7 +45,11 @@
             <div class="primary">
                 <button class="action primary checkout"
                         type="submit"
-                        data-bind="click: placeOrder, attr: {title: $t('Place Order')}, enable: (getCode() == isChecked()), css: {disabled: !isPlaceOrderActionAllowed()}"
+                        data-bind="
+                            click: placeOrder,
+                            attr: {title: $t('Place Order')},
+                            enable: (getCode() == isChecked()),
+                            css: {disabled: !isPlaceOrderActionAllowed()}"
                         disabled>
                     <span data-bind="i18n: 'Place Order'"></span>
                 </button>

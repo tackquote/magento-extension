@@ -61,7 +61,8 @@ class StyleRules
      * reaches this module's own controls.
      */
     private const PRIMARY = [
-        '.tackquote-add-btn',
+        // "Add to Quote" is primary only when it is the product page's sole quote control.
+        '.primary.tackquote-add-btn',
         '.tackquote-request-btn.tocart',
         '.tackquote-widget__toggle',
         '.tackquote-drawer__submit',
@@ -73,6 +74,7 @@ class StyleRules
 
     /** The module's second-rank buttons and links. */
     private const SECONDARY = [
+        '.secondary.tackquote-add-btn',
         '.tackquote-request-btn.secondary',
         '.tackquote-cart-quote__button',
         '.tackquote-back',

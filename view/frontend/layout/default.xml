@@ -11,12 +11,13 @@
   argument: the launcher's label, side and size in the quote list, and one <style> element
   in head.additional (the head block Magento_PageCache's own default.xml adds to the same
   way) for the accent color, button style, launcher offset and custom CSS.
+
+  No <css> entry: the module's styles are view/frontend/web/css/source/_module.less, which
+  Magento's LESS pipeline imports into the theme's own styles-m.css and styles-l.css for
+  Blank and every Blank-derived theme (Luma included), compiled with that theme's variables.
 -->
 <page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
-    <head>
-        <css src="TackQuote_Quotes::css/request-quote.css"/>
-    </head>
     <body>
         <referenceBlock name="head.additional">
             <block class="Magento\Framework\View\Element\Template"

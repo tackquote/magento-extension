@@ -22,16 +22,22 @@ if ($state === ApplicationStatus::APPROVED): ?>
     <?php return; ?>
 <?php endif; ?>
 <?php if ($state === ApplicationStatus::PENDING): ?>
-    <div class="message info"><div><?= $escaper->escapeHtml(__('Your wholesale application is being reviewed. We will email you when it has been decided.')) ?></div></div>
+    <div class="message info"><div><?= $escaper->escapeHtml(__(
+        'Your wholesale application is being reviewed. We will email you when it has been decided.'
+    )) ?></div></div>
     <?php return; ?>
 <?php endif; ?>
 <?php $form = $block->getForm(); ?>
 <?php if ($form === null): ?>
-    <div class="message info"><div><?= $escaper->escapeHtml(__('The application form is not available right now. Please try again later.')) ?></div></div>
+    <div class="message info"><div><?= $escaper->escapeHtml(__(
+        'The application form is not available right now. Please try again later.'
+    )) ?></div></div>
     <?php return; ?>
 <?php endif; ?>
 <?php if ($state === ApplicationStatus::DECLINED): ?>
-    <div class="message notice"><div><?= $escaper->escapeHtml(__('Your last wholesale application was not approved. You can apply again below.')) ?></div></div>
+    <div class="message notice"><div><?= $escaper->escapeHtml(__(
+        'Your last wholesale application was not approved. You can apply again below.'
+    )) ?></div></div>
 <?php endif; ?>
 <div class="tackquote-application tackquote-application--wholesale">
     <?php if ($form['name'] !== ''): ?>

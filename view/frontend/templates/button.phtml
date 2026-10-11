@@ -7,8 +7,11 @@
  * category pages and search results too — rendering a second copy of the form here would
  * duplicate every field, validation rule and policy branch.
  *
- * THEME ADAPTATION — controls use Magento's own button classes so they inherit whatever
- * theme the storefront runs (Luma, Hyvä, custom) instead of imposing their own chrome.
+ * THEME ADAPTATION: controls use Magento's own button classes so they inherit whatever
+ * theme the storefront runs instead of imposing their own chrome. "Request a Quote" is the
+ * theme's primary action (`action primary tocart`, the classes of Add to Cart) and comes first,
+ * so it lines up under Add to Cart; "Add to Quote" is `action secondary` beside it, or primary
+ * when it is the only quote control. Size and layout: view/frontend/web/css/source/_module.less.
  *
  * @var \TackQuote\Quotes\Block\RequestQuote $block
  * @var \Magento\Framework\Escaper $escaper
@@ -18,9 +21,9 @@
 $product = $block->getCurrentProduct();
 $showRequest = $block->isEnabled();
 $showAdd = $block->isAddToQuoteEnabled();
-// In quote-only mode Add to Cart has been removed from this page, so the request button is
-// no longer the alternative action — it is the only one, and must not read as the lesser
-// button. RequestQuote::isEnabled() already guarantees $showRequest is true here.
+// In quote-only mode Add to Cart has been removed from this page and the request button is
+// the only action; it is the theme's primary button in every mode, so it never reads as the
+// lesser one. RequestQuote::isEnabled() already guarantees $showRequest is true here.
 $quoteOnly = $block->isQuoteOnly();
 
 if ((!$showRequest && !$showAdd) || !$product) {
@@ -34,17 +37,15 @@ if ((!$showRequest && !$showAdd) || !$product) {
      data-requires-options="<?= $block->productRequiresOptions() ? '1' : '0' ?>"
      data-quote-only="<?= $quoteOnly ? '1' : '0' ?>">
 
-    <?php if ($showAdd): ?>
-        <button type="button" class="action tocart tackquote-add-btn">
-            <span><?= $escaper->escapeHtml($block->getAddToQuoteLabel()) ?></span>
+    <?php if ($showRequest): ?>
+        <button type="button" class="action primary tocart tackquote-request-btn" aria-haspopup="dialog">
+            <span><?= $escaper->escapeHtml($block->getButtonLabel()) ?></span>
         </button>
     <?php endif; ?>
 
-    <?php if ($showRequest): ?>
-        <button type="button"
-                class="action <?= ($showAdd && !$quoteOnly) ? 'secondary' : 'tocart' ?> tackquote-request-btn"
-                aria-haspopup="dialog">
-            <span><?= $escaper->escapeHtml($block->getButtonLabel()) ?></span>
+    <?php if ($showAdd): ?>
+        <button type="button" class="action <?= $showRequest ? 'secondary' : 'primary' ?> tackquote-add-btn">
+            <span><?= $escaper->escapeHtml($block->getAddToQuoteLabel()) ?></span>
         </button>
     <?php endif; ?>
 </div>
