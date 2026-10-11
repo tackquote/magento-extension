@@ -37,6 +37,17 @@
                 <wholesale_form_slug></wholesale_form_slug>
                 <enable_net_terms_tab>0</enable_net_terms_tab>
             </forms>
+            <b2b_groups>
+                <customer_groups></customer_groups>
+                <enable_catalog_visibility>0</enable_catalog_visibility>
+                <hide_catalog_when_unknown>0</hide_catalog_when_unknown>
+                <enable_restrictions>0</enable_restrictions>
+                <restrict_when_unknown>0</restrict_when_unknown>
+                <enable_shipping_discounts>0</enable_shipping_discounts>
+                <enable_tax_exempt>0</enable_tax_exempt>
+                <tax_exempt_class>0</tax_exempt_class>
+                <enable_group_mirror>0</enable_group_mirror>
+            </b2b_groups>
         </tackquote_quotes>
         <!--
           "Pay on net terms" (lane MG-FORMS-TERMS). Off until the merchant turns it on.

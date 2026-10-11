@@ -28,6 +28,14 @@
                  orders are Magento_Sales orders. -->
             <module name="Magento_Payment"/>
             <module name="Magento_Sales"/>
+            <!-- Buyer-group rules (Model/Groups): shipping rates (Magento\Shipping\Model\Shipping),
+                 the exempt customer tax class (Magento_Tax source model), the top menu
+                 (Magento\Theme\Block\Html\Topmenu) and search listings (Magento_CatalogSearch's
+                 search_request.xml, merged with ours). Payment is already declared above. -->
+            <module name="Magento_Shipping"/>
+            <module name="Magento_Tax"/>
+            <module name="Magento_Theme"/>
+            <module name="Magento_CatalogSearch"/>
         </sequence>
     </module>
 </config>

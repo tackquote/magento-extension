@@ -24,6 +24,16 @@
         <plugin name="tackquote_quote_only_cart_guard"
                 type="TackQuote\Quotes\Plugin\Quote\QuoteOnlyCartGuard"
                 sortOrder="10"/>
+        <plugin name="tackquote_account_price_totals"
+                type="TackQuote\Quotes\Plugin\Quote\AccountPriceTotalsPlugin"
+                sortOrder="20"/>
+        <plugin name="tackquote_order_limit_cart_guard"
+                type="TackQuote\Quotes\Plugin\Quote\OrderLimitCartGuard"
+                sortOrder="20"/>
+        <!-- Buyer-group rules: tax-exempt buyers (Plugin\Tax\TaxExemptCustomerClass). -->
+        <plugin name="tackquote_tax_exempt_customer_class"
+                type="TackQuote\Quotes\Plugin\Tax\TaxExemptCustomerClass"
+                sortOrder="40"/>
     </type>
 
     <!-- Quantity increases on an existing line, which never reach addProduct(). -->
@@ -31,6 +41,9 @@
         <plugin name="tackquote_quote_only_cart_item_repository_guard"
                 type="TackQuote\Quotes\Plugin\Quote\QuoteOnlyCartItemRepositoryGuard"
                 sortOrder="10"/>
+        <plugin name="tackquote_order_limit_cart_item_repository_guard"
+                type="TackQuote\Quotes\Plugin\Quote\OrderLimitCartItemRepositoryGuard"
+                sortOrder="20"/>
     </type>
 
     <!-- Order placement: placeOrder / payment-information end in QuoteManagement::submit(). -->
@@ -38,44 +51,53 @@
         <plugin name="tackquote_quote_only_submit_guard"
                 type="TackQuote\Quotes\Plugin\Quote\QuoteOnlySubmitGuard"
                 sortOrder="10"/>
-    </type>
-
-    <!--
-      B2B CHECKOUT ENFORCEMENT (Stores > Configuration > TackQuote > B2B Checkout). New <type>
-      blocks only; Magento merges them with the quote-only declarations above, and every plugin
-      below is ordered AFTER the quote-only guard on the same method (sortOrder 20/30 > 10), so a
-      cart quote-only mode refuses is never priced or limit-checked. Area-scoped for the same
-      reason as everything else in this file: the admin order editor must keep its own prices.
-
-      The account price is put on the cart lines before every totals collection, and the order
-      limit is checked whenever a line is added.
-    -->
-    <type name="Magento\Quote\Model\Quote">
-        <plugin name="tackquote_account_price_totals"
-                type="TackQuote\Quotes\Plugin\Quote\AccountPriceTotalsPlugin"
-                sortOrder="20"/>
-        <plugin name="tackquote_order_limit_cart_guard"
-                type="TackQuote\Quotes\Plugin\Quote\OrderLimitCartGuard"
-                sortOrder="20"/>
-    </type>
-
-    <!-- Quantity changes on an existing line, which never reach addProduct(). -->
-    <type name="Magento\Quote\Api\CartItemRepositoryInterface">
-        <plugin name="tackquote_order_limit_cart_item_repository_guard"
-                type="TackQuote\Quotes\Plugin\Quote\OrderLimitCartItemRepositoryGuard"
-                sortOrder="20"/>
-    </type>
-
-    <!--
-      At order submit: re-resolve the account prices with a fresh TackQuote answer (20), then
-      check every order limit against the total that will be charged (30).
-    -->
-    <type name="Magento\Quote\Model\QuoteManagement">
         <plugin name="tackquote_account_price_submit"
                 type="TackQuote\Quotes\Plugin\Quote\AccountPriceSubmitPlugin"
                 sortOrder="20"/>
         <plugin name="tackquote_order_limit_submit_guard"
                 type="TackQuote\Quotes\Plugin\Quote\OrderLimitSubmitGuard"
                 sortOrder="30"/>
+    </type>
+
+    <!--
+      B2B CHECKOUT ENFORCEMENT (Stores > Configuration > TackQuote > B2B Checkout). Its plugins
+      sit in the quote-only <type> blocks above (one block per class: Magento's di.xsd has a
+      `uniqueType` constraint, and a second block for the same class fails validation in
+      developer mode), and every plugin is ordered AFTER the quote-only guard on the same method (sortOrder 20/30 > 10), so a
+      cart quote-only mode refuses is never priced or limit-checked. Area-scoped for the same
+      reason as everything else in this file: the admin order editor must keep its own prices.
+
+      The account price is put on the cart lines before every totals collection, and the order
+      limit is checked whenever a line is added.
+    -->
+    <!-- (merged into the first <type> block for this class above: one block per class, as
+         Magento's di.xsd `uniqueType` constraint requires) -->
+
+    <!-- Quantity changes on an existing line, which never reach addProduct(). -->
+    <!-- (merged into the first <type> block for this class above: one block per class, as
+         Magento's di.xsd `uniqueType` constraint requires) -->
+
+    <!--
+      At order submit: re-resolve the account prices with a fresh TackQuote answer (20), then
+      check every order limit against the total that will be charged (30).
+    -->
+    <!-- (merged into the first <type> block for this class above: one block per class, as
+         Magento's di.xsd `uniqueType` constraint requires) -->
+
+    <!--
+      Buyer-group rules (Model\Groups\*): payment methods by group. The per-method decision is
+      the payment_method_is_active observer (etc/<area>/events.xml); this plugin only keeps the
+      rules from leaving a cart with no method at all.
+    -->
+    <type name="Magento\Payment\Model\MethodList">
+        <plugin name="tackquote_group_payment_method_list"
+                type="TackQuote\Quotes\Plugin\Payment\MethodListRestriction"
+                sortOrder="10"/>
+    </type>
+    <!-- Buyer-group rules: shipping methods by group, and shipping discounts per group. -->
+    <type name="Magento\Shipping\Model\Shipping">
+        <plugin name="tackquote_group_shipping_rates"
+                type="TackQuote\Quotes\Plugin\Shipping\GroupShippingRates"
+                sortOrder="10"/>
     </type>
 </config>

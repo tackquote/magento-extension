@@ -13,6 +13,7 @@ use Magento\Backend\Block\Template;
 use Magento\Backend\Block\Template\Context;
 use TackQuote\Quotes\Model\Config;
 use TackQuote\Quotes\Model\Config\Source\QuoteOnlyScope;
+use TackQuote\Quotes\Model\Groups\GroupRulesConfig;
 
 class Dashboard extends Template
 {
@@ -27,20 +28,28 @@ class Dashboard extends Template
     private $quoteOnlyScope;
 
     /**
+     * @var GroupRulesConfig
+     */
+    private $groupRules;
+
+    /**
      * @param Context $context
      * @param Config $config
      * @param QuoteOnlyScope $quoteOnlyScope
+     * @param GroupRulesConfig $groupRules
      * @param array $data
      */
     public function __construct(
         Context $context,
         Config $config,
         QuoteOnlyScope $quoteOnlyScope,
+        GroupRulesConfig $groupRules,
         array $data = []
     ) {
         parent::__construct($context, $data);
         $this->config = $config;
         $this->quoteOnlyScope = $quoteOnlyScope;
+        $this->groupRules = $groupRules;
     }
 
     /**
@@ -170,6 +179,30 @@ class Dashboard extends Template
         ];
 
         return $rows;
+    }
+
+    /**
+     * The buyer-group rule rows of the "B2B features" card, as the merchant set them (raw
+     * switches, like getB2bSwitches()).
+     *
+     * @return array<int, array{label: string, on: bool}>
+     */
+    public function getGroupRuleRows(): array
+    {
+        $rows = [
+            GroupRulesConfig::CATALOG_ENABLED => (string) __('Hidden categories by buyer group'),
+            GroupRulesConfig::RESTRICTIONS_ENABLED => (string) __('Payment and shipping methods by buyer group'),
+            GroupRulesConfig::DISCOUNTS_ENABLED => (string) __('Shipping discounts by buyer group'),
+            GroupRulesConfig::TAX_EXEMPT_ENABLED => (string) __('Tax-exempt buyers'),
+            GroupRulesConfig::MIRROR_ENABLED => (string) __('Customer group from buyer group'),
+        ];
+
+        $out = [];
+        foreach ($rows as $field => $label) {
+            $out[] = ['label' => $label, 'on' => $this->groupRules->isSwitchOn($field)];
+        }
+
+        return $out;
     }
 
     /**

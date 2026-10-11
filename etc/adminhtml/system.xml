@@ -428,6 +428,160 @@
                     <config_path>payment/tackquote_net_terms/sort_order</config_path>
                 </field>
             </group>
+            <!--
+              Buyer-group rules (parity with the WooCommerce plugin 1.10.0/1.11.0 buyer-group
+              features). Read by Model\Groups\GroupRulesConfig. Every switch defaults to No
+              (etc/config.xml); the rule fields refuse a line that does not parse
+              (Model\Groups\Config\RuleMapBackend).
+            -->
+            <group id="b2b_groups" translate="label comment" type="text" sortOrder="27"
+                   showInDefault="1" showInWebsite="1" showInStore="0">
+                <label>Buyer group rules (signed-in customers)</label>
+                <comment><![CDATA[Rules keyed on the customer's TackQuote buyer group code, read
+                    from TackQuote when it is needed and kept for 60 seconds per customer. The
+                    customer's email address (and, where TackQuote supports it, the Magento
+                    customer id) is sent to TackQuote to find the account. Rules use
+                    group CODES (for example GOLD), compared without regard to case.
+                    <strong>@GUESTS</strong> means everybody outside a group: guests, customers
+                    TackQuote places in no group, and customers outside the groups selected
+                    below. The admin and integrations (TackQuote's own quote conversion
+                    included) are never affected.]]></comment>
+                <field id="customer_groups" translate="label comment" type="multiselect" sortOrder="5"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Only for these customer groups</label>
+                    <source_model>Magento\Customer\Model\Config\Source\Group\Multiselect</source_model>
+                    <can_be_empty>1</can_be_empty>
+                    <comment><![CDATA[Leave empty to ask TackQuote about every signed-in customer.
+                        TackQuote finds the account by email address, and Magento does not confirm
+                        an address unless account confirmation is on. Selecting the groups you put
+                        trade customers in keeps a new account that typed someone else's address
+                        from getting that buyer's group. Customers outside the selection count as
+                        @GUESTS.]]></comment>
+                </field>
+                <field id="enable_catalog_visibility" translate="label comment" type="select" sortOrder="10"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Hide categories by buyer group</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>Hidden categories, and the products in them, leave the menu, category
+                        and search listings; their pages answer "page not found" and their products
+                        cannot be added to the cart. Child categories are hidden with their parent.</comment>
+                </field>
+                <field id="catalog_visibility_map" translate="label comment" type="textarea" sortOrder="20"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Categories hidden from groups</label>
+                    <backend_model>TackQuote\Quotes\Model\Groups\Config\RuleMapBackend</backend_model>
+                    <comment><![CDATA[One category per line: <code>category ID: CODE, CODE</code>,
+                        for example <code>12: RETAIL, @GUESTS</code> hides category 12 from the
+                        RETAIL group and from everybody outside a group. The category ID is shown
+                        in Catalog > Categories.]]></comment>
+                    <depends><field id="enable_catalog_visibility">1</field></depends>
+                </field>
+                <field id="hide_catalog_when_unknown" translate="label comment" type="select" sortOrder="30"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Hide when the buyer group is unknown</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>When TackQuote cannot be reached, a signed-in customer's group is
+                        unknown. No: the categories are shown. Yes: every category hidden from any
+                        group is hidden. Guests are always @GUESTS and need no lookup.</comment>
+                    <depends><field id="enable_catalog_visibility">1</field></depends>
+                </field>
+                <field id="enable_restrictions" translate="label comment" type="select" sortOrder="40"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Restrict payment and shipping methods by buyer group</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>A method with no line below stays available to everyone. A method with
+                        a line is available only to the groups it names. If the lines would leave a
+                        cart with no payment method or no shipping method, every method stays
+                        available and the store log says so.</comment>
+                </field>
+                <field id="payment_map" translate="label comment" type="textarea" sortOrder="50"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Payment methods by group</label>
+                    <backend_model>TackQuote\Quotes\Model\Groups\Config\RuleMapBackend</backend_model>
+                    <comment><![CDATA[One method per line: <code>method code: CODE, CODE</code>,
+                        for example <code>checkmo: TRADE, GOLD</code> or
+                        <code>purchaseorder: TRADE</code>.]]></comment>
+                    <depends><field id="enable_restrictions">1</field></depends>
+                </field>
+                <field id="shipping_map" translate="label comment" type="textarea" sortOrder="60"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Shipping methods by group</label>
+                    <backend_model>TackQuote\Quotes\Model\Groups\Config\RuleMapBackend</backend_model>
+                    <comment><![CDATA[One line per carrier or rate: <code>carrier code: CODE</code>
+                        (for example <code>freeshipping: GOLD</code>) or
+                        <code>carrier_method: CODE</code> (for example
+                        <code>tablerate_bestway: TRADE</code>). A rate's own line wins over its
+                        carrier's.]]></comment>
+                    <depends><field id="enable_restrictions">1</field></depends>
+                </field>
+                <field id="restrict_when_unknown" translate="label comment" type="select" sortOrder="70"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Restrict when the buyer group is unknown</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>When TackQuote cannot be reached. No: restricted methods stay available,
+                        so an outage does not stop anyone paying. Yes: they are withheld. A customer
+                        TackQuote places in no group never gets a restricted method.</comment>
+                    <depends><field id="enable_restrictions">1</field></depends>
+                </field>
+                <field id="enable_shipping_discounts" translate="label comment" type="select" sortOrder="80"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Shipping discounts by buyer group</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>Only customers TackQuote places in a group get a discount. Applied
+                        after the restrictions above.</comment>
+                </field>
+                <field id="shipping_discount_map" translate="label comment" type="textarea" sortOrder="90"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Shipping discount per group</label>
+                    <backend_model>TackQuote\Quotes\Model\Groups\Config\RuleMapBackend</backend_model>
+                    <comment><![CDATA[One group per line: <code>GOLD: percent=15</code> (15% off
+                        every shipping rate), <code>GOLD: percent=15 | flatrate, tablerate</code>
+                        (those carriers only), <code>TIER2: free</code> (shipping costs nothing),
+                        or <code>TIER3: free_only</code> (show only the rates that already cost
+                        nothing, when there is one).]]></comment>
+                    <depends><field id="enable_shipping_discounts">1</field></depends>
+                </field>
+                <field id="enable_tax_exempt" translate="label comment" type="select" sortOrder="100"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Apply TackQuote tax exemptions</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>When TackQuote marks the buyer tax exempt, the cart and checkout
+                        charge the customer tax class below instead of the group's. The customer's
+                        group is not changed. An outage, or no answer, charges tax as usual.
+                        TackQuote sends an exemption only for a customer it has linked to this
+                        store's customer account (an approved wholesale or credit application made
+                        from this store), never for an email match alone.</comment>
+                </field>
+                <field id="tax_exempt_class" translate="label comment" type="select" sortOrder="110"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Customer tax class for tax-exempt buyers</label>
+                    <source_model>Magento\Tax\Model\TaxClass\Source\Customer</source_model>
+                    <comment>Create a customer tax class that no tax rule uses (Stores > Tax
+                        Rules) and choose it here. Catalog prices shown including tax are not
+                        changed; the cart and checkout charge no tax.</comment>
+                    <depends><field id="enable_tax_exempt">1</field></depends>
+                </field>
+                <field id="enable_group_mirror" translate="label comment" type="select" sortOrder="120"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Set the customer group from the buyer group</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>On sign-in, and at most every 5 minutes after, a customer whose
+                        TackQuote group is listed below is moved to that customer group. Only
+                        customers in the website's default group, or in a group this setting put
+                        them in, are moved; when TackQuote stops listing them they go back to the
+                        group they came from. Every change is written to the store log.</comment>
+                </field>
+                <field id="group_mirror_map" translate="label comment" type="textarea" sortOrder="130"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Customer group per buyer group</label>
+                    <backend_model>TackQuote\Quotes\Model\Groups\Config\RuleMapBackend</backend_model>
+                    <comment><![CDATA[One group per line: <code>CODE: customer group ID</code>, for
+                        example <code>GOLD: 4</code>. The ID is shown in Customers > Customer
+                        Groups. A customer group can carry its own prices and tax class, so check
+                        "Only for these customer groups" above.]]></comment>
+                    <depends><field id="enable_group_mirror">1</field></depends>
+                </field>
+            </group>
         </section>
     </system>
 </config>
