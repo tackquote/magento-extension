@@ -1,0 +1,31 @@
+<?php
+/**
+ * Product-page B2B display: an EMPTY placeholder plus the script that fills it.
+ *
+ * Nothing about the customer is rendered here, because this HTML is full-page cached and
+ * served to every visitor. b2b-display.js asks Controller/B2b/Display.php for the
+ * signed-in customer's data after load and fills the placeholder with text only.
+ * The placeholder stays `hidden` (and takes no space) until there is something to show,
+ * so a guest, or a customer TackQuote has nothing for, sees the page exactly as before.
+ *
+ * @var \TackQuote\Quotes\Block\B2bDisplay $block
+ * @var \Magento\Framework\Escaper $escaper
+ * @package TackQuote_Quotes
+ */
+
+$productId = $block->getProductId();
+if (!$block->isEnabled() || $productId < 1) {
+    return;
+}
+?>
+<div class="tackquote-b2b" data-role="tackquote-b2b" hidden></div>
+<script type="text/x-magento-init">
+{
+    "[data-role=tackquote-b2b]": {
+        "TackQuote_Quotes/js/b2b-display": {
+            "endpoint": "<?= $escaper->escapeJs($block->getEndpointUrl()) ?>",
+            "productId": <?= (int) $productId ?>
+        }
+    }
+}
+</script>

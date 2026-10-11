@@ -221,6 +221,14 @@
   line-height: 1.5;
 }
 
+/* Short explanatory line under a card's facts (B2B features card). */
+.tq-card__note {
+  margin: 12px 0 0;
+  font-size: 12px;
+  color: var(--tq-slate-600);
+  line-height: 1.5;
+}
+
 /* Facts list ------------------------------------------------------------- */
 
 .tq-facts {

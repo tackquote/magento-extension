@@ -36,6 +36,20 @@
                    name="tackquote.request.quote"
                    template="TackQuote_Quotes::button.phtml"
                    after="product.info"/>
+            <!--
+              B2B display (account price, volume table, order-limit notice, buyer-group
+              badge): an empty placeholder directly under the price. `product.info.price`
+              is a container that is a child of `product.info.main` (Adobe, "Customize
+              product view pages", developer.adobe.com/commerce/frontend-core/guide/layouts/
+              product-layouts), so `after` names a real sibling and is honoured. The block
+              renders no customer data, so it is safe in the full-page cache; see
+              Block/B2bDisplay.php. UNVERIFIED on a custom theme that moves or removes
+              product.info.price: the block then falls to the end of product.info.main.
+            -->
+            <block class="TackQuote\Quotes\Block\B2bDisplay"
+                   name="tackquote.b2b.display"
+                   template="TackQuote_Quotes::b2b-display.phtml"
+                   after="product.info.price"/>
         </referenceContainer>
     </body>
 </page>
