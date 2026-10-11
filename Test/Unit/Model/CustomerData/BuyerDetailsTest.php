@@ -93,9 +93,13 @@ class BuyerDetailsTest extends TestCase
             (string) file_get_contents(self::ROOT . '/etc/di.xml')
         );
 
-        // The script reads the same name.
+        // The script reads the same name (buyer-prefill.js, which quote-app.js loads).
         self::assertStringContainsString(
-            "customerData.get('" . BuyerDetails::SECTION . "')",
+            "SECTION = '" . BuyerDetails::SECTION . "'",
+            (string) file_get_contents(self::ROOT . '/view/frontend/web/js/buyer-prefill.js')
+        );
+        self::assertStringContainsString(
+            "'TackQuote_Quotes/js/buyer-prefill'",
             (string) file_get_contents(self::ROOT . '/view/frontend/web/js/quote-app.js')
         );
     }

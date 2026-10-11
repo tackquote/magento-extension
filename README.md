@@ -60,7 +60,9 @@ WooCommerce, which needs the plugin to push.
   billing address's telephone. They come from Magento's own customer record through a
   customer-data section, `tackquote-buyer` (`Model/CustomerData/BuyerDetails.php`), loaded
   with Magento's own sections, never from the full-page-cached form HTML (which Magento shares
-  between customers of a group) and never from TackQuote. UNVERIFIED in a browser.
+  between customers of a group) and never from TackQuote. A shopper who was already signed in
+  when the module was installed has never loaded that section, so the form asks for it once
+  per page (`view/frontend/web/js/buyer-prefill.js`) instead of waiting for the next login.
 
 **Prices are always re-resolved server-side.** The browser stores and sends only a SKU, a
 display name and a quantity — never a price. `Controller/Quote/Submit.php` looks every SKU
@@ -1322,6 +1324,7 @@ vendor/bin/phpcs                     # picks up ./phpcs.xml -> the Magento2 stan
 scripts/check-standards.sh           # the same, failing on ANY error or warning (severity 1)
 vendor/bin/phpunit -c Test/Unit/phpunit.xml
 node Test/Js/cart-seed.test.js       # the cart-page mapper; plain Node, no dependencies
+node Test/Js/buyer-prefill.test.js   # the signed-in prefill's one-time section reload
 ```
 
 The module is held to the Magento coding standard with **zero errors and zero warnings**;
@@ -1652,6 +1655,7 @@ magento-extension/                              (repository root)
 │   ├── web/js/quote-app.js                     RequireJS component: list, drawer, form,
 │   │                                           quote page, cart copy, attachments
 │   ├── web/js/cart-seed.js                     Cart items -> quote-list rows (pure; Test/Js)
+│   ├── web/js/buyer-prefill.js                 When to reload the prefill section (Test/Js)
 │   ├── web/js/b2b-display.js                   Fills the B2B placeholder (text only)
 │   └── web/css/source/_module.less             Storefront styles (LESS, theme variables)
 └── view/adminhtml/

@@ -28,8 +28,9 @@ define([
     'Magento_Ui/js/modal/modal',
     'Magento_Customer/js/customer-data',
     'mage/translate',
-    'TackQuote_Quotes/js/cart-seed'
-], function ($, _, modal, customerData, $t, cartSeed) {
+    'TackQuote_Quotes/js/cart-seed',
+    'TackQuote_Quotes/js/buyer-prefill'
+], function ($, _, modal, customerData, $t, cartSeed, buyerPrefill) {
     'use strict';
 
     var STORAGE_KEY = 'tack_quote_list',
@@ -587,11 +588,15 @@ define([
          * email is the account's and is read-only, as in the WooCommerce plugin: the submit
          * controller uses the account email for a signed-in customer whatever is posted.
          * A guest's section is empty, so the fields stay as they are and the email editable.
+         *
+         * Applied through buyer-prefill.js, which also asks for the section once per page when
+         * a shopper who was signed in before the section existed has never loaded it.
+         *
+         * @param {Object} buyer The `tackquote-buyer` section.
+         * @param {Object} customer Magento's own `customer` section.
          */
-        function prefillFromCustomer() {
-            var buyer = customerData.get('tackquote-buyer')() || {},
-                customer = customerData.get('customer')() || {},
-                $email = $form.find('[name="email"]'),
+        function applyBuyerDetails(buyer, customer) {
+            var $email = $form.find('[name="email"]'),
                 signedIn = typeof buyer.email === 'string' && buyer.email !== '';
 
             fillIfEmpty('firstName', buyer.firstname || customer.firstname);
@@ -604,6 +609,9 @@ define([
                 $email.prop('readOnly', false).removeAttr('aria-readonly').val('');
             }
         }
+
+        /** One runner per page, so the one-time section reload happens at most once. */
+        var prefillFromCustomer = buyerPrefill(customerData, applyBuyerDetails);
 
         /**
          * Render the review step from whatever is being quoted, so the shopper confirms the
