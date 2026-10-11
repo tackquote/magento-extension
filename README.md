@@ -971,8 +971,12 @@ are declared in `etc/frontend/di.xml` and the three Web API areas only).
   cart's quantity change (`Cart::updateItems()`), the Web API's quantity change
   (`CartItemRepositoryInterface::save()`), and order placement (`QuoteManagement::submit()`,
   which catches every other path). Quantities are summed per SKU across the cart's lines.
-- **Wording.** "<Product>: <the notice's own sentence> You have <n> in your cart.", for
-  example "Widget: Order between 5 and 50 units of this product. You have 60 in your cart."
+- **Wording.** "<Product>: <the notice's own sentence>" and then only what is true of the
+  cart. A refused add or quantity change leaves the cart as it was, so it says what was
+  attempted: "Widget: Order between 2 and 10 units of this product. You tried to add 1." (or
+  "You have 4 in your cart and tried to add 20.", or "You asked for 60." for a quantity
+  change). Only the order submit, where the cart really holds it, says "You have 60 in your
+  cart."
 - **Failure refuses nothing**: if TackQuote cannot be reached, the cart is not limited
   (the WooCommerce plugin's rule). Answers are cached for 60 seconds per customer and SKU.
 

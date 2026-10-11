@@ -434,3 +434,8 @@
 "Last server check failed at %1: %2","La dernière vérification du serveur a échoué le %1 : %2"
 "Magento cron has not run TackQuote's jobs yet. The storefront asks TackQuote itself when nothing is cached, but without cron your registration settings and the server's capabilities are not kept fresh.","Le cron de Magento n'a pas encore exécuté les tâches de TackQuote. La boutique interroge TackQuote elle-même quand rien n'est en cache, mais sans cron vos paramètres d'inscription et les fonctions du serveur ne sont pas tenus à jour."
 "Your account is still being linked to our quoting system. Please try again in a few minutes.","Votre compte est encore en cours de liaison avec notre système de devis. Veuillez réessayer dans quelques minutes."
+"%1: %2 %3","%1 : %2 %3"
+"You tried to add %1.","Vous avez essayé d'en ajouter %1."
+"You have %1 in your cart and tried to add %2.","Vous en avez %1 dans votre panier et avez essayé d'en ajouter %2."
+"You asked for %1.","Vous en avez demandé %1."
+"You have %1 in your cart.","Vous en avez %1 dans votre panier."

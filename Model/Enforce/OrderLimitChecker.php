@@ -20,9 +20,13 @@
  * order submit (assertCart). A cart change checks only the SKUs it touches, so an unrelated line
  * below its minimum never blocks adding something else; the order submit checks everything.
  *
- * WORDING — "<product>: <the notice's own sentence> You have <n> in your cart.", the sentence
- * coming from Model\B2bDisplay\Presenter::limitSentence(), so the refusal repeats exactly what
- * the product page said.
+ * WORDING — "<product>: <the notice's own sentence>" and then what is TRUE of the cart, the
+ * sentence coming from Model\B2bDisplay\Presenter::limitSentence(), so the refusal repeats
+ * exactly what the product page said. A refused add or quantity change leaves the cart as it
+ * was, so it does not claim the refused total is in the cart (devstore Q/A finding #9):
+ * "You tried to add 1." (with "You have 4 in your cart and" before it when the cart already
+ * holds some), "You asked for 60." for a quantity change, and "You have 60 in your cart." only
+ * at order submit, where the cart really holds it.
  *
  * WHO — Model\Enforce\Eligibility (signed-in owner of the cart, inside the B2B customer groups,
  * never an admin or integration caller) and the merchant's switch
@@ -135,7 +139,19 @@ class OrderLimitChecker
             'name' => $totals[$sku]['name'] ?? $name,
         ];
 
-        $this->refuse($this->quantityViolations($buyer, [$sku => $totals[$sku]]));
+        // The add is refused, so the cart keeps only what it already held.
+        $said = function (float $total) use ($qty): string {
+            $inCart = $total - $qty;
+
+            return $inCart > 0
+                ? (string) __(
+                    'You have %1 in your cart and tried to add %2.',
+                    $this->quantity($inCart),
+                    $this->quantity($qty)
+                )
+                : (string) __('You tried to add %1.', $this->quantity($qty));
+        };
+        $this->refuse($this->quantityViolations($buyer, [$sku => $totals[$sku]], $said));
     }
 
     /**
@@ -168,7 +184,13 @@ class OrderLimitChecker
         }
 
         $totals = $this->totals($quote, $quantities);
-        $this->refuse($this->quantityViolations($buyer, array_intersect_key($totals, $touched)));
+        $this->refuse($this->quantityViolations(
+            $buyer,
+            array_intersect_key($totals, $touched),
+            function (float $total): string {
+                return (string) __('You asked for %1.', $this->quantity($total));
+            }
+        ));
     }
 
     /**
@@ -186,7 +208,9 @@ class OrderLimitChecker
         }
 
         $totals = $this->totals($quote, []);
-        $messages = $this->quantityViolations($buyer, $totals);
+        $messages = $this->quantityViolations($buyer, $totals, function (float $total): string {
+            return (string) __('You have %1 in your cart.', $this->quantity($total));
+        });
 
         $bounds = [];
         foreach (array_keys($totals) as $sku) {
@@ -264,9 +288,10 @@ class OrderLimitChecker
      *
      * @param array{storeId:int,customerId:int,email:string,currency:string} $buyer
      * @param array<string,array{qty:float,name:string}> $totals
+     * @param callable $said What is true of the cart for a refused total: float => sentence.
      * @return string[]
      */
-    private function quantityViolations(array $buyer, array $totals): array
+    private function quantityViolations(array $buyer, array $totals, callable $said): array
     {
         $messages = [];
         foreach ($totals as $sku => $line) {
@@ -284,10 +309,10 @@ class OrderLimitChecker
                 continue;
             }
             $messages[] = (string) __(
-                '%1: %2 You have %3 in your cart.',
+                '%1: %2 %3',
                 $line['name'] !== '' ? $line['name'] : (string) $sku,
                 $this->presenter->limitSentence($limit),
-                $this->quantity($qty)
+                $said($qty)
             );
         }
 
