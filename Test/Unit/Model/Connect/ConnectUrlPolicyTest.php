@@ -76,19 +76,29 @@ class ConnectUrlPolicyTest extends TestCase
             'another host for the default API' => [
                 'https://evil.example.net/auth/connect/magento?request=' . self::REQ, self::REQ, self::DEFAULT_API,
             ],
-            'plain http' => ['http://app.tackquote.com/auth/connect/magento?request=' . self::REQ, self::REQ, self::DEFAULT_API],
+            'plain http' => [
+                'http://app.tackquote.com/auth/connect/magento?request=' . self::REQ,
+                self::REQ,
+                self::DEFAULT_API
+            ],
             'the WooCommerce page' => [
                 'https://app.tackquote.com/auth/connect/woocommerce?request=' . self::REQ, self::REQ, self::DEFAULT_API,
             ],
             'another request id' => [
-                'https://app.tackquote.com/auth/connect/magento?request=mgr_BBBBBBBBBBBBBBBBBBBBBB', self::REQ, self::DEFAULT_API,
+                'https://app.tackquote.com/auth/connect/magento?request=mgr_BBBBBBBBBBBBBBBBBBBBBB',
+                self::REQ,
+                self::DEFAULT_API,
             ],
             'a WooCommerce request id' => [
                 'https://app.tackquote.com/auth/connect/magento?request=wcr_AAAAAAAAAAAAAAAAAAAAAA',
                 'wcr_AAAAAAAAAAAAAAAAAAAAAA',
                 self::DEFAULT_API,
             ],
-            'userinfo' => ['https://u:p@app.tackquote.com/auth/connect/magento?request=' . self::REQ, self::REQ, self::DEFAULT_API],
+            'userinfo' => [
+                'https://u:p@app.tackquote.com/auth/connect/magento?request=' . self::REQ,
+                self::REQ,
+                self::DEFAULT_API
+            ],
             'fragment' => [$ok . '#x', self::REQ, self::DEFAULT_API],
             'empty' => ['', self::REQ, self::DEFAULT_API],
         ];

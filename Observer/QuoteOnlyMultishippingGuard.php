@@ -101,6 +101,8 @@ class QuoteOnlyMultishippingGuard implements ObserverInterface
     }
 
     /**
+     * Refuse multishipping checkout in quote-only mode.
+     *
      * @param Observer $observer
      * @return void
      */
@@ -131,6 +133,8 @@ class QuoteOnlyMultishippingGuard implements ObserverInterface
     }
 
     /**
+     * Refuse with a message.
+     *
      * @param string $message
      * @return void
      */

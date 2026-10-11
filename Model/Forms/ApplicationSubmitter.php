@@ -96,7 +96,7 @@ class ApplicationSubmitter
      * @param string $slug Form slug ('' for the default form).
      * @param array $form The LIVE normalised form (WholesaleFormSource::get(..., true)).
      * @param array $posted `tack_sf` values.
-     * @param array<string, array> $files Field key => one uploaded-file entry (filesByField()).
+     * @param array<string,array> $files Field key => one uploaded-file entry (filesByField()).
      * @param AccountIdentity $who
      * @param int|null $storeId
      * @return array{kind: string, message: string}
@@ -179,7 +179,10 @@ class ApplicationSubmitter
 
         return ['kind' => 'pending', 'message' => $message !== ''
             ? $message
-            : (string) __('Your application has been received and is awaiting review. We will email you when it has been decided.')];
+            : (string) __(
+                'Your application has been received and is awaiting review. We will email you when it has '
+                . 'been decided.'
+            )];
     }
 
     /**
@@ -196,7 +199,9 @@ class ApplicationSubmitter
             return $this->error((string) __('Please sign in to your account to apply for net terms.'));
         }
         if (!$who->carriesCustomerId()) {
-            return $this->error((string) __('Net terms applications are not available from this store right now. Please contact us.'));
+            return $this->error(
+                (string) __('Net terms applications are not available from this store right now. Please contact us.')
+            );
         }
         $built = $this->creditBuilder->build($posted, $who->getEmail());
         if ($built['error'] !== null) {
@@ -209,10 +214,14 @@ class ApplicationSubmitter
         }
         $this->standing->forget($who->getCustomerId());
         if (($result['data']['status'] ?? null) === 'already_pending') {
-            return ['kind' => 'pending', 'message' => (string) __('You already have a net terms application awaiting review. We will email you with the decision.')];
+            return ['kind' => 'pending', 'message' => (string) __(
+                'You already have a net terms application awaiting review. We will email you with the decision.'
+            )];
         }
 
-        return ['kind' => 'success', 'message' => (string) __('Your net terms application has been submitted. We will email you with the decision.')];
+        return ['kind' => 'success', 'message' => (string) __(
+            'Your net terms application has been submitted. We will email you with the decision.'
+        )];
     }
 
     /**
@@ -225,7 +234,7 @@ class ApplicationSubmitter
      * @param mixed $bag
      * @return array<string, array>
      */
-    public static function filesByField($bag): array
+    public function filesByField($bag): array
     {
         if (!is_array($bag)) {
             return [];
@@ -249,8 +258,10 @@ class ApplicationSubmitter
         }
 
         // UPLOAD_ERR_NO_FILE (4): the field was left empty.
-        return array_filter($out, static function ($entry): bool {
-            return (int) ($entry['error'] ?? 4) !== 4 && is_string($entry['tmp_name'] ?? null) && $entry['tmp_name'] !== '';
+        return array_filter($out, function ($entry): bool {
+            return (int) ($entry['error'] ?? 4) !== 4
+                && is_string($entry['tmp_name'] ?? null)
+                && $entry['tmp_name'] !== '';
         });
     }
 
@@ -279,6 +290,8 @@ class ApplicationSubmitter
     }
 
     /**
+     * Plain text from a server message: tags stripped, trimmed, at most 500 characters.
+     *
      * @param mixed $text
      * @return string
      */
@@ -288,6 +301,8 @@ class ApplicationSubmitter
     }
 
     /**
+     * Build a failed submission result.
+     *
      * @param string $message
      * @return array{kind: string, message: string}
      */

@@ -103,6 +103,8 @@ class AddQuoteOnlyProductAttribute implements DataPatchInterface, PatchRevertabl
     }
 
     /**
+     * Add the quote-only product attribute.
+     *
      * @return $this
      */
     public function apply()
@@ -118,6 +120,8 @@ class AddQuoteOnlyProductAttribute implements DataPatchInterface, PatchRevertabl
     }
 
     /**
+     * Remove the quote-only product attribute.
+     *
      * @return void
      */
     public function revert()
@@ -131,6 +135,8 @@ class AddQuoteOnlyProductAttribute implements DataPatchInterface, PatchRevertabl
     }
 
     /**
+     * Patches this patch depends on.
+     *
      * @return string[]
      */
     public static function getDependencies()
@@ -139,6 +145,8 @@ class AddQuoteOnlyProductAttribute implements DataPatchInterface, PatchRevertabl
     }
 
     /**
+     * Other names this patch was known by.
+     *
      * @return string[]
      */
     public function getAliases()

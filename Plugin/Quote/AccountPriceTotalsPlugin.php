@@ -54,6 +54,8 @@ class AccountPriceTotalsPlugin
     }
 
     /**
+     * Apply account prices before the totals are collected.
+     *
      * @param Quote $subject
      * @return void
      */

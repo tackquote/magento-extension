@@ -54,6 +54,8 @@ class Callback extends Action implements HttpGetActionInterface
     }
 
     /**
+     * Only admins allowed to manage the TackQuote configuration may finish a connection.
+     *
      * @return bool
      */
     protected function _isAllowed(): bool
@@ -62,6 +64,8 @@ class Callback extends Action implements HttpGetActionInterface
     }
 
     /**
+     * Finish the connection TackQuote redirected back from.
+     *
      * @return Redirect
      */
     public function execute()

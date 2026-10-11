@@ -47,6 +47,8 @@ class CategoryViewVisibility
     }
 
     /**
+     * Answer 404 for a category hidden from the visitor's buyer group.
+     *
      * @param View $subject
      * @param callable $proceed
      * @return mixed

@@ -23,7 +23,13 @@ class FormDefinitionTest extends TestCase
         return (new FormDefinition())->normalise(['fields' => [
             ['key' => 'companyName', 'type' => 'text', 'label' => 'Company', 'required' => true],
             ['key' => 'eu', 'type' => 'checkbox', 'label' => 'EU business'],
-            ['key' => 'vat', 'type' => 'tax_id', 'label' => 'VAT', 'required' => true, 'showIf' => ['field' => 'eu', 'equals' => true]],
+            [
+                'key' => 'vat',
+                'type' => 'tax_id',
+                'label' => 'VAT',
+                'required' => true,
+                'showIf' => ['field' => 'eu', 'equals' => true]
+            ],
             ['key' => 'lines', 'type' => 'multiselect', 'label' => 'Lines', 'options' => ['A', 'B']],
             ['key' => 'ship', 'type' => 'address', 'label' => 'Ship to'],
             ['key' => 'cert', 'type' => 'file', 'label' => 'Certificate', 'required' => true],
@@ -93,7 +99,10 @@ class FormDefinitionTest extends TestCase
 
     public function testTooLongIsRefused(): void
     {
-        $result = (new FormDefinition())->collectAnswers($this->fields(), ['companyName' => str_repeat('a', FormDefinition::MAX_TEXT + 1)]);
+        $result = (new FormDefinition())->collectAnswers(
+            $this->fields(),
+            ['companyName' => str_repeat('a', FormDefinition::MAX_TEXT + 1)]
+        );
         self::assertSame('Company is too long.', $result['error']);
     }
 
@@ -103,7 +112,11 @@ class FormDefinitionTest extends TestCase
         $missing = $def->pickFiles($this->fields(), [], ['other' => ['tmp_name' => '/tmp/x']]);
         self::assertSame('Certificate is required.', $missing['error']);
 
-        $picked = $def->pickFiles($this->fields(), [], ['cert' => ['tmp_name' => '/tmp/a'], 'other' => ['tmp_name' => '/tmp/x']]);
+        $picked = $def->pickFiles(
+            $this->fields(),
+            [],
+            ['cert' => ['tmp_name' => '/tmp/a'], 'other' => ['tmp_name' => '/tmp/x']]
+        );
         self::assertNull($picked['error']);
         self::assertSame(['cert'], array_keys($picked['wanted']));
     }

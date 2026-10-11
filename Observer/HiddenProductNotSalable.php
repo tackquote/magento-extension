@@ -43,6 +43,8 @@ class HiddenProductNotSalable implements ObserverInterface
     }
 
     /**
+     * Make a product in a category hidden from the visitor not salable.
+     *
      * @param Observer $observer
      * @return void
      */

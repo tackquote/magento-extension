@@ -27,7 +27,8 @@
                       controllers ALSO require TackQuote_Quotes::config (their _isAllowed()): a
                       dashboard-only role can see the connection state but cannot change it.
                     -->
-                    <resource id="TackQuote_Quotes::connect" title="Connect with TackQuote" translate="title" sortOrder="20"/>
+                    <resource id="TackQuote_Quotes::connect" title="Connect with TackQuote" translate="title"
+                              sortOrder="20"/>
                 </resource>
                 <resource id="Magento_Backend::stores">
                     <resource id="Magento_Backend::stores_settings">

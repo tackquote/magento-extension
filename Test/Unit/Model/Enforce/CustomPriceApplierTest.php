@@ -109,7 +109,9 @@ class CustomPriceApplierTest extends TestCase
     {
         $data = json_decode((string) $item->getData('additional_data'), true);
 
-        return is_array($data) && isset($data[CustomPriceApplier::MARKER]) ? (float) $data[CustomPriceApplier::MARKER] : null;
+        return is_array($data) && isset(
+            $data[CustomPriceApplier::MARKER]
+        ) ? (float) $data[CustomPriceApplier::MARKER] : null;
     }
 
     public function testAConfirmedAccountPriceBecomesTheLinesCustomPrice(): void

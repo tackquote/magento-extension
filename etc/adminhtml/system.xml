@@ -9,7 +9,7 @@
   tabs()): Connection, Storefront, B2B pricing, Buyer groups, Forms, Order sync (Orders here). Magento has no tabs inside
   one configuration section, so each group's label starts with its tab name, the groups are
   ordered by sortOrder (10s Connection, 20s Storefront, 30s B2B pricing, 40s Buyer groups, 50s
-  Forms, 60s Orders), and the TackQuote Overview (Block\Adminhtml\Dashboard) links straight to each group.
+  Forms, 60s Orders), and the TackQuote Overview (ViewModel\Adminhtml\Overview) links straight to each group.
 
   NO CONFIG PATH MAY CHANGE HERE. Group and field ids are the stored paths
   (tackquote_quotes/<group>/<field>); merchants' saved values live under them and the module

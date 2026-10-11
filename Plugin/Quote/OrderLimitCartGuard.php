@@ -84,7 +84,7 @@ class OrderLimitCartGuard
         $this->checker->assertAdd(
             $subject,
             (string) $product->getSku(),
-            self::requestedQty($request),
+            $this->requestedQty($request),
             (string) $product->getName()
         );
     }
@@ -95,7 +95,7 @@ class OrderLimitCartGuard
      * @param mixed $request
      * @return float
      */
-    public static function requestedQty($request): float
+    public function requestedQty($request): float
     {
         if ($request === null) {
             return 1.0;

@@ -34,7 +34,8 @@ $targets = $block->isTargetPriceEnabled();
                     <th scope="col" class="col name"><?= $escaper->escapeHtml(__('Product')) ?></th>
                     <th scope="col" class="col qty"><?= $escaper->escapeHtml(__('Quantity')) ?></th>
                     <?php if ($targets): ?>
-                        <th scope="col" class="col target"><?= $escaper->escapeHtml(__('Target price (optional)')) ?></th>
+                        <?php $targetLabel = __('Target price (optional)'); ?>
+                        <th scope="col" class="col target"><?= $escaper->escapeHtml($targetLabel) ?></th>
                     <?php endif; ?>
                     <th scope="col" class="col actions">
                         <span class="tackquote-visually-hidden"><?= $escaper->escapeHtml(__('Remove')) ?></span>

@@ -55,6 +55,8 @@ class QuotedLine
     }
 
     /**
+     * Decode a line's additional data.
+     *
      * The line's `additional_data` as a JSON object, [] when empty, null when it holds
      * anything else (someone else's data, never overwritten).
      *
@@ -82,6 +84,8 @@ class QuotedLine
     }
 
     /**
+     * Whether the line names a quote at all.
+     *
      * Whether the line names a quote at all (even a damaged marker). Used where the answer
      * must fail towards "leave it alone".
      *
@@ -103,7 +107,7 @@ class QuotedLine
      */
     public function read(AbstractItem $item): ?array
     {
-        return self::fromData($this->decode($item->getData('additional_data')));
+        return $this->fromData($this->decode($item->getData('additional_data')));
     }
 
     /**
@@ -112,7 +116,7 @@ class QuotedLine
      * @param array|null $data
      * @return array{ref: string, number: string, price: float, qty: int, lines: int, currency: string}|null
      */
-    public static function fromData(?array $data): ?array
+    public function fromData(?array $data): ?array
     {
         if (!is_array($data)) {
             return null;
@@ -147,7 +151,7 @@ class QuotedLine
      * Write the marker onto a fresh line, keeping any other key already there.
      *
      * @param AbstractItem $item
-     * @param array{ref: string, number: string, price: float, qty: int, lines: int, currency: string} $marker
+     * @param array{ref:string,number:string,price:float,qty:int,lines:int,currency:string} $marker
      * @return bool False when the line's `additional_data` belongs to someone else.
      */
     public function stamp(AbstractItem $item, array $marker): bool

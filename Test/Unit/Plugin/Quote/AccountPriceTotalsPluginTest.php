@@ -23,7 +23,10 @@ class AccountPriceTotalsPluginTest extends TestCase
 {
     private function quote(bool $collected): Quote
     {
-        $quote = $this->getMockBuilder(Quote::class)->disableOriginalConstructor()->onlyMethods(['getStoreId'])->getMock();
+        $quote = $this->getMockBuilder(Quote::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['getStoreId'])
+            ->getMock();
         $quote->setData('totals_collected_flag', $collected);
 
         return $quote;
@@ -35,7 +38,10 @@ class AccountPriceTotalsPluginTest extends TestCase
         $applier = $this->createMock(CustomPriceApplier::class);
         $applier->expects(self::once())->method('apply')->with($quote, false);
 
-        (new AccountPriceTotalsPlugin($applier, $this->createMock(LoggerInterface::class)))->beforeCollectTotals($quote);
+        (new AccountPriceTotalsPlugin(
+            $applier,
+            $this->createMock(LoggerInterface::class)
+        ))->beforeCollectTotals($quote);
     }
 
     public function testNothingIsChangedUnderTotalsThatWillNotBeRecomputed(): void

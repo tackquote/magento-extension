@@ -40,6 +40,8 @@ class QuoteCheckoutUpdateItemsLock
     }
 
     /**
+     * Refuse a quantity change on a quoted line.
+     *
      * @param Cart $subject
      * @param mixed $data
      * @return void
@@ -76,7 +78,10 @@ class QuoteCheckoutUpdateItemsLock
         }
     }
 
+    // phpcs:disable Magento2.Functions.StaticFunction -- one message shared with the Web API lock
     /**
+     * Message shown when a quoted line's quantity cannot be changed.
+     *
      * @return \Magento\Framework\Phrase
      */
     public static function message()
@@ -86,4 +91,5 @@ class QuoteCheckoutUpdateItemsLock
             . 'to revise the quote.'
         );
     }
+    // phpcs:enable Magento2.Functions.StaticFunction
 }

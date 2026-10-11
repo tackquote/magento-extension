@@ -84,7 +84,9 @@ class OrderLimitGuardsTest extends TestCase
      */
     public function testTheAddedQuantityIsReadAsAddProductReadsIt($request, float $expected): void
     {
-        self::assertSame($expected, OrderLimitCartGuard::requestedQty($request));
+        $guard = new OrderLimitCartGuard($this->createMock(OrderLimitChecker::class), self::quotedCart());
+
+        self::assertSame($expected, $guard->requestedQty($request));
     }
 
     public function testAnAddOfASimpleProductIsChecked(): void
@@ -101,7 +103,10 @@ class OrderLimitGuardsTest extends TestCase
         $checker = $this->createMock(OrderLimitChecker::class);
         $checker->expects(self::never())->method('assertAdd');
 
-        (new OrderLimitCartGuard($checker, self::quotedCart()))->beforeAddProduct($this->createMock(Quote::class), $this->product('configurable'), 7);
+        (new OrderLimitCartGuard(
+            $checker,
+            self::quotedCart()
+        ))->beforeAddProduct($this->createMock(Quote::class), $this->product('configurable'), 7);
     }
 
     public function testAnApiQuantityChangeOnAnExistingLineIsChecked(): void
@@ -160,7 +165,10 @@ class OrderLimitGuardsTest extends TestCase
         $checker = $this->createMock(OrderLimitChecker::class);
         $checker->expects(self::once())->method('assertCart')->with($quote);
 
-        (new OrderLimitSubmitGuard($checker, self::quotedCart()))->beforeSubmit($this->createMock(QuoteManagement::class), $quote);
+        (new OrderLimitSubmitGuard(
+            $checker,
+            self::quotedCart()
+        ))->beforeSubmit($this->createMock(QuoteManagement::class), $quote);
     }
 
     public function testAnIntactAcceptedQuoteIsNotLimitCheckedAtSubmit(): void
@@ -171,6 +179,9 @@ class OrderLimitGuardsTest extends TestCase
         $quotedCart = $this->createMock(QuotedCart::class);
         $quotedCart->method('isIntact')->with($quote)->willReturn(true);
 
-        (new OrderLimitSubmitGuard($checker, $quotedCart))->beforeSubmit($this->createMock(QuoteManagement::class), $quote);
+        (new OrderLimitSubmitGuard(
+            $checker,
+            $quotedCart
+        ))->beforeSubmit($this->createMock(QuoteManagement::class), $quote);
     }
 }

@@ -253,6 +253,8 @@ class CustomerGroupMirror
     }
 
     /**
+     * Move a customer into a customer group.
+     *
      * @param \Magento\Customer\Api\Data\CustomerInterface $customer
      * @param int $groupId
      * @return bool
@@ -275,6 +277,8 @@ class CustomerGroupMirror
     }
 
     /**
+     * Whether a customer group with this id exists.
+     *
      * @param int $groupId
      * @return bool
      */
@@ -293,6 +297,8 @@ class CustomerGroupMirror
     }
 
     /**
+     * Default customer group of the store.
+     *
      * @param int $storeId
      * @return int
      */
@@ -306,6 +312,8 @@ class CustomerGroupMirror
     }
 
     /**
+     * Flag code that records the customer's mirrored group.
+     *
      * @param int $customerId
      * @return string
      */
@@ -315,6 +323,8 @@ class CustomerGroupMirror
     }
 
     /**
+     * Build a mirror result.
+     *
      * @param string $result
      * @param int|null $groupId
      * @return array{result: string, groupId: int|null}

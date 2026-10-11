@@ -146,7 +146,10 @@ class QuoteOnlyRulesTest extends TestCase
         self::assertFalse(QuoteOnlyRules::isApprovedAnswer(['status' => 'linked', 'wholesaleApproved' => 'true']));
         self::assertFalse(QuoteOnlyRules::isApprovedAnswer(['status' => 'linked', 'wholesaleApproved' => 1]));
         self::assertFalse(QuoteOnlyRules::isApprovedAnswer(['status' => 'linked']));
-        self::assertFalse(QuoteOnlyRules::isApprovedAnswer(['status' => 'unlinked', 'reason' => 'customer_not_linked']));
+        self::assertFalse(QuoteOnlyRules::isApprovedAnswer([
+            'status' => 'unlinked',
+            'reason' => 'customer_not_linked'
+        ]));
         self::assertFalse(QuoteOnlyRules::isApprovedAnswer(['status' => 'anonymous']));
         self::assertFalse(QuoteOnlyRules::isApprovedAnswer(['status' => 'approved', 'wholesaleApproved' => true]));
         self::assertFalse(QuoteOnlyRules::isApprovedAnswer(null));

@@ -134,8 +134,12 @@ class CatalogVisibilityPluginsTest extends TestCase
         self::assertSame($key, (new TopmenuVisibility($this->visibility([])))->afterGetCacheKeyInfo($block, $key));
     }
 
-    private function categoryPage(CatalogVisibility $visibility, int $categoryId, ?Forward $forward, bool $expectProceed)
-    {
+    private function categoryPage(
+        CatalogVisibility $visibility,
+        int $categoryId,
+        ?Forward $forward,
+        bool $expectProceed
+    ) {
         $request = $this->createMock(RequestInterface::class);
         $request->method('getParam')->willReturn((string) $categoryId);
         $controller = $this->createMock(View::class);
@@ -225,7 +229,10 @@ class CatalogVisibilityPluginsTest extends TestCase
         $logger->expects(self::once())->method('warning');
         $layer = $this->createMock(Layer::class);
 
-        (new LayerVisibility($this->visibility([12]), $logger))->afterPrepareProductCollection($layer, $layer, $collection);
+        (new LayerVisibility(
+            $this->visibility([12]),
+            $logger
+        ))->afterPrepareProductCollection($layer, $layer, $collection);
     }
 
     private function salable(CatalogVisibility $visibility, int $productId, bool $salable): bool

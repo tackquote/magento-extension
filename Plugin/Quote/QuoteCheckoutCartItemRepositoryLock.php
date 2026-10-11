@@ -49,6 +49,8 @@ class QuoteCheckoutCartItemRepositoryLock
     }
 
     /**
+     * Refuse a Web API quantity change on a quoted line.
+     *
      * @param CartItemRepositoryInterface $subject
      * @param CartItemInterface $cartItem
      * @return void

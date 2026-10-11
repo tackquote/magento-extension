@@ -55,7 +55,9 @@ class CreditApplicationBuilder
     {
         $email = strtolower(trim($accountEmail));
         if ($email === '' || filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
-            return $this->fail((string) __('Your account has no valid email address. Please add one under Account Information first.'));
+            return $this->fail(
+                (string) __('Your account has no valid email address. Please add one under Account Information first.')
+            );
         }
         $payload = ['contactEmail' => $email];
 
@@ -68,7 +70,11 @@ class CreditApplicationBuilder
         }
         $payload['legalBusinessName'] = $name;
 
-        foreach (['contactPhone' => [40, __('Contact phone is too long.')], 'taxId' => [64, __('Tax / VAT ID is too long.')]] as $key => [$max, $message]) {
+        $limits = [
+            'contactPhone' => [40, __('Contact phone is too long.')],
+            'taxId' => [64, __('Tax / VAT ID is too long.')],
+        ];
+        foreach ($limits as $key => [$max, $message]) {
             $value = $this->line($posted[$key] ?? null);
             if (strlen($value) > $max) {
                 return $this->fail((string) $message);
@@ -146,7 +152,9 @@ class CreditApplicationBuilder
             $payload['tradeReferences'] = $references;
         }
 
-        $notes = isset($posted['notes']) && is_scalar($posted['notes']) ? trim(strip_tags((string) $posted['notes'])) : '';
+        $notes = isset($posted['notes']) && is_scalar($posted['notes'])
+            ? trim(strip_tags((string) $posted['notes']))
+            : '';
         if (strlen($notes) > FormDefinition::MAX_TEXTAREA) {
             return $this->fail((string) __('Notes are too long (2,000 characters at most).'));
         }
@@ -169,6 +177,8 @@ class CreditApplicationBuilder
     }
 
     /**
+     * Build a failed build result.
+     *
      * @param string $message
      * @return array{payload: array, error: string}
      */

@@ -38,6 +38,8 @@ class ProductPageVisibility
     }
 
     /**
+     * Answer "not loaded" for a product in a category hidden from the visitor.
+     *
      * @param ProductHelper $subject
      * @param Product|false $result
      * @return Product|false

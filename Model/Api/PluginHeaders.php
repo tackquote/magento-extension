@@ -106,6 +106,8 @@ class PluginHeaders
     }
 
     /**
+     * The store's web base URL, for the site URL header.
+     *
      * The store's web base URL without a trailing slash, or '' when it cannot be read or is
      * not a plain http(s) URL.
      *

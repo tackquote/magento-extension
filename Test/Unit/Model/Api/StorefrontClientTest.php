@@ -92,7 +92,13 @@ class StorefrontClientTest extends TestCase
             });
         }
 
-        return new StorefrontClient($this->config, $this->curlFactory, new Json(), $logger, $this->createConfiguredMock(PluginHeaders::class, ['get' => []]));
+        return new StorefrontClient(
+            $this->config,
+            $this->curlFactory,
+            new Json(),
+            $logger,
+            $this->createConfiguredMock(PluginHeaders::class, ['get' => []])
+        );
     }
 
     private function respond(int $status, string $body): void
@@ -132,7 +138,10 @@ class StorefrontClientTest extends TestCase
 
         self::assertTrue($result['ok']);
         self::assertSame(['status' => 'linked', 'wholesaleApproved' => true], $result['data']);
-        self::assertSame(self::API_BASE . '/storefront/v1/price-access?buyerEmail=buyer%40example.test', $this->urls[0]);
+        self::assertSame(
+            self::API_BASE . '/storefront/v1/price-access?buyerEmail=buyer%40example.test',
+            $this->urls[0]
+        );
         self::assertSame(self::KEY, $this->headers['X-Api-Key'] ?? null);
         self::assertArrayNotHasKey('Authorization', $this->headers);
     }
@@ -176,7 +185,13 @@ class StorefrontClientTest extends TestCase
         $config->method('getApiKey')->willReturn('');
         $this->curlFactory->expects($this->never())->method('create');
 
-        $client = new StorefrontClient($config, $this->curlFactory, new Json(), $this->createMock(LoggerInterface::class), $this->createConfiguredMock(PluginHeaders::class, ['get' => []]));
+        $client = new StorefrontClient(
+            $config,
+            $this->curlFactory,
+            new Json(),
+            $this->createMock(LoggerInterface::class),
+            $this->createConfiguredMock(PluginHeaders::class, ['get' => []])
+        );
 
         self::assertFalse($client->get(StorefrontClient::ROUTE_BUYER_GROUP, ['buyerEmail' => self::EMAIL])['ok']);
     }
@@ -233,7 +248,13 @@ class StorefrontClientTest extends TestCase
             ->getMock();
         $factory->method('create')->willReturn($curl);
 
-        $client = new StorefrontClient($this->config, $factory, new Json(), $this->createMock(LoggerInterface::class), $this->createConfiguredMock(PluginHeaders::class, ['get' => []]));
+        $client = new StorefrontClient(
+            $this->config,
+            $factory,
+            new Json(),
+            $this->createMock(LoggerInterface::class),
+            $this->createConfiguredMock(PluginHeaders::class, ['get' => []])
+        );
         $result = $client->get(StorefrontClient::ROUTE_BUYER_GROUP, ['buyerEmail' => self::EMAIL]);
 
         self::assertFalse($result['ok']);
@@ -261,7 +282,10 @@ class StorefrontClientTest extends TestCase
 
         $result = $this->client()->get(StorefrontClient::ROUTE_BUYER_GROUP, ['buyerEmail' => self::EMAIL]);
 
-        self::assertSame(['ok' => true, 'status' => 200, 'data' => ['status' => 'grouped', 'name' => 'Tier 2', 'code' => 'T2']], $result);
+        self::assertSame(
+            ['ok' => true, 'status' => 200, 'data' => ['status' => 'grouped', 'name' => 'Tier 2', 'code' => 'T2']],
+            $result
+        );
     }
 
     /**

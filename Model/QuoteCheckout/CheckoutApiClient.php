@@ -118,8 +118,7 @@ class CheckoutApiClient
     /**
      * Report the order a quoted cart became.
      *
-     * @param array{quoteRef: string, orderId: string, incrementId: string, state?: string,
-     *              paymentMethod?: string} $report
+     * @param array{quoteRef:string,orderId:string,incrementId:string,state?:string,paymentMethod?:string} $report
      * @param int|null $storeId
      * @return array{ok: bool, status: int, data?: array}
      */

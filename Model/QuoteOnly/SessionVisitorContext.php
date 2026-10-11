@@ -31,6 +31,8 @@ class SessionVisitorContext implements VisitorContextInterface
     }
 
     /**
+     * Whether the visitor is exempt from quote-only mode.
+     *
      * A storefront shopper is never exempt. The admin is exempt structurally instead:
      * adminhtml never loads etc/frontend/di.xml, so this class is not used there.
      *
@@ -42,6 +44,8 @@ class SessionVisitorContext implements VisitorContextInterface
     }
 
     /**
+     * Whether the visitor is a signed-in customer.
+     *
      * @return bool
      */
     public function isLoggedIn(): bool
@@ -50,6 +54,8 @@ class SessionVisitorContext implements VisitorContextInterface
     }
 
     /**
+     * Customer group of the visitor.
+     *
      * @return int
      */
     public function getCustomerGroupId(): int
@@ -58,6 +64,8 @@ class SessionVisitorContext implements VisitorContextInterface
     }
 
     /**
+     * Customer id of the visitor, or null for a guest.
+     *
      * @return int|null
      */
     public function getCustomerId(): ?int
@@ -71,6 +79,8 @@ class SessionVisitorContext implements VisitorContextInterface
     }
 
     /**
+     * Email address of the visitor, or '' for a guest.
+     *
      * @return string
      */
     public function getCustomerEmail(): string

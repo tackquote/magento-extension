@@ -32,28 +32,32 @@ $init = ['TackQuote_Quotes/js/connect-card' => []];
             <span class="title"><?= $escaper->escapeHtml(__('Connect with TackQuote')) ?></span>
         </h3>
     <?php else: ?>
-        <span class="tq-overview__sr" id="tq-connect-heading-c"><?= $escaper->escapeHtml(__('Connect with TackQuote')) ?></span>
+        <span class="tq-overview-sr" id="tq-connect-heading-c"><?= $escaper->escapeHtml(__(
+            'Connect with TackQuote'
+        )) ?></span>
     <?php endif; ?>
     <div class="admin__page-section-item-content">
-        <p class="tq-connect__state">
-            <span class="tq-overview__state <?= $state === '' ? 'grid-severity-minor' : 'grid-severity-notice' ?>">
+        <p class="tq-connect-state">
+            <span class="tq-overview-state <?= $state === '' ? 'grid-severity-minor' : 'grid-severity-notice' ?>">
                 <span><?= $escaper->escapeHtml($block->getStateLabel()) ?></span>
             </span>
         </p>
-        <p class="tq-connect__intro"><?= $escaper->escapeHtml($block->getIntro()) ?></p>
+        <p class="tq-connect-intro"><?= $escaper->escapeHtml($block->getIntro()) ?></p>
 
         <?php if (!$canConnect): ?>
-            <p class="tq-overview__note">
-                <?= $escaper->escapeHtml(__('Ask an admin with access to the TackQuote settings to connect this store.')) ?>
+            <p class="tq-overview-note">
+                <?= $escaper->escapeHtml(__(
+                    'Ask an admin with access to the TackQuote settings to connect this store.'
+                )) ?>
             </p>
         <?php elseif ($compact): ?>
-            <div class="tq-connect__actions">
-                <button type="button" class="action-default scalable primary tq-connect__post"
+            <div class="tq-connect-actions">
+                <button type="button" class="action-default scalable primary tq-connect-post"
                         data-url="<?= $escaper->escapeHtmlAttr($block->getStartUrl()) ?>">
                     <span><?= $escaper->escapeHtml($block->getConnectLabel()) ?></span>
                 </button>
                 <?php if ($block->isConnected()): ?>
-                    <button type="button" class="action-default scalable tq-connect__post"
+                    <button type="button" class="action-default scalable tq-connect-post"
                             data-url="<?= $escaper->escapeHtmlAttr($block->getDisconnectUrl()) ?>"
                             data-confirm="<?= $escaper->escapeHtmlAttr($confirm) ?>">
                         <span><?= $escaper->escapeHtml(__('Disconnect')) ?></span>
@@ -61,7 +65,7 @@ $init = ['TackQuote_Quotes/js/connect-card' => []];
                 <?php endif; ?>
             </div>
         <?php else: ?>
-            <div class="tq-connect__actions">
+            <div class="tq-connect-actions">
                 <form method="post" action="<?= $escaper->escapeUrl($block->getStartUrl()) ?>">
                     <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($block->getFormKey()) ?>"/>
                     <button type="submit" class="action-secondary">
@@ -70,8 +74,9 @@ $init = ['TackQuote_Quotes/js/connect-card' => []];
                 </form>
                 <?php if ($block->isConnected()): ?>
                     <form method="post" action="<?= $escaper->escapeUrl($block->getDisconnectUrl()) ?>"
-                          class="tq-connect__disconnect" data-confirm="<?= $escaper->escapeHtmlAttr($confirm) ?>">
-                        <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($block->getFormKey()) ?>"/>
+                          class="tq-connect-disconnect" data-confirm="<?= $escaper->escapeHtmlAttr($confirm) ?>">
+                        <input type="hidden" name="form_key"
+                               value="<?= $escaper->escapeHtmlAttr($block->getFormKey()) ?>"/>
                         <button type="submit" class="action-default">
                             <span><?= $escaper->escapeHtml(__('Disconnect')) ?></span>
                         </button>
@@ -80,13 +85,24 @@ $init = ['TackQuote_Quotes/js/connect-card' => []];
             </div>
         <?php endif; ?>
 
-        <p class="tq-overview__note">
-            <?= $escaper->escapeHtml(__('Opens TackQuote in this window. TackQuote creates an API key for this store and sends it back to this store directly. Your store must use https.')) ?>
+        <p class="tq-overview-note">
+            <?= $escaper->escapeHtml(__(
+                'Opens TackQuote in this window. TackQuote creates an API key for this store and sends it back to '
+                . 'this store directly. Your store must use https.'
+            )) ?>
         </p>
-        <details class="tq-connect__more">
+        <details class="tq-connect-more">
             <summary><?= $escaper->escapeHtml(__('Learn more')) ?></summary>
-            <p><?= $escaper->escapeHtml(__('Pressing the button sends TackQuote this store\'s address, its Admin address, the store name, the module and Magento versions, the store language, a random value and a one-way code challenge. No customer, order or product data.')) ?></p>
-            <p><?= $escaper->escapeHtml(__('TackQuote will be able to create quote requests from this store and receive wholesale and net-terms applications. The key is stored encrypted, like a pasted key. Disconnect removes it from this store and revokes a key that Connect created.')) ?></p>
+            <p><?= $escaper->escapeHtml(__(
+                'Pressing the button sends TackQuote this store\'s address, its Admin address, the store name, the '
+                . 'module and Magento versions, the store language, a random value and a one-way code challenge. No '
+                . 'customer, order or product data.'
+            )) ?></p>
+            <p><?= $escaper->escapeHtml(__(
+                'TackQuote will be able to create quote requests from this store and receive wholesale and '
+                . 'net-terms applications. The key is stored encrypted, like a pasted key. Disconnect removes it '
+                . 'from this store and revokes a key that Connect created.'
+            )) ?></p>
         </details>
     </div>
 </div>

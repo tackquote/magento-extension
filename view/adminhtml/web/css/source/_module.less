@@ -1,5 +1,5 @@
 // /**
-//  * TackQuote admin styles: the Overview (TackQuote > Overview) and the TackQuote controls
+//  * TackQuote admin styles, for the Overview (TackQuote > Overview) and the TackQuote controls
 //  * in Stores > Configuration.
 //  *
 //  * The admin theme compiles every module's view/adminhtml/web/css/source/_module.less into
@@ -15,17 +15,17 @@
 //  Variables
 //  _____________________________________________
 
-@tq-overview__label-column__width: 40%;
-@tq-overview__state-column__width: 9rem;
-@tq-overview__off__color: @color-brownie;
-@tq-overview__off__background: @color-white-fog2;
+@tq-overview-label-column__width: 40%;
+@tq-overview-state-column__width: 9rem;
+@tq-overview-off__color: @color-brownie;
+@tq-overview-off__background: @color-white-fog2;
 
 //
 //  Common
 //  _____________________________________________
 
-.tq-overview__sr,
-.tq-connect--compact .tq-connect__sr {
+.tq-overview-sr,
+.tq-connect--compact .tq-connect-sr {
     .lib-visually-hidden();
 }
 
@@ -43,7 +43,7 @@
     }
 
     //  Before mage/backend/tabs has run, show only the first panel (no flash of all seven)
-    .tq-overview__tabs:not(.ui-tabs) .tq-overview__panel + .tq-overview__panel {
+    .tq-overview-tabs:not(.ui-tabs) .tq-overview-panel + .tq-overview-panel {
         display: none;
     }
 
@@ -61,12 +61,12 @@
     }
 }
 
-.tq-overview__scope {
+.tq-overview-scope {
     color: @color-brownie;
     margin: 0 0 @indent__base;
 }
 
-.tq-overview__count {
+.tq-overview-count {
     color: @color-brownie;
     float: right;
     font-size: @font-size__base;
@@ -74,17 +74,17 @@
     white-space: nowrap;
 }
 
-.tq-overview__note {
+.tq-overview-note {
     color: @color-brownie;
     margin: @indent__s 0 0;
 }
 
-.tq-overview__links {
+.tq-overview-links {
     margin: @indent__s 0 0;
 }
 
 //  Two items side by side in a section, stacked on small screens
-.tq-overview__columns {
+.tq-overview-columns {
     display: grid;
     gap: @indent__base @indent__l;
     grid-template-columns: minmax(0, 1fr);
@@ -101,33 +101,33 @@
 //  Setting | state | link tables
 //  ---------------------------------------------
 
-.tq-overview__table {
+.tq-overview-table {
     table-layout: fixed;
     width: 100%;
 
     th[scope='row'] {
         color: @color-very-dark-gray-black;
         overflow-wrap: break-word;
-        width: @tq-overview__label-column__width;
+        width: @tq-overview-label-column__width;
     }
 
-    .tq-overview__col-setting {
-        width: @tq-overview__label-column__width;
+    .tq-overview-col-setting {
+        width: @tq-overview-label-column__width;
     }
 
-    .tq-overview__col-state {
+    .tq-overview-col-state {
         white-space: nowrap;
-        width: @tq-overview__state-column__width;
+        width: @tq-overview-state-column__width;
     }
 
-    .tq-overview__col-action {
+    .tq-overview-col-action {
         text-align: right;
         white-space: nowrap;
         width: 10rem;
     }
 
     //  Long values (URLs, the launcher summary) wrap between words only
-    .tq-overview__value {
+    .tq-overview-value {
         overflow-wrap: break-word;
         word-break: normal;
 
@@ -141,17 +141,17 @@
 //  State badges: the admin's grid-severity badges, inline and never wrapped
 //  ---------------------------------------------
 
-.tq-overview__state {
+.tq-overview-state {
     &[class] {
         display: inline-block;
         white-space: nowrap;
     }
 }
 
-.tq-overview__state--off {
-    background: @tq-overview__off__background;
+.tq-overview-state--off {
+    background: @tq-overview-off__background;
     border: 1px solid @color-gray68;
-    color: @tq-overview__off__color;
+    color: @tq-overview-off__color;
     font-weight: bold;
     line-height: 17px;
     padding: 0 3px;
@@ -159,7 +159,7 @@
     text-transform: uppercase;
 }
 
-.tq-overview__swatch {
+.tq-overview-swatch {
     border: 1px solid @color-gray68;
     display: inline-block;
     height: 1.4rem;
@@ -173,12 +173,12 @@
 //  _____________________________________________
 
 .tq-connect {
-    .tq-connect__state,
-    .tq-connect__intro {
+    .tq-connect-state,
+    .tq-connect-intro {
         margin: 0 0 @indent__s;
     }
 
-    .tq-connect__actions {
+    .tq-connect-actions {
         display: flex;
         flex-wrap: wrap;
         gap: @indent__s;
@@ -189,7 +189,7 @@
         }
     }
 
-    .tq-connect__more {
+    .tq-connect-more {
         margin-top: @indent__s;
 
         summary {
@@ -200,7 +200,7 @@
 }
 
 //
-//  "Verify" result in Stores > Configuration > TackQuote (templates/system/config/test-connection.phtml)
+//  'Verify' result in Stores > Configuration > TackQuote (templates/system/config/test-connection.phtml)
 //  _____________________________________________
 
 .tq-config-result {
@@ -217,7 +217,7 @@
 }
 
 .tq-config-result--pending {
-    background: @tq-overview__off__background;
+    background: @tq-overview-off__background;
     color: @color-brownie;
 }
 
@@ -238,7 +238,7 @@
 //  _____________________________________________
 
 .media-width(@extremum, @break) when (@extremum = 'min') and (@break = @screen__m) {
-    .tq-overview__columns {
+    .tq-overview-columns {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }

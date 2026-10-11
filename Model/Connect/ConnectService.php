@@ -112,7 +112,10 @@ class ConnectService
         if (!ConnectUrlPolicy::isAllowedUrl($siteUrl)) {
             return $this->notice(
                 'error',
-                (string) __('Connect needs your store to use https. Paste an API key instead, or switch your store to https.')
+                (string) __(
+                    'Connect needs your store to use https. Paste an API key instead, or switch your store to '
+                    . 'https.'
+                )
             );
         }
 
@@ -123,13 +126,13 @@ class ConnectService
             'adminUrl' => (string) ($store['adminUrl'] ?? ''),
             'redirectUri' => (string) ($store['redirectUri'] ?? ''),
             'state' => $state,
-            'codeChallenge' => Pkce::challenge($verifier),
+            'codeChallenge' => $this->pkce->challenge($verifier),
             'codeChallengeMethod' => 'S256',
             'siteName' => $this->clip((string) ($store['siteName'] ?? ''), 120),
             'pluginVersion' => $this->clip((string) ($store['pluginVersion'] ?? ''), 32),
             'platformVersion' => $this->clip((string) ($store['platformVersion'] ?? ''), 32),
             'locale' => $this->clip((string) ($store['locale'] ?? ''), 20),
-        ], static function ($value): bool {
+        ], function ($value): bool {
             return $value !== '';
         });
 
@@ -142,7 +145,10 @@ class ConnectService
         if (ConnectUrlPolicy::consentHost($connectUrl, $requestId, $this->config->getApiBaseUrl()) === '') {
             return $this->notice(
                 'error',
-                (string) __('TackQuote answered with a sign-in address this module will not open, so nothing was changed. Check the API base URL, or paste an API key instead.')
+                (string) __(
+                    'TackQuote answered with a sign-in address this module will not open, so nothing was changed. '
+                    . 'Check the API base URL, or paste an API key instead.'
+                )
             );
         }
 
@@ -175,7 +181,10 @@ class ConnectService
         if ($verifier === null) {
             return $this->notice(
                 'error',
-                (string) __('TackQuote was not connected: this sign-in could not be verified, expired, or was already used. Nothing was changed.') . ' ' . $restart
+                (string) __(
+                    'TackQuote was not connected: this sign-in could not be verified, expired, or was already '
+                    . 'used. Nothing was changed.'
+                ) . ' ' . $restart
             );
         }
 
@@ -185,13 +194,17 @@ class ConnectService
             }
             return $this->notice(
                 'error',
-                (string) __('TackQuote was not connected: the sign-in did not finish. Nothing was changed.') . ' ' . $restart
+                (string) __(
+                    'TackQuote was not connected: the sign-in did not finish. Nothing was changed.'
+                ) . ' ' . $restart
             );
         }
         if (!preg_match(Pkce::B64URL_43, $code)) {
             return $this->notice(
                 'error',
-                (string) __('TackQuote was not connected: the sign-in response carried no usable code. Nothing was changed.') . ' ' . $restart
+                (string) __(
+                    'TackQuote was not connected: the sign-in response carried no usable code. Nothing was changed.'
+                ) . ' ' . $restart
             );
         }
 
@@ -204,10 +217,13 @@ class ConnectService
             return $this->notice('error', $this->failureMessage($answer, 'exchange'));
         }
         $apiKey = is_string($answer['data']['apiKey'] ?? null) ? $answer['data']['apiKey'] : '';
-        if (!self::isUsableKey($apiKey)) {
+        if (!$this->isUsableKey($apiKey)) {
             return $this->notice(
                 'error',
-                (string) __('TackQuote answered without a usable API key, so nothing was changed. Press Connect with TackQuote again, or paste an API key.')
+                (string) __(
+                    'TackQuote answered without a usable API key, so nothing was changed. Press Connect with '
+                    . 'TackQuote again, or paste an API key.'
+                )
             );
         }
 
@@ -236,6 +252,8 @@ class ConnectService
     // ── Disconnect ────────────────────────────────────────────────────────────
 
     /**
+     * Disconnect this store from TackQuote.
+     *
      * Revoke the saved default-scope key in TackQuote when Connect issued it,
      * then remove it from this store whatever TackQuote answered.
      *
@@ -254,7 +272,10 @@ class ConnectService
         if (!$viaConnect) {
             return $this->notice(
                 'success',
-                (string) __('Disconnected. The pasted API key was removed from this store. It keeps working in TackQuote until you revoke it there under Settings > Developer > API Keys.')
+                (string) __(
+                    'Disconnected. The pasted API key was removed from this store. It keeps working in TackQuote '
+                    . 'until you revoke it there under Settings > Developer > API Keys.'
+                )
             );
         }
         if ($revoked) {
@@ -263,29 +284,38 @@ class ConnectService
                 (string) __('Disconnected. The API key was removed from this store and revoked in TackQuote.')
             );
         }
-        $this->logger->warning('TackQuote Connect: the key was removed locally but TackQuote did not confirm the revoke.');
+        $this->logger->warning(
+            'TackQuote Connect: the key was removed locally but TackQuote did not confirm the revoke.'
+        );
 
         return $this->notice(
             'warning',
-            (string) __('Disconnected on this store, but TackQuote did not confirm the key was revoked. Revoke it in TackQuote under Settings > Developer > API Keys.')
+            (string) __(
+                'Disconnected on this store, but TackQuote did not confirm the key was revoked. Revoke it in '
+                . 'TackQuote under Settings > Developer > API Keys.'
+            )
         );
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     /**
+     * Whether a key is worth storing.
+     *
      * A key shape worth storing: printable key characters of a plausible length.
      * The connection test then proves it works.
      *
      * @param string $key
      * @return bool
      */
-    public static function isUsableKey(string $key): bool
+    private function isUsableKey(string $key): bool
     {
         return strlen($key) >= 20 && strlen($key) <= 200 && preg_match('/^[A-Za-z0-9._\-]+$/', $key) === 1;
     }
 
     /**
+     * Admin message for a failed call to TackQuote.
+     *
      * The message for a failed call to TackQuote: what happened and what to do,
      * plus TackQuote's own sentence when it sent one.
      *
@@ -299,24 +329,39 @@ class ConnectService
         $said = $status !== 0 ? $this->clip(strip_tags((string) ($answer['message'] ?? '')), 300) : '';
 
         if ($status === 0) {
-            $message = (string) __('Could not reach TackQuote, so nothing was changed. Check the API base URL, then try again in a few minutes.');
+            $message = (string) __(
+                'Could not reach TackQuote, so nothing was changed. Check the API base URL, then try again in a '
+                . 'few minutes.'
+            );
         } elseif ($status === 404) {
-            $message = (string) __('This TackQuote server does not support Connect with TackQuote for Magento. Paste an API key instead.');
+            $message = (string) __(
+                'This TackQuote server does not support Connect with TackQuote for Magento. Paste an API key '
+                . 'instead.'
+            );
             $said = '';
         } elseif ($status === 429 || $status >= 500) {
-            $message = (string) __('TackQuote is busy or unavailable right now, so nothing was changed. Try again in a few minutes.');
+            $message = (string) __(
+                'TackQuote is busy or unavailable right now, so nothing was changed. Try again in a few minutes.'
+            );
         } elseif ($status === 403) {
-            $message = (string) __('TackQuote did not connect this store: your TackQuote plan does not allow it. Nothing was changed on this store.');
+            $message = (string) __(
+                'TackQuote did not connect this store: your TackQuote plan does not allow it. Nothing was changed '
+                . 'on this store.'
+            );
         } elseif ($step === 'start') {
             $message = (string) __('TackQuote refused to start connecting this store, so nothing was changed.');
         } else {
-            $message = (string) __('TackQuote refused the sign-in code: it is invalid, expired or already used. Nothing was changed.');
+            $message = (string) __(
+                'TackQuote refused the sign-in code: it is invalid, expired or already used. Nothing was changed.'
+            );
         }
 
         return $said !== '' && $said !== $message ? $message . ' ' . $said : $message;
     }
 
     /**
+     * Build one admin notice.
+     *
      * @param string $type success | warning | error
      * @param string $message
      * @return array{type: string, message: string}

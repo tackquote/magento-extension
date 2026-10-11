@@ -78,15 +78,26 @@ class ConnectCard extends Template
     {
         switch ($this->getConnectionState()) {
             case Config::VIA_CONNECT:
-                return (string) __('This store is connected with TackQuote. Connect again to issue a new key for this store; the previous one is revoked.');
+                return (string) __(
+                    'This store is connected with TackQuote. Connect again to issue a new key for this store; the '
+                    . 'previous one is revoked.'
+                );
             case Config::VIA_KEY:
-                return (string) __('This store uses a pasted API key. Connecting with TackQuote replaces the saved key on this store. The old key keeps working until you revoke it in TackQuote.');
+                return (string) __(
+                    'This store uses a pasted API key. Connecting with TackQuote replaces the saved key on this '
+                    . 'store. The old key keeps working until you revoke it in TackQuote.'
+                );
             default:
-                return (string) __('Connect this store to your TackQuote account. Press Connect with TackQuote, sign in or create an account, and approve. Nothing to copy.');
+                return (string) __(
+                    'Connect this store to your TackQuote account. Press Connect with TackQuote, sign in or create '
+                    . 'an account, and approve. Nothing to copy.'
+                );
         }
     }
 
     /**
+     * Label of the Connect button.
+     *
      * @return string
      */
     public function getConnectLabel(): string
@@ -118,6 +129,8 @@ class ConnectCard extends Template
     }
 
     /**
+     * URL that starts a connection.
+     *
      * @return string
      */
     public function getStartUrl(): string
@@ -126,6 +139,8 @@ class ConnectCard extends Template
     }
 
     /**
+     * URL that disconnects the store.
+     *
      * @return string
      */
     public function getDisconnectUrl(): string
@@ -134,6 +149,8 @@ class ConnectCard extends Template
     }
 
     /**
+     * Whether the card renders in compact mode.
+     *
      * Compact mode: inside the configuration form, where a nested <form> is not
      * allowed, so the buttons post through a form built on click.
      *

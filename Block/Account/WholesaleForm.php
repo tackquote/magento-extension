@@ -146,6 +146,8 @@ class WholesaleForm extends Template
     }
 
     /**
+     * The customer's wholesale application state.
+     *
      * The customer's own application state, only in the account tab; ApplicationStatus::UNKNOWN
      * everywhere else and whenever it cannot be read.
      *
@@ -161,6 +163,8 @@ class WholesaleForm extends Template
     }
 
     /**
+     * Whether the form's file inputs render.
+     *
      * Whether file inputs render. In the account tab: only when TackQuote can tie a file to
      * this customer. On a CMS page: yes (the POST re-checks once the visitor signs in).
      *
@@ -199,6 +203,8 @@ class WholesaleForm extends Template
     }
 
     /**
+     * URL the application form posts to.
+     *
      * @return string
      */
     public function getActionUrl(): string
@@ -207,6 +213,8 @@ class WholesaleForm extends Template
     }
 
     /**
+     * Identity of the signed-in customer, as TackQuote knows it.
+     *
      * @return \TackQuote\Quotes\Model\Forms\AccountIdentity
      */
     private function identity()
@@ -221,6 +229,8 @@ class WholesaleForm extends Template
     }
 
     /**
+     * Id of the current store, or null when it cannot be read.
+     *
      * @return int|null
      */
     private function storeId(): ?int

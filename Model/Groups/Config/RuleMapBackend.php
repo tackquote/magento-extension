@@ -32,6 +32,8 @@ class RuleMapBackend extends Value
     ];
 
     /**
+     * Validate the rule map before it is stored.
+     *
      * @return $this
      * @throws LocalizedException
      */

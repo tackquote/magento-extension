@@ -161,7 +161,7 @@ class Presenter
     /**
      * The order-limit sentence, the same three phrasings as the WooCommerce plugin.
      *
-     * @param array{min: int|null, max: int|null} $limit
+     * @param array{min:int|null,max:int|null} $limit
      * @return string
      */
     public function limitSentence(array $limit): string

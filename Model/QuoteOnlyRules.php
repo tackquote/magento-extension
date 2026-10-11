@@ -36,7 +36,13 @@ declare(strict_types=1);
 
 namespace TackQuote\Quotes\Model;
 
-final class QuoteOnlyRules
+// phpcs:disable Magento2.Functions.StaticFunction -- stateless pure functions over primitives, see the file comment
+/**
+ * The quote-only rule, once, for every caller. Not an extension point: nothing in this module
+ * subclasses it (Test/Unit/Model/QuoteOnlyRulesClosedTest.php), and static methods cannot be
+ * intercepted by plugins either, so the rule cannot be changed from outside.
+ */
+class QuoteOnlyRules
 {
     /** Every storefront visitor is quote-only. The default. */
     public const SCOPE_ALL = 'all';
@@ -62,6 +68,8 @@ final class QuoteOnlyRules
     public const PRODUCT_ATTRIBUTE = 'tackquote_quote_only';
 
     /**
+     * Every quote-only scope value.
+     *
      * @return string[]
      */
     public static function scopes(): array
@@ -240,3 +248,4 @@ final class QuoteOnlyRules
         return $storeWideModeActive && $hidePricesSwitch;
     }
 }
+// phpcs:enable Magento2.Functions.StaticFunction

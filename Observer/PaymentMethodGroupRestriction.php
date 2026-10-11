@@ -52,6 +52,8 @@ class PaymentMethodGroupRestriction implements ObserverInterface
     }
 
     /**
+     * Mark a payment method the buyer group may not use as unavailable.
+     *
      * @param Observer $observer
      * @return void
      */

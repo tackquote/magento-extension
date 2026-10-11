@@ -173,9 +173,9 @@ class StorefrontClient
      * One `/storefront/v1/{route}` read.
      *
      * @param string $route One of the ROUTE_* constants.
-     * @param array<string, string> $query Query parameters (sku, quantity, buyerEmail, currency).
+     * @param array<string,string> $query Query parameters (sku, quantity, buyerEmail, currency).
      * @param int|null $storeId
-     * @param array<string, string> $identityHeaders Only the IDENTITY_HEADERS; others are dropped.
+     * @param array<string,string> $identityHeaders Only the IDENTITY_HEADERS; others are dropped.
      * @return array{ok: bool, status: int, data?: array}
      */
     public function get(string $route, array $query, ?int $storeId = null, array $identityHeaders = []): array
@@ -191,7 +191,7 @@ class StorefrontClient
 
         $query = array_filter(
             $query,
-            static function ($value): bool {
+            function ($value): bool {
                 return is_string($value) && $value !== '';
             }
         );
@@ -372,7 +372,7 @@ class StorefrontClient
      *
      * LOGGING — the HTTP status only. Never the key, the email, the SKUs or the body.
      *
-     * @param array<int, array{sku: string, quantity: int}> $items
+     * @param array<int,array{sku:string,quantity:int}> $items
      * @param string $buyerEmail The signed-in customer's own email address.
      * @param int|null $storeId
      * @return array{ok: bool, status: int, data?: array}

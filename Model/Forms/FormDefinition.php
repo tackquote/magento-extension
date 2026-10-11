@@ -171,7 +171,7 @@ class FormDefinition
      *
      * @param array[] $fields Normalised fields.
      * @param array $values Answers collected so far (for showIf).
-     * @param array<string, array> $files Field key => one uploaded-file entry.
+     * @param array<string,array> $files Field key => one uploaded-file entry.
      * @return array{wanted: array<string, array>, error: string|null} Field key => field.
      */
     public function pickFiles(array $fields, array $values, array $files): array
@@ -203,7 +203,7 @@ class FormDefinition
      * trimmed strings). Conditions only look backwards.
      *
      * @param array $field
-     * @param array<string, array> $byKey
+     * @param array<string,array> $byKey
      * @param array $values
      * @param int $depth
      * @return bool
@@ -322,6 +322,8 @@ class FormDefinition
     }
 
     /**
+     * Index form fields by their key.
+     *
      * @param array[] $fields
      * @return array<string, array>
      */
@@ -336,6 +338,8 @@ class FormDefinition
     }
 
     /**
+     * Build a failed parse result.
+     *
      * @param string $message
      * @return array{values: array, error: string}
      */

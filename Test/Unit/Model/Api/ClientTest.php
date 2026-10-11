@@ -72,7 +72,14 @@ class ClientTest extends TestCase
     {
         // The real Json serializer: the point of several of these tests is what happens to
         // a body as it is parsed, and a mock would simply return whatever it was told.
-        return new Client($this->config, $this->curl, new Json(), $this->logger, $this->landing(), $this->noPluginHeaders());
+        return new Client(
+            $this->config,
+            $this->curl,
+            new Json(),
+            $this->logger,
+            $this->landing(),
+            $this->noPluginHeaders()
+        );
     }
 
     /**
@@ -261,7 +268,14 @@ class ClientTest extends TestCase
         $this->curl->expects(self::never())->method('get');
         $this->curl->expects(self::never())->method('post');
 
-        $result = (new Client($config, $this->curl, new Json(), $this->logger, $this->landing(), $this->noPluginHeaders()))->testConnection();
+        $result = (new Client(
+            $config,
+            $this->curl,
+            new Json(),
+            $this->logger,
+            $this->landing(),
+            $this->noPluginHeaders()
+        ))->testConnection();
 
         self::assertFalse($result['ok']);
     }

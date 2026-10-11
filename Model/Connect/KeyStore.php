@@ -70,7 +70,7 @@ class KeyStore
     public function saveConnectedKey(string $apiKey, int $now): void
     {
         $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT;
-        $this->writer->save(Config::apiKeyPath(), $this->encryptor->encrypt($apiKey), $scope, 0);
+        $this->writer->save(Config::API_KEY_PATH, $this->encryptor->encrypt($apiKey), $scope, 0);
         $this->writer->save(Config::XML_PATH_CONNECTED_VIA, Config::VIA_CONNECT, $scope, 0);
         $this->writer->save(Config::XML_PATH_CONNECTED_AT, (string) $now, $scope, 0);
         // Not the key: its SHA-256, so Config::getConnectedVia() can tell a key pasted later.
@@ -86,7 +86,7 @@ class KeyStore
     public function clear(): void
     {
         $scope = ScopeConfigInterface::SCOPE_TYPE_DEFAULT;
-        $this->writer->delete(Config::apiKeyPath(), $scope, 0);
+        $this->writer->delete(Config::API_KEY_PATH, $scope, 0);
         $this->writer->delete(Config::XML_PATH_CONNECTED_VIA, $scope, 0);
         $this->writer->delete(Config::XML_PATH_CONNECTED_AT, $scope, 0);
         $this->writer->delete(Config::XML_PATH_CONNECTED_KEY_SHA256, $scope, 0);

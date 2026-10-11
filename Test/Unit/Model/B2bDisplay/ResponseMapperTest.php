@@ -74,11 +74,21 @@ class ResponseMapperTest extends TestCase
             'unpriced' => [['status' => 'unpriced']],
             'currency mismatch' => [['status' => 'unpriced', 'reason' => 'currency_mismatch',
                 'currency' => 'USD', 'presentmentCurrency' => 'USD']],
-            'a future status' => [['status' => 'priced_v2', 'unitPrice' => 1, 'currency' => 'USD', 'accountSpecific' => true]],
-            'null price' => [['status' => 'priced', 'unitPrice' => null, 'currency' => 'USD', 'accountSpecific' => true]],
-            'string price' => [['status' => 'priced', 'unitPrice' => 'free', 'currency' => 'USD', 'accountSpecific' => true]],
-            'boolean price' => [['status' => 'priced', 'unitPrice' => true, 'currency' => 'USD', 'accountSpecific' => true]],
-            'negative price' => [['status' => 'priced', 'unitPrice' => -1, 'currency' => 'USD', 'accountSpecific' => true]],
+            'a future status' => [
+                ['status' => 'priced_v2', 'unitPrice' => 1, 'currency' => 'USD', 'accountSpecific' => true]
+            ],
+            'null price' => [
+                ['status' => 'priced', 'unitPrice' => null, 'currency' => 'USD', 'accountSpecific' => true]
+            ],
+            'string price' => [
+                ['status' => 'priced', 'unitPrice' => 'free', 'currency' => 'USD', 'accountSpecific' => true]
+            ],
+            'boolean price' => [
+                ['status' => 'priced', 'unitPrice' => true, 'currency' => 'USD', 'accountSpecific' => true]
+            ],
+            'negative price' => [
+                ['status' => 'priced', 'unitPrice' => -1, 'currency' => 'USD', 'accountSpecific' => true]
+            ],
             'not an object' => ['priced'],
             'null' => [null],
         ];
@@ -257,7 +267,9 @@ class ResponseMapperTest extends TestCase
     {
         self::assertSame(
             ['name' => 'Tier 2'],
-            $this->mapper->buyerGroup(['status' => 'grouped', 'name' => ' Tier 2 ', 'code' => 'T2', 'taxExempt' => false])
+            $this->mapper->buyerGroup(
+                ['status' => 'grouped', 'name' => ' Tier 2 ', 'code' => 'T2', 'taxExempt' => false]
+            )
         );
     }
 

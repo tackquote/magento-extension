@@ -15,9 +15,11 @@
   therefore be a lie in the config rather than a constraint, and the wider set is what we
   want anyway: it puts the layout XML and quote-app.js in scope too.
 
-  The whole `Magento2` ruleset is included with NO sniff exclusions. If a sniff ever has
-  to be switched off, put the reason here — an unexplained exclusion is indistinguishable
-  from a finding somebody hid.
+  The whole `Magento2` ruleset is included. The module is held to ZERO errors AND ZERO
+  warnings at every severity (scripts/check-standards.sh runs phpcs at severity 1, so every warning counts, and
+  docs/CODING_STANDARDS.md has the policy). If a sniff ever has to be switched off, put the
+  reason here: an unexplained exclusion is indistinguishable from a finding somebody hid.
+  The only exclusions are the path-scoped ones below, each with its reason.
 -->
 <ruleset name="TackQuote_Quotes">
     <description>Magento 2 coding standard for the TackQuote_Quotes module.</description>
@@ -36,4 +38,33 @@
     <exclude-pattern>*/.phpunit.cache/*</exclude-pattern>
 
     <rule ref="Magento2"/>
+
+    <!--
+      Generic.Files.LineLength, for two XML files only, because a line break there would change
+      what Magento reads:
+      - etc/adminhtml/system.xml: each group <comment> is ONE translatable phrase. Magento
+        translates it by its exact text (i18n/*.csv keys, pinned by Test/Unit/I18n/
+        CatalogueTest.php), so wrapping a long comment would insert a newline into the key and
+        every locale would silently fall back to English.
+      - view/frontend/layout/checkout_index_index.xml: the payment renderer has to be declared
+        at Magento_Checkout's fixed jsLayout path, 17 elements deep; at four spaces per level the
+        innermost items cannot fit in 120 columns whatever the formatting.
+    -->
+    <rule ref="Generic.Files.LineLength">
+        <exclude-pattern>*/etc/adminhtml/system\.xml$</exclude-pattern>
+        <exclude-pattern>*/view/frontend/layout/checkout_index_index\.xml$</exclude-pattern>
+    </rule>
+
+    <!--
+      Magento2.Less.ClassNaming (no underscore in a class name), for the storefront stylesheet
+      only. Its `tackquote-block__element` class names are the module's public styling contract:
+      merchants target them from the "Custom CSS" setting and from their themes, README
+      (Storefront styling) documents them, Model/Styling/StyleRules.php writes accent rules
+      against them, and quote-app.js / b2b-display.js select by them. Renaming them to satisfy
+      the sniff would silently break every store that styles them. The admin stylesheet has no
+      such contract and follows the sniff.
+    -->
+    <rule ref="Magento2.Less.ClassNaming">
+        <exclude-pattern>*/view/frontend/web/css/source/_module\.less$</exclude-pattern>
+    </rule>
 </ruleset>

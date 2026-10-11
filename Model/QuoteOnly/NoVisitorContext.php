@@ -19,6 +19,8 @@ namespace TackQuote\Quotes\Model\QuoteOnly;
 class NoVisitorContext implements VisitorContextInterface
 {
     /**
+     * No visitor is exempt here.
+     *
      * @return bool
      */
     public function isExempt(): bool
@@ -27,6 +29,8 @@ class NoVisitorContext implements VisitorContextInterface
     }
 
     /**
+     * No visitor is signed in here.
+     *
      * @return bool
      */
     public function isLoggedIn(): bool
@@ -35,6 +39,8 @@ class NoVisitorContext implements VisitorContextInterface
     }
 
     /**
+     * Customer group of a guest.
+     *
      * @return int
      */
     public function getCustomerGroupId(): int
@@ -43,6 +49,8 @@ class NoVisitorContext implements VisitorContextInterface
     }
 
     /**
+     * No customer id: there is no visitor.
+     *
      * @return int|null
      */
     public function getCustomerId(): ?int
@@ -51,6 +59,8 @@ class NoVisitorContext implements VisitorContextInterface
     }
 
     /**
+     * No email address: there is no visitor.
+     *
      * @return string
      */
     public function getCustomerEmail(): string

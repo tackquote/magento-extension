@@ -59,10 +59,22 @@ class CreditApplicationBuilderTest extends TestCase
     {
         return [
             'no name' => [[], 'Legal business name is required.'],
-            'terms not offered' => [['legalBusinessName' => 'A', 'requestedTermsDays' => '31'], 'Please choose one of the offered payment terms.'],
-            'negative limit' => [['legalBusinessName' => 'A', 'requestedLimit' => '-1'], 'Requested credit limit must be a number between 0 and 100,000,000.'],
-            'partial address' => [['legalBusinessName' => 'A', 'billingAddress' => ['line1' => 'x']], 'Billing address: City is required.'],
-            'bad reference email' => [['legalBusinessName' => 'A', 'tradeReferences' => [['email' => 'nope']]], 'A trade reference email address is not valid.'],
+            'terms not offered' => [
+                ['legalBusinessName' => 'A', 'requestedTermsDays' => '31'],
+                'Please choose one of the offered payment terms.'
+            ],
+            'negative limit' => [
+                ['legalBusinessName' => 'A', 'requestedLimit' => '-1'],
+                'Requested credit limit must be a number between 0 and 100,000,000.'
+            ],
+            'partial address' => [
+                ['legalBusinessName' => 'A', 'billingAddress' => ['line1' => 'x']],
+                'Billing address: City is required.'
+            ],
+            'bad reference email' => [
+                ['legalBusinessName' => 'A', 'tradeReferences' => [['email' => 'nope']]],
+                'A trade reference email address is not valid.'
+            ],
         ];
     }
 

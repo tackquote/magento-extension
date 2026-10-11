@@ -56,14 +56,22 @@ class NetTermsMethodTest extends TestCase
         $this->answer = [
             'status' => 'standing',
             'state' => 'approved',
-            'account' => ['status' => 'active', 'termsDays' => 45, 'creditLimit' => '1000', 'currency' => 'USD', 'available' => '500'],
+            'account' => [
+                'status' => 'active',
+                'termsDays' => 45,
+                'creditLimit' => '1000',
+                'currency' => 'USD',
+                'available' => '500'
+            ],
         ];
     }
 
     private function method(): NetTermsMethod
     {
         $handler = $this->createMock(ValueHandlerInterface::class);
-        $handler->method('handle')->willReturnCallback(fn (array $subject) => ['active' => $this->active ? '1' : '0'][$subject['field']] ?? null);
+        $handler->method('handle')->willReturnCallback(
+            fn (array $subject) => ['active' => $this->active ? '1' : '0'][$subject['field']] ?? null
+        );
         $pool = $this->createMock(ValueHandlerPoolInterface::class);
         $pool->method('get')->willReturn($handler);
 
@@ -138,7 +146,10 @@ class NetTermsMethodTest extends TestCase
 
     public function testNotOfferedToAGuestOrWithoutAQuote(): void
     {
-        self::assertFalse($this->method()->isAvailable($this->quote(['customer_id' => null, 'customer_is_guest' => 1])));
+        self::assertFalse($this->method()->isAvailable($this->quote([
+            'customer_id' => null,
+            'customer_is_guest' => 1
+        ])));
         self::assertFalse($this->method()->isAvailable($this->quote(['customer_is_guest' => 1])));
         self::assertFalse($this->method()->isAvailable(null));
         self::assertSame([], $this->reads);

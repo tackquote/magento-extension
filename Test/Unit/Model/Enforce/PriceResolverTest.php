@@ -47,8 +47,17 @@ class PriceResolverTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->resolveAnswer = self::ok([['sku' => 'A', 'quantity' => 2, 'unitPrice' => 7.5, 'source' => 'price_book']]);
-        $this->currencyAnswer = ['ok' => true, 'status' => 200, 'data' => ['status' => 'priced', 'currency' => 'USD', 'unitPrice' => 7.5]];
+        $this->resolveAnswer = self::ok([[
+            'sku' => 'A',
+            'quantity' => 2,
+            'unitPrice' => 7.5,
+            'source' => 'price_book'
+        ]]);
+        $this->currencyAnswer = [
+            'ok' => true,
+            'status' => 200,
+            'data' => ['status' => 'priced', 'currency' => 'USD', 'unitPrice' => 7.5]
+        ];
 
         $this->client = $this->createMock(StorefrontClient::class);
         $this->client->method('resolvePricing')->willReturnCallback(function (array $lines, string $email, $storeId) {
@@ -123,7 +132,10 @@ class PriceResolverTest extends TestCase
     public function testAnAccountPricedInAnotherCurrencyChargesNothingAndIsNotAFailure(): void
     {
         $this->currencyAnswer = ['ok' => true, 'status' => 200, 'data' => [
-            'status' => 'unpriced', 'reason' => 'currency_mismatch', 'currency' => 'EUR', 'presentmentCurrency' => 'USD',
+            'status' => 'unpriced',
+            'reason' => 'currency_mismatch',
+            'currency' => 'EUR',
+            'presentmentCurrency' => 'USD',
         ]];
 
         $result = $this->resolver()->resolve(self::BUYER, [['sku' => 'A', 'quantity' => 2]]);
@@ -216,7 +228,12 @@ class PriceResolverTest extends TestCase
         $resolver->resolve(self::BUYER, [['sku' => 'A', 'quantity' => 2]]);
 
         // TackQuote's price changed; the cache still holds 7.5.
-        $this->resolveAnswer = self::ok([['sku' => 'A', 'quantity' => 2, 'unitPrice' => 9.0, 'source' => 'price_book']]);
+        $this->resolveAnswer = self::ok([[
+            'sku' => 'A',
+            'quantity' => 2,
+            'unitPrice' => 9.0,
+            'source' => 'price_book'
+        ]]);
         $this->resolveCalls = [];
         $this->getCalls = [];
 

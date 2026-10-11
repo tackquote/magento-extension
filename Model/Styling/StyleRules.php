@@ -82,6 +82,8 @@ class StyleRules
     ];
 
     /**
+     * Normalise a saved hex colour.
+     *
      * A hex colour as saved: '' (use the theme's colours), the colour in lower case, or null
      * when the value is not a hex colour.
      *
@@ -187,6 +189,8 @@ class StyleRules
     }
 
     /**
+     * Launcher label as printed.
+     *
      * The launcher label as printed: trimmed, control characters removed, at most
      * LAUNCHER_LABEL_MAX characters. '' means "use the default label".
      *
@@ -214,7 +218,7 @@ class StyleRules
         if (strlen($h) === 3) {
             $h = $h[0] . $h[0] . $h[1] . $h[1] . $h[2] . $h[2];
         }
-        $lin = static function (int $channel): float {
+        $lin = function (int $channel): float {
             $c = $channel / 255;
 
             return $c <= 0.03928 ? $c / 12.92 : (($c + 0.055) / 1.055) ** 2.4;

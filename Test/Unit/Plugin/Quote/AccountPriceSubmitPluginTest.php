@@ -71,14 +71,20 @@ class AccountPriceSubmitPluginTest extends TestCase
         $applier = $this->createMock(CustomPriceApplier::class);
         $applier->method('apply')->willReturn(false);
 
-        (new AccountPriceSubmitPlugin($applier))->beforeSubmit($this->createMock(QuoteManagement::class), $this->quote());
+        (new AccountPriceSubmitPlugin($applier))->beforeSubmit(
+            $this->createMock(QuoteManagement::class),
+            $this->quote()
+        );
 
         self::assertSame(0, $this->collections);
     }
 
     public function testAStaleCachedPriceIsNeverChargedAtSubmit(): void
     {
-        $line = $this->getMockBuilder(Item::class)->disableOriginalConstructor()->onlyMethods(['getParentItem'])->getMock();
+        $line = $this->getMockBuilder(Item::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['getParentItem'])
+            ->getMock();
         $line->setData(['product_type' => 'simple', 'sku' => 'A', 'qty' => 2, 'product_id' => 5]);
         $quote = $this->quote([$line]);
 
@@ -100,7 +106,11 @@ class AccountPriceSubmitPluginTest extends TestCase
                 ['sku' => 'A', 'quantity' => 2, 'unitPrice' => $price, 'source' => 'price_book'],
             ]]];
         });
-        $client->method('get')->willReturn(['ok' => true, 'status' => 200, 'data' => ['status' => 'priced', 'currency' => 'USD']]);
+        $client->method('get')->willReturn([
+            'ok' => true,
+            'status' => 200,
+            'data' => ['status' => 'priced', 'currency' => 'USD']
+        ]);
 
         $eligibility = $this->createMock(Eligibility::class);
         $eligibility->method('buyer')->willReturn(

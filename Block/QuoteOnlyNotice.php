@@ -58,6 +58,8 @@ class QuoteOnlyNotice extends Template
     }
 
     /**
+     * Whether quote-only mode applies to this visitor, so the notice is shown.
+     *
      * @return bool
      */
     public function isVisible(): bool
@@ -66,6 +68,8 @@ class QuoteOnlyNotice extends Template
     }
 
     /**
+     * Label of the request button.
+     *
      * The merchant's own wording for the request button, so the panel matches the button the
      * shopper has been seeing on every product page.
      *
@@ -77,6 +81,8 @@ class QuoteOnlyNotice extends Template
     }
 
     /**
+     * URL of the store home page, for "Continue shopping".
+     *
      * @return string
      */
     public function getContinueShoppingUrl(): string

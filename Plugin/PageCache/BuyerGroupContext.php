@@ -64,6 +64,8 @@ class BuyerGroupContext
     }
 
     /**
+     * Add the buyer group to the page cache vary string.
+     *
      * @param HttpContext $subject
      * @return void
      */

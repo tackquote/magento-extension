@@ -119,9 +119,10 @@ class CheckoutEnforcementDeclarationsTest extends TestCase
 
     public function testTheCartPageUpdateIsLimitChecked(): void
     {
+        $plugins = $this->plugins('etc/frontend/di.xml');
         self::assertSame(
             'Magento\Checkout\Model\Cart',
-            $this->plugins('etc/frontend/di.xml')['TackQuote\Quotes\Plugin\Checkout\OrderLimitUpdateItemsGuard']['type'] ?? null
+            $plugins['TackQuote\Quotes\Plugin\Checkout\OrderLimitUpdateItemsGuard']['type'] ?? null
         );
     }
 
@@ -136,7 +137,8 @@ class CheckoutEnforcementDeclarationsTest extends TestCase
 
     public function testTheOrderNoteObserverListensToTheSubmitEvent(): void
     {
-        $observers = $this->xml('etc/events.xml')->xpath('//event[@name="sales_model_service_quote_submit_before"]/observer');
+        $observers = $this->xml('etc/events.xml')
+            ->xpath('//event[@name="sales_model_service_quote_submit_before"]/observer');
 
         self::assertNotEmpty($observers);
         self::assertSame('TackQuote\Quotes\Observer\AccountPriceOrderComment', (string) $observers[0]['instance']);

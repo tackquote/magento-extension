@@ -39,6 +39,8 @@ interface VisitorContextInterface
     public function isExempt(): bool;
 
     /**
+     * Whether the visitor is a signed-in customer.
+     *
      * @return bool
      */
     public function isLoggedIn(): bool;
@@ -51,6 +53,8 @@ interface VisitorContextInterface
     public function getCustomerGroupId(): int;
 
     /**
+     * Customer id of the visitor, or null for a guest.
+     *
      * @return int|null Null for a guest.
      */
     public function getCustomerId(): ?int;

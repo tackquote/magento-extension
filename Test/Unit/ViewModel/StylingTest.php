@@ -71,7 +71,10 @@ class StylingTest extends TestCase
         self::assertSame('outlined', $styling->getButtonStyle());
         self::assertSame(32, $styling->getLauncherOffset());
         self::assertSame('My quote', $styling->getLauncherLabel());
-        self::assertSame('tackquote-app--launcher-left tackquote-app--launcher-compact', $styling->getLauncherClasses());
+        self::assertSame(
+            'tackquote-app--launcher-left tackquote-app--launcher-compact',
+            $styling->getLauncherClasses()
+        );
         self::assertTrue($styling->hasCustomCss());
         self::assertStringStartsWith(
             ':root{--tackquote-launcher-offset:32px;--tackquote-accent:#c00;--tackquote-accent-text:#fff}',

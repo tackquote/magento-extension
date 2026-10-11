@@ -181,7 +181,10 @@ class StyleRulesTest extends TestCase
         self::assertStringStartsWith(':root{--tackquote-accent:#1e73be;--tackquote-accent-text:#fff}', $css);
         self::assertStringContainsString('html:root body .action.tackquote-request-btn.tocart,', $css);
         self::assertStringContainsString('{background:var(--tackquote-accent);', $css);
-        self::assertStringContainsString('.tackquote-b2b .tackquote-b2b__account-price{color:var(--tackquote-accent)}', $css);
+        self::assertStringContainsString(
+            '.tackquote-b2b .tackquote-b2b__account-price{color:var(--tackquote-accent)}',
+            $css
+        );
         self::assertStringNotContainsString('!important', $css);
     }
 
@@ -201,7 +204,10 @@ class StyleRulesTest extends TestCase
 
         $accented = $this->rules->buildCss('#c00', StyleRules::BUTTON_OUTLINED, '20', '');
         self::assertStringContainsString('--tackquote-accent:#c00', $accented);
-        self::assertStringContainsString('background:transparent;border:1px solid var(--tackquote-accent,currentColor)', $accented);
+        self::assertStringContainsString(
+            'background:transparent;border:1px solid var(--tackquote-accent,currentColor)',
+            $accented
+        );
     }
 
     public function testTheOffsetVariableIsPrintedOnlyWhenItDiffers(): void

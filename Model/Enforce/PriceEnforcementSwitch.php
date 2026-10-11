@@ -39,6 +39,8 @@ class PriceEnforcementSwitch
     }
 
     /**
+     * Whether account prices are charged at checkout on this store.
+     *
      * @param int|null $storeId
      * @return bool
      */

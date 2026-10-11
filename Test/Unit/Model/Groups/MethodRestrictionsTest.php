@@ -244,6 +244,9 @@ class MethodRestrictionsTest extends TestCase
         $this->config->method('getShippingMap')->willReturn(['flatrate' => ['TRADE']]);
         $this->buyer(new BuyerGroupAnswer(BuyerGroupAnswer::EXEMPT));
 
-        self::assertNull($this->restrictions()->applyToRates([$this->rate('flatrate', 'flatrate', 5.0)], $this->cart()));
+        self::assertNull($this->restrictions()->applyToRates(
+            [$this->rate('flatrate', 'flatrate', 5.0)],
+            $this->cart()
+        ));
     }
 }

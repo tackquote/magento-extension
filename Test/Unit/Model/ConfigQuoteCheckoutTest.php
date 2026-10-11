@@ -44,7 +44,10 @@ class ConfigQuoteCheckoutTest extends TestCase
 
     public function testTheSwitchActsOnlyWithAWorkingConnection(): void
     {
-        self::assertTrue($this->config([self::PATH_ENABLED => true, self::PATH_QUOTE_CHECKOUT => true])->isQuoteCheckoutActive());
+        self::assertTrue($this->config([
+            self::PATH_ENABLED => true,
+            self::PATH_QUOTE_CHECKOUT => true
+        ])->isQuoteCheckoutActive());
 
         $off = $this->config([self::PATH_ENABLED => true]);
         self::assertFalse($off->isQuoteCheckoutEnabled());

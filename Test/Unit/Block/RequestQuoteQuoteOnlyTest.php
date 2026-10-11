@@ -16,7 +16,7 @@ declare(strict_types=1);
 namespace TackQuote\Quotes\Test\Unit\Block;
 
 use Magento\Catalog\Block\Product\Context;
-use Magento\Framework\Registry;
+use Magento\Catalog\Helper\Data as CatalogHelper;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use TackQuote\Quotes\Block\RequestQuote;
@@ -41,14 +41,14 @@ class RequestQuoteQuoteOnlyTest extends TestCase
         $this->mode = $this->createMock(QuoteOnlyMode::class);
     }
 
-    private function block(?Registry $registry = null): RequestQuote
+    private function block(?CatalogHelper $catalogHelper = null): RequestQuote
     {
         $context = $this->createMock(Context::class);
 
         return new RequestQuote(
             $context,
             $this->config,
-            $registry ?? $this->createMock(Registry::class),
+            $catalogHelper ?? $this->createMock(CatalogHelper::class),
             $this->createMock(ProductOptionRequirement::class),
             $this->mode
         );
@@ -119,14 +119,14 @@ class RequestQuoteQuoteOnlyTest extends TestCase
         // Per-product twin of the test above: Observer\QuoteOnlyLayoutHandle removed this
         // product's Add to Cart blocks, so the request trigger must render.
         $product = $this->createMock(\Magento\Catalog\Model\Product::class);
-        $registry = $this->createMock(Registry::class);
-        $registry->method('registry')->with('current_product')->willReturn($product);
+        $catalogHelper = $this->createMock(CatalogHelper::class);
+        $catalogHelper->method('getProduct')->willReturn($product);
 
         $this->config->method('isButtonEnabled')->willReturn(false);
         $this->mode->method('isActive')->willReturn(false);
         $this->mode->method('isProductQuoteOnly')->with($product)->willReturn(true);
 
-        $block = $this->block($registry);
+        $block = $this->block($catalogHelper);
         self::assertTrue($block->isQuoteOnly());
         self::assertTrue($block->isEnabled(), 'a quote-only product page with no CTA is a dead end');
     }
@@ -134,13 +134,13 @@ class RequestQuoteQuoteOnlyTest extends TestCase
     public function testAnOrdinaryProductInNormalModeHonoursShowButton(): void
     {
         $product = $this->createMock(\Magento\Catalog\Model\Product::class);
-        $registry = $this->createMock(Registry::class);
-        $registry->method('registry')->willReturn($product);
+        $catalogHelper = $this->createMock(CatalogHelper::class);
+        $catalogHelper->method('getProduct')->willReturn($product);
 
         $this->config->method('isButtonEnabled')->willReturn(false);
         $this->mode->method('isActive')->willReturn(false);
         $this->mode->method('isProductQuoteOnly')->willReturn(false);
 
-        self::assertFalse($this->block($registry)->isEnabled());
+        self::assertFalse($this->block($catalogHelper)->isEnabled());
     }
 }

@@ -251,8 +251,8 @@ class AccountApiClient
      *
      * @param string $method GET or POST.
      * @param string $route Path under /storefront/v1/.
-     * @param array<string, string> $query
-     * @param array<string, string> $headers
+     * @param array<string,string> $query
+     * @param array<string,string> $headers
      * @param string|null $body
      * @param int|null $storeId
      * @return array{ok: bool, status: int, data?: array, message?: string}

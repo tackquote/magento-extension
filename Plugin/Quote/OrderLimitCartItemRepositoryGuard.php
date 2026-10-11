@@ -46,6 +46,8 @@ class OrderLimitCartItemRepositoryGuard
     }
 
     /**
+     * Check order limits before a cart item is saved through the API.
+     *
      * @param CartItemRepositoryInterface $subject
      * @param CartItemInterface $cartItem
      * @return void

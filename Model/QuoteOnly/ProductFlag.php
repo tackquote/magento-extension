@@ -56,6 +56,8 @@ class ProductFlag
     }
 
     /**
+     * Whether the product is flagged quote-only.
+     *
      * @param mixed $product A catalog product (any DataObject carrying an id).
      * @param int|null $storeId
      * @return bool
@@ -74,6 +76,8 @@ class ProductFlag
     }
 
     /**
+     * Whether the product with this id is flagged quote-only.
+     *
      * @param int $productId
      * @param int|null $storeId
      * @return bool

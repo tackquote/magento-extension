@@ -157,7 +157,10 @@ class CustomerGroupMirrorTest extends TestCase
 
         self::assertSame(['result' => 'assigned', 'groupId' => self::GOLD_GROUP], $this->sync());
         self::assertSame([self::GOLD_GROUP], $this->savedGroups);
-        self::assertSame(['from' => self::DEFAULT_GROUP, 'to' => self::GOLD_GROUP], $this->flags['tackquote_group_mirror_42']);
+        self::assertSame(
+            ['from' => self::DEFAULT_GROUP, 'to' => self::GOLD_GROUP],
+            $this->flags['tackquote_group_mirror_42']
+        );
     }
 
     public function testACustomerPlacedInAnotherGroupByHandIsNeverMoved(): void

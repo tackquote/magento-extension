@@ -59,7 +59,11 @@ test('a simple item with custom options is skipped and named', function () {
 });
 
 test('a quantity below one or unreadable becomes 1; fractions are floored', function () {
-    var out = cartSeed([item({qty: 0}), item({product_sku: 'S-2', qty: 'x'}), item({product_sku: 'S-3', qty: 3.7})], 50);
+    var out = cartSeed([
+        item({qty: 0}),
+        item({product_sku: 'S-2', qty: 'x'}),
+        item({product_sku: 'S-3', qty: 3.7})
+    ], 50);
 
     assert.deepStrictEqual(out.lines.map(function (l) { return l.qty; }), [1, 1, 3]);
 });

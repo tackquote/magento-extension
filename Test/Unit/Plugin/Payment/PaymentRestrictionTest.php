@@ -46,7 +46,11 @@ class PaymentRestrictionTest extends TestCase
         $restrictions = $this->createMock(MethodRestrictions::class);
         $restrictions->method('isPaymentPermitted')->willReturn(false);
 
-        self::assertFalse($this->fire($restrictions, true, $this->createMock(CartInterface::class))->getData('is_available'));
+        self::assertFalse($this->fire(
+            $restrictions,
+            true,
+            $this->createMock(CartInterface::class)
+        )->getData('is_available'));
     }
 
     public function testAPermittedMethodStaysAvailable(): void
@@ -54,7 +58,11 @@ class PaymentRestrictionTest extends TestCase
         $restrictions = $this->createMock(MethodRestrictions::class);
         $restrictions->method('isPaymentPermitted')->willReturn(true);
 
-        self::assertTrue($this->fire($restrictions, true, $this->createMock(CartInterface::class))->getData('is_available'));
+        self::assertTrue($this->fire(
+            $restrictions,
+            true,
+            $this->createMock(CartInterface::class)
+        )->getData('is_available'));
     }
 
     public function testNoCartOrAlreadyUnavailableIsNotAsked(): void
@@ -63,7 +71,11 @@ class PaymentRestrictionTest extends TestCase
         $restrictions->expects(self::never())->method('isPaymentPermitted');
 
         self::assertTrue($this->fire($restrictions, true, null)->getData('is_available'));
-        self::assertFalse($this->fire($restrictions, false, $this->createMock(CartInterface::class))->getData('is_available'));
+        self::assertFalse($this->fire(
+            $restrictions,
+            false,
+            $this->createMock(CartInterface::class)
+        )->getData('is_available'));
     }
 
     public function testAnEmptyListCausedByTheRulesIsReplacedByTheUnrestrictedOne(): void

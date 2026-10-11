@@ -191,7 +191,12 @@ class PresenterTest extends TestCase
     {
         self::assertSame(
             Presenter::EMPTY_PAYLOAD,
-            $this->presenter()->present(Presenter::EMPTY_PAYLOAD, $this->product(10.0), $this->createMock(Store::class), 'USD')
+            $this->presenter()->present(
+                Presenter::EMPTY_PAYLOAD,
+                $this->product(10.0),
+                $this->createMock(Store::class),
+                'USD'
+            )
         );
     }
 

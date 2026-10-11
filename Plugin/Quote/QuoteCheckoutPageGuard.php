@@ -76,6 +76,8 @@ class QuoteCheckoutPageGuard
     }
 
     /**
+     * Send a cart with a broken accepted quote back to the cart page instead of the checkout.
+     *
      * @param CheckoutIndex $subject
      * @param callable $proceed
      * @return mixed

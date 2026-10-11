@@ -63,6 +63,9 @@ class ConnectServiceTest extends TestCase
         $pkce = $this->createMock(Pkce::class);
         $pkce->method('newVerifier')->willReturn(self::VERIFIER);
         $pkce->method('newState')->willReturn(self::STATE);
+        $pkce->method('challenge')->willReturnCallback(
+            static fn (string $verifier): string => (new Pkce())->challenge($verifier)
+        );
 
         return new ConnectService(
             $this->config,
@@ -109,7 +112,7 @@ class ConnectServiceTest extends TestCase
                     'adminUrl' => 'https://shop.example.com/admin/tackquote/dashboard/index/',
                     'redirectUri' => 'https://shop.example.com/admin/tackquote/connect/callback/key/abc/',
                     'state' => self::STATE,
-                    'codeChallenge' => Pkce::challenge(self::VERIFIER),
+                    'codeChallenge' => (new Pkce())->challenge(self::VERIFIER),
                     'codeChallengeMethod' => 'S256',
                     'siteName' => 'Example Shop',
                     'pluginVersion' => '1.5.0',

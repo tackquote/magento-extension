@@ -51,6 +51,7 @@ class AnswerMapper
     /** The only `source` charged. See the class docblock. */
     private const CHARGEABLE_SOURCE = 'price_book';
 
+    // phpcs:disable Magento2.Functions.StaticFunction -- pure key function, also used by CustomPriceApplier
     /**
      * The key one cart line is priced under: its SKU and its whole quantity.
      *
@@ -62,6 +63,7 @@ class AnswerMapper
     {
         return $sku . "\n" . $quantity;
     }
+    // phpcs:enable Magento2.Functions.StaticFunction
 
     /**
      * The chargeable unit prices in a resolve answer, keyed by lineKey().
@@ -96,6 +98,8 @@ class AnswerMapper
     }
 
     /**
+     * Currency verdict of a wholesale-price answer.
+     *
      * What a `/storefront/v1/wholesale-price` answer, asked in $cartCurrency, says about the
      * currency TackQuote prices this tenant in.
      *
@@ -173,6 +177,8 @@ class AnswerMapper
     }
 
     /**
+     * Read an amount from the answer.
+     *
      * A non-negative, finite amount, or null. Booleans and numeric strings are not prices
      * on this wire (the server sends JSON numbers).
      *

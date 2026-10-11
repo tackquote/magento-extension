@@ -40,6 +40,8 @@ class IdentityResolver
     }
 
     /**
+     * Resolve the identity TackQuote should know a customer by.
+     *
      * @param int|null $customerId
      * @param string|null $email
      * @param int|null $storeId

@@ -1,8 +1,8 @@
 // /**
-//  * TackQuote storefront styles: quote buttons, quote list drawer and launcher, quote form,
+//  * TackQuote storefront styles for the quote buttons, quote list drawer and launcher, quote form,
 //  * quote page, cart button, quote-only labels and the B2B display.
 //  *
-//  * DESIGN STANCE: blend with the active theme. Three layers, in this order:
+//  * DESIGN STANCE. Blend with the active theme. Three layers, in this order.
 //  *
 //  *   1. Theme classes. Every control carries Magento's own markup contract
 //  *      (`action primary`, `action secondary`, `action tocart`, `input-text qty`,
@@ -38,30 +38,26 @@
 @tackquote__launcher-offset: 20px;
 @tackquote__drawer-width: 320px;
 
-// A tile whose product is quote-only. Kept as an escaped string and interpolated, so the LESS
-// compiler passes `:has()` through untouched instead of parsing it.
-@tackquote__tile-on-quote: ~'.product-item-info:has(.tackquote-available-on-quote)';
-
 //
 //  Common
 //  _____________________________________________
 
 & when (@media-common = true) {
 
-    // -----------------------------------------------------------------------
-    // [hidden] enforcement. The `hidden` attribute only works through the UA
-    // stylesheet's `[hidden] { display: none }`, which loses to ANY author `display`
-    // rule. Luma sets a display value on `.message`, `.action` and fieldsets, so
-    // previously both empty message bars rendered as coloured strips on open, and
-    // "Send request" showed alongside "Continue" on step one. Scoped !important is the
-    // correct remedy: `hidden` is a semantic contract.
+    //  -----------------------------------------------------------------------
+    //  [hidden] enforcement. The `hidden` attribute only works through the UA
+    //  stylesheet's `[hidden] { display: none }`, which loses to ANY author `display`
+    //  rule. Luma sets a display value on `.message`, `.action` and fieldsets, so
+    //  previously both empty message bars rendered as coloured strips on open, and
+    //  'Send request' showed alongside 'Continue' on step one. Scoped !important is the
+    //  correct remedy, because `hidden` is a semantic contract.
     //
-    // Scoped three ways deliberately. Magento_Ui's modal widget MOVES the dialog out of
-    // .tackquote-app into .modals-wrapper, so a selector anchored only to the block
-    // would stop matching the moment the modal opens. The :not() exclusions are
-    // load-bearing: the dialog container itself carries `hidden` to prevent the form
-    // flashing inline before JS runs; quote-app.js removes it once the widget owns it.
-    // -----------------------------------------------------------------------
+    //  Scoped three ways deliberately. Magento_Ui's modal widget MOVES the dialog out of
+    //  .tackquote-app into .modals-wrapper, so a selector anchored only to the block
+    //  would stop matching the moment the modal opens. The not() exclusions are
+    //  load-bearing. The dialog container itself carries `hidden` to prevent the form
+    //  flashing inline before JS runs; quote-app.js removes it once the widget owns it.
+    //  -----------------------------------------------------------------------
     .tackquote-app [hidden]:not([data-role='tackquote-modal']),
     .tackquote-modal-popup [hidden]:not([data-role='tackquote-modal']),
     [data-role='tackquote-modal'] [hidden],
@@ -70,20 +66,20 @@
         display: none !important;
     }
 
-    // Private tokens, from the theme's variables.
+    //  Private tokens, from the theme's variables.
     .tackquote-app,
     .tackquote-modal-popup,
     .tackquote-page {
         --tq-gap: @tackquote__gap;
-        --tq-rule: @tackquote__rule-color;
         --tq-muted: @tackquote__muted-color;
+        --tq-rule: @tackquote__rule-color;
     }
 
-    // -----------------------------------------------------------------------
-    // Product page: "Request a Quote" (action primary tocart) and "Add to Quote"
-    // (action secondary), the same size and font as the theme's Add to Cart
-    // (.box-tocart .action.tocart extends .abs-button-l in Luma, i.e. .lib-button-l()).
-    // -----------------------------------------------------------------------
+    //  -----------------------------------------------------------------------
+    //  Product page: 'Request a Quote' (action primary tocart) and 'Add to Quote'
+    //  (action secondary), the same size and font as the theme's Add to Cart
+    //  (.box-tocart .action.tocart extends .abs-button-l in Luma, i.e. .lib-button-l()).
+    //  -----------------------------------------------------------------------
     .tackquote-product-actions {
         display: flex;
         flex-wrap: wrap;
@@ -99,8 +95,8 @@
         }
     }
 
-    // Inline message beside a product-page or listing trigger. Needed because the modal's
-    // error region is unreachable when adding to the quote list (the modal is closed).
+    //  Inline message beside a product-page or listing trigger. Needed because the modal's
+    //  error region is unreachable when adding to the quote list (the modal is closed).
     .tackquote-inline-note {
         .lib-font-size(12);
         .lib-css(color, @tackquote__error-color);
@@ -109,28 +105,28 @@
         margin: 6px 0 0;
     }
 
-    // -----------------------------------------------------------------------
-    // Category and search tiles: "Add to Quote" carries `action tocart`, so the theme's
-    // tile button rule (Luma: `.product-item .tocart`) sizes it exactly like the tile's
-    // own Add to Cart in the .actions-primary row.
-    // -----------------------------------------------------------------------
+    //  -----------------------------------------------------------------------
+    //  Category and search tiles: 'Add to Quote' carries `action tocart`, so the theme's
+    //  tile button rule (Luma: `.product-item .tocart`) sizes it exactly like the tile's
+    //  own Add to Cart in the .actions-primary row.
+    //  -----------------------------------------------------------------------
     .tackquote-listing-action {
         display: inline-block;
         margin: @indent__xs @indent__xs @indent__xs 0;
         vertical-align: middle;
     }
 
-    // Where the tile's Add to Cart is hidden (quote-only store, or a quote-only product),
-    // "Add to Quote" is the tile's main action and takes the primary look.
+    //  Where the tile's Add to Cart is hidden (quote-only store, or a quote-only product),
+    //  'Add to Quote' is the tile's main action and takes the primary look.
     body.tackquote-quote-only .product-item .action.tackquote-add-btn--listing,
-    @{tackquote__tile-on-quote} .action.tackquote-add-btn--listing {
+    .product-item-info:has(.tackquote-available-on-quote) .action.tackquote-add-btn--listing {
         .lib-button-primary();
     }
 
-    // -----------------------------------------------------------------------
-    // Cart page: sized like the theme's "Proceed to Checkout" (Luma:
-    // .checkout-methods-items .action.primary.checkout extends .abs-button-l, width 100%).
-    // -----------------------------------------------------------------------
+    //  -----------------------------------------------------------------------
+    //  Cart page: sized like the theme's 'Proceed to Checkout' (Luma:
+    //  .checkout-methods-items .action.primary.checkout extends .abs-button-l, width 100%).
+    //  -----------------------------------------------------------------------
     .tackquote-cart-quote {
         margin-top: @indent__s;
     }
@@ -141,13 +137,13 @@
         width: 100%;
     }
 
-    // -----------------------------------------------------------------------
-    // Quote list launcher: a theme `action primary` button (the theme's colours, radius
-    // and font) fixed in a corner. Position, offset and size come from the Styling
-    // settings: --tackquote-launcher-offset (printed by styling.phtml only when it is not
-    // the 20px default); side and size as modifier classes on .tackquote-app
-    // (ViewModel\Styling::getLauncherClasses()).
-    // -----------------------------------------------------------------------
+    //  -----------------------------------------------------------------------
+    //  Quote list launcher. A theme `action primary` button (the theme's colours, radius
+    //  and font) fixed in a corner. Position, offset and size come from the Styling
+    //  settings, --tackquote-launcher-offset (printed by styling.phtml only when it is not
+    //  the 20px default); side and size as modifier classes on .tackquote-app
+    //  (ViewModel\Styling::getLauncherClasses()).
+    //  -----------------------------------------------------------------------
     .tackquote-widget {
         bottom: var(--tackquote-launcher-offset, @tackquote__launcher-offset);
         position: fixed;
@@ -171,8 +167,8 @@
         .lib-button-s();
     }
 
-    // The count, drawn like the theme's minicart counter: the button's colours inverted,
-    // so it follows the theme (and the merchant's accent) on any primary colour.
+    //  The count, drawn like the theme's minicart counter: the button's colours inverted,
+    //  so it follows the theme (and the merchant's accent) on any primary colour.
     .tackquote-widget__count {
         .lib-font-size(11);
         align-items: center;
@@ -188,11 +184,11 @@
         padding: 0 @indent__xs;
     }
 
-    // -----------------------------------------------------------------------
-    // Quote list drawer: the theme's minicart dropdown look (Luma .block-minicart:
-    // white panel, dropdown border and shadow, 25px x 20px padding, items between
-    // rules, a large full-width primary button).
-    // -----------------------------------------------------------------------
+    //  -----------------------------------------------------------------------
+    //  Quote list drawer: the theme's minicart dropdown look (Luma .block-minicart:
+    //  light panel, dropdown border and shadow, 25px x 20px padding, items between
+    //  rules, a large full-width primary button).
+    //  -----------------------------------------------------------------------
     .tackquote-drawer {
         .lib-css(background, @tackquote__panel-background);
         .lib-css(border, @tackquote__panel-border);
@@ -230,12 +226,12 @@
     .tackquote-drawer__close.action {
         .lib-button-reset();
         .lib-icon-font(
-            @icon-remove,
-            @_icon-font-size: 14px,
-            @_icon-font-line-height: 14px,
-            @_icon-font-color: @tackquote__muted-color,
-            @_icon-font-color-hover: @primary__color,
-            @_icon-font-text-hide: true
+            @icon-remove;
+            @_icon-font-size: 14px;
+            @_icon-font-line-height: 14px;
+            @_icon-font-color: @tackquote__muted-color;
+            @_icon-font-color-hover: @primary__color;
+            @_icon-font-text-hide: true;
         );
         cursor: pointer;
         height: 30px;
@@ -276,8 +272,8 @@
         overflow-wrap: anywhere;
     }
 
-    // Specificity is deliberate: Luma sets `.input-text { width: 100% }`, which would
-    // stretch the box until the remove button is pushed out of the drawer.
+    //  Specificity is deliberate: Luma sets `.input-text { width: 100% }`, which would
+    //  stretch the box until the remove button is pushed out of the drawer.
     .tackquote-drawer .tackquote-drawer__item .input-text.tackquote-drawer__qty {
         flex: 0 0 auto;
         min-width: 0;
@@ -289,12 +285,12 @@
     .tackquote-drawer__remove.action {
         .lib-button-reset();
         .lib-icon-font(
-            @icon-trash,
-            @_icon-font-size: 18px,
-            @_icon-font-line-height: 20px,
-            @_icon-font-color: @tackquote__muted-color,
-            @_icon-font-color-hover: @primary__color,
-            @_icon-font-text-hide: true
+            @icon-trash;
+            @_icon-font-size: 18px;
+            @_icon-font-line-height: 20px;
+            @_icon-font-color: @tackquote__muted-color;
+            @_icon-font-color-hover: @primary__color;
+            @_icon-font-text-hide: true;
         );
         cursor: pointer;
         flex: none;
@@ -321,10 +317,10 @@
         text-align: center;
     }
 
-    // -----------------------------------------------------------------------
-    // Quote form modal (Magento_Ui/js/modal/modal). Fields keep the theme's
-    // `.fieldset > .field > .label/.control` structure; only rhythm is set here.
-    // -----------------------------------------------------------------------
+    //  -----------------------------------------------------------------------
+    //  Quote form modal (Magento_Ui/js/modal/modal). Fields keep the theme's
+    //  `.fieldset > .field > .label/.control` structure; only rhythm is set here.
+    //  -----------------------------------------------------------------------
     .tackquote-modal-popup .modal-inner-wrap {
         max-width: 620px;
     }
@@ -333,8 +329,8 @@
         padding-bottom: 0;
     }
 
-    // Step indicator. "You are here" is weight and a heavier ring, NOT a filled disc: a
-    // filled disc needs the numeral punched out in the modal's background colour.
+    //  Step indicator. 'You are here' is weight and a heavier ring, NOT a filled disc: a
+    //  filled disc needs the numeral punched out in the modal's background colour.
     .tackquote-steps {
         .lib-css(border-bottom, 1px solid @tackquote__rule-color);
         align-items: center;
@@ -437,7 +433,7 @@
             }
         }
 
-        // Quantity is a small number; a full-width input for it looks like a mistake.
+        //  Quantity is a small number; a full-width input for it looks like a mistake.
         .field.tackquote-qty .control {
             max-width: 140px;
         }
@@ -457,7 +453,7 @@
             margin: 0 0 @tackquote__gap;
         }
 
-        // Footer, separated by a rule so the primary action has a consistent home.
+        //  Footer, separated by a rule so the primary action has a consistent home.
         .actions-toolbar {
             .lib-css(border-top, 1px solid @tackquote__rule-color);
             align-items: center;
@@ -483,15 +479,15 @@
             }
         }
 
-        // The Back control deliberately avoids Luma's `.action.back` class: Luma ships
-        // `.actions-toolbar > .secondary .action.back { display: none }`. A quiet link so
-        // it never competes with the primary control.
+        //  The Back control deliberately avoids Luma's `.action.back` class: Luma ships
+        //  `.actions-toolbar > .secondary .action.back { display: none }`. A quiet link so
+        //  it never competes with the primary control.
         .action.tackquote-back {
             .lib-button-as-link();
         }
     }
 
-    // Selected product summary and the review list in the form's final step.
+    //  Selected product summary and the review list in the form's final step.
     .tackquote-summary {
         .lib-css(border, 1px solid @tackquote__rule-color);
         align-items: baseline;
@@ -562,7 +558,7 @@
         max-width: 10em;
     }
 
-    // Attachments.
+    //  Attachments.
     .tackquote-attachments__list {
         list-style: none;
         margin: @indent__s 0 0;
@@ -582,7 +578,7 @@
         margin: @indent__s 0 0;
     }
 
-    // Completed state: the form is replaced by its outcome.
+    //  Completed state: the form is replaced by its outcome.
     .tackquote-done {
         padding: @indent__s 0 @indent__m;
     }
@@ -598,11 +594,11 @@
         margin: 0;
     }
 
-    // -----------------------------------------------------------------------
-    // Quote page: the theme's `.table-wrapper > .data.table` with `.col` cells,
-    // `.input-text.qty` boxes, a fieldset for the message, and an `.actions-toolbar`
-    // with a primary and a secondary button.
-    // -----------------------------------------------------------------------
+    //  -----------------------------------------------------------------------
+    //  Quote page: the theme's `.table-wrapper > .data.table` with `.col` cells,
+    //  `.input-text.qty` boxes, a fieldset for the message, and an `.actions-toolbar`
+    //  with a primary and a secondary button.
+    //  -----------------------------------------------------------------------
     .tackquote-page__table {
         .col.qty .input-text.qty {
             text-align: center;
@@ -635,13 +631,13 @@
         text-decoration: none;
     }
 
-    // -----------------------------------------------------------------------
-    // Quote-only (B2B catalog) mode. THIS IS COSMETIC ONLY; the server refuses the
-    // request regardless (Plugin\Quote\QuoteOnlyCartGuard). The tile Add to Cart is
-    // hard-coded in Magento_Catalog::product/list.phtml, so it is hidden here instead of
-    // overriding a template every theme customises. Scoped to `.product-item`, and the
-    // module's own quote buttons are excluded, so a quote action always remains.
-    // -----------------------------------------------------------------------
+    //  -----------------------------------------------------------------------
+    //  Quote-only (B2B catalog) mode. THIS IS COSMETIC ONLY; the server refuses the
+    //  request regardless (Plugin\Quote\QuoteOnlyCartGuard). The tile Add to Cart is
+    //  hard-coded in Magento_Catalog::product/list.phtml, so it is hidden here instead of
+    //  overriding a template every theme customises. Scoped to `.product-item`, and the
+    //  module's own quote buttons are excluded, so a quote action always remains.
+    //  -----------------------------------------------------------------------
     body.tackquote-quote-only .product-item .tocart:not(.tackquote-add-btn):not(.tackquote-request-btn),
     body.tackquote-quote-only .product-item-actions .actions-primary form[data-role='tocart-form'] button.tocart {
         display: none !important;
@@ -658,15 +654,15 @@
         margin-top: 15px;
     }
 
-    // Quote-only per product, and "Price on request". `.tackquote-available-on-quote` is
-    // added after a quote-only product's price by Plugin\Pricing\QuoteOnlyPriceRender,
-    // inside that product's own tile. Where :has() is unsupported the button simply stays
-    // visible and the server's refusal message explains.
-    @{tackquote__tile-on-quote} .actions-primary form[data-role='tocart-form'] {
+    //  Quote-only per product, and 'Price on request'. `.tackquote-available-on-quote` is
+    //  added after a quote-only product's price by Plugin\Pricing\QuoteOnlyPriceRender,
+    //  inside that product's own tile. Where :has() is unsupported the button simply stays
+    //  visible and the server's refusal message explains.
+    .product-item-info:has(.tackquote-available-on-quote) .actions-primary form[data-role='tocart-form'] {
         display: none !important;
     }
 
-    // Sized like the theme's price text, so it sits where a price would.
+    //  Sized like the theme's price text, so it sits where a price would.
     .tackquote-available-on-quote,
     .tackquote-price-on-request {
         font-weight: @font-weight__semibold;
@@ -681,11 +677,11 @@
         .lib-font-size(22);
     }
 
-    // -----------------------------------------------------------------------
-    // B2B display (product page), filled by b2b-display.js for a signed-in customer.
-    // The price row is a `.price-box` with `.old-price`/`.price` spans, and the breaks a
-    // `.data.table`, so the theme's price and table typography apply.
-    // -----------------------------------------------------------------------
+    //  -----------------------------------------------------------------------
+    //  B2B display (product page), filled by b2b-display.js for a signed-in customer.
+    //  The price row is a `.price-box` with `.old-price`/`.price` spans, and the breaks a
+    //  `.data.table`, so the theme's price and table typography apply.
+    //  -----------------------------------------------------------------------
     .tackquote-b2b {
         margin: 0 0 @indent__base;
 
@@ -741,7 +737,7 @@
         font-size: .9em;
     }
 
-    // Visually hidden, still read by screen readers.
+    //  Visually hidden, still read by screen readers.
     .tackquote-b2b__sr,
     .tackquote-visually-hidden {
         .lib-visually-hidden();
@@ -760,8 +756,8 @@
         padding-right: @indent__base;
     }
 
-    // Luma turns `.table-wrapper .data.table` into labelled rows on phones, using each
-    // cell's data-th. The remove cell has no label to show.
+    //  Luma turns `.table-wrapper .data.table` into labelled rows on phones, using each
+    //  cell's data-th. The remove cell has no label to show.
     .tackquote-page__table tbody > tr > td.col.actions {
         text-align: left;
 
@@ -772,9 +768,9 @@
 }
 
 .media-width(@extremum, @break) when (@extremum = 'min') and (@break = @screen__s) {
-    // Pair naturally-related fields. Grid ON THE FIELDSET rather than wrapper elements, so
-    // every .field remains a direct child and the theme's `.fieldset > .field` rules
-    // (required asterisk, label styling, error states) keep applying.
+    //  Pair naturally-related fields. Grid ON THE FIELDSET rather than wrapper elements, so
+    //  every .field remains a direct child and the theme's `.fieldset > .field` rules
+    //  (required asterisk, label styling, error states) keep applying.
     .tackquote-form .fieldset {
         align-items: start;
         display: grid;
@@ -794,8 +790,8 @@
 //  _____________________________________________
 
 .media-width(@extremum, @break) when (@extremum = 'min') and (@break = @screen__m) {
-    // Stacked, each as wide as the theme's Add to Cart (Luma: 49% of the column), so
-    // "Request a Quote" lines up under Add to Cart and "Add to Quote" under it.
+    //  Stacked, each as wide as the theme's Add to Cart (Luma: 49% of the column), so
+    //  'Request a Quote' lines up under Add to Cart and 'Add to Quote' under it.
     .tackquote-product-actions {
         align-items: flex-start;
         flex-direction: column;
@@ -806,7 +802,7 @@
         width: 49%;
     }
 
-    // A drawer that cannot fit beside the launcher still fits on screen.
+    //  A drawer that cannot fit beside the launcher still fits on screen.
     .tackquote-drawer {
         max-width: ~'calc(100vw - 40px)';
     }

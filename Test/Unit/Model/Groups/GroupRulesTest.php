@@ -81,7 +81,10 @@ class GroupRulesTest extends TestCase
 
     public function testTheAdminRefusesExactlyTheLinesThatWouldNotParse(): void
     {
-        self::assertSame([2, 4], GroupRules::invalidLines("checkmo: TRADE\nno colon\n# fine\ncheck mo: TRADE", 'methods'));
+        self::assertSame(
+            [2, 4],
+            GroupRules::invalidLines("checkmo: TRADE\nno colon\n# fine\ncheck mo: TRADE", 'methods')
+        );
         self::assertSame([2], GroupRules::invalidLines("checkmo: TRADE\nbanktransfer: TR~ADE", 'methods'));
         self::assertSame([1], GroupRules::invalidLines("bulk: GOLD\n12: GOLD, @GUESTS", 'categories'));
         self::assertSame([2, 3], GroupRules::invalidLines("GOLD: percent=15\nX: half\n@GUESTS: free", 'discounts'));
@@ -148,7 +151,12 @@ class GroupRulesTest extends TestCase
         $map = ['checkmo' => ['TRADE']];
 
         self::assertTrue(GroupRules::isPermitted($map, 'banktransfer', self::answerOf(BuyerGroupAnswer::NONE), true));
-        self::assertTrue(GroupRules::isPermitted(['checkmo' => []], 'checkmo', self::answerOf(BuyerGroupAnswer::NONE), true));
+        self::assertTrue(GroupRules::isPermitted(
+            ['checkmo' => []],
+            'checkmo',
+            self::answerOf(BuyerGroupAnswer::NONE),
+            true
+        ));
     }
 
     public function testARestrictedMethodIsForTheGroupsItNames(): void
@@ -161,7 +169,12 @@ class GroupRulesTest extends TestCase
         self::assertFalse(GroupRules::isPermitted($map, 'checkmo', self::answerOf(BuyerGroupAnswer::GUEST), false));
         self::assertFalse(GroupRules::isPermitted($map, 'checkmo', self::answerOf(BuyerGroupAnswer::ANONYMOUS), false));
         self::assertTrue(
-            GroupRules::isPermitted(['checkmo' => ['@GUESTS']], 'checkmo', self::answerOf(BuyerGroupAnswer::GUEST), false)
+            GroupRules::isPermitted(
+                ['checkmo' => ['@GUESTS']],
+                'checkmo',
+                self::answerOf(BuyerGroupAnswer::GUEST),
+                false
+            )
         );
     }
 
@@ -195,7 +208,10 @@ class GroupRulesTest extends TestCase
         $pct = ['mode' => 'percent', 'percent' => 15.0, 'methods' => []];
         self::assertSame(8.5, GroupRules::discountedPrice(10.0, $pct));
         self::assertSame(8.49, GroupRules::discountedPrice(9.99, $pct), 'rounded to 2 decimals');
-        self::assertSame(0.0, GroupRules::discountedPrice(12.0, ['mode' => 'free', 'percent' => 100.0, 'methods' => []]));
+        self::assertSame(
+            0.0,
+            GroupRules::discountedPrice(12.0, ['mode' => 'free', 'percent' => 100.0, 'methods' => []])
+        );
         self::assertSame(0.0, GroupRules::discountedPrice(0.0, $pct), 'a free rate stays free');
     }
 }

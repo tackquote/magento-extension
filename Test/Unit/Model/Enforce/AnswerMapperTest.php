@@ -20,7 +20,10 @@ class AnswerMapperTest extends TestCase
 {
     private static function line(array $overrides = []): array
     {
-        return array_merge(['sku' => 'A-1', 'quantity' => 5, 'unitPrice' => 8.25, 'source' => 'price_book'], $overrides);
+        return array_merge(
+            ['sku' => 'A-1', 'quantity' => 5, 'unitPrice' => 8.25, 'source' => 'price_book'],
+            $overrides
+        );
     }
 
     public function testAPriceBookPriceForAMatchedBuyerIsChargeableAtItsQuantity(): void
@@ -102,7 +105,12 @@ class AnswerMapperTest extends TestCase
                 ['status' => 'priced', 'currency' => 'EUR', 'unitPrice' => 1], AnswerMapper::CURRENCY_MISMATCH,
             ],
             'withheld for another currency' => [
-                ['status' => 'unpriced', 'reason' => 'currency_mismatch', 'currency' => 'EUR', 'presentmentCurrency' => 'USD'],
+                [
+                    'status' => 'unpriced',
+                    'reason' => 'currency_mismatch',
+                    'currency' => 'EUR',
+                    'presentmentCurrency' => 'USD'
+                ],
                 AnswerMapper::CURRENCY_MISMATCH,
             ],
             'withheld but naming the cart currency' => [

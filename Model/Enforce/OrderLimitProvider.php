@@ -79,7 +79,7 @@ class OrderLimitProvider
     /**
      * The decoded answer for this SKU, or null when there is none to enforce.
      *
-     * @param array{storeId: int, customerId: int, email: string, currency: string} $buyer
+     * @param array{storeId:int,customerId:int,email:string,currency:string} $buyer
      * @param string $sku
      * @return array|null
      */
@@ -146,7 +146,7 @@ class OrderLimitProvider
     /**
      * Public so the test can pin what varies it; hashed because the parts include an email.
      *
-     * @param array{storeId: int, customerId: int, email: string, currency: string} $buyer
+     * @param array{storeId:int,customerId:int,email:string,currency:string} $buyer
      * @param string $sku
      * @return string
      */

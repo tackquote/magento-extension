@@ -109,6 +109,8 @@ class CatalogVisibility
     }
 
     /**
+     * Whether the category is hidden from the current visitor.
+     *
      * @param int $categoryId
      * @return bool
      */
@@ -142,6 +144,8 @@ class CatalogVisibility
     }
 
     /**
+     * Page-cache vary value for the visitor's hidden categories.
+     *
      * The page-cache vary value: '' when nothing is hidden from this visitor, otherwise a
      * short hash of the hidden set.
      *
@@ -158,6 +162,8 @@ class CatalogVisibility
     }
 
     /**
+     * Id of the current store.
+     *
      * @return int
      */
     private function storeId(): int

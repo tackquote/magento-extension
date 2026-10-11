@@ -67,6 +67,8 @@ class TaxExemptCustomerClass
     }
 
     /**
+     * Use the exempt customer tax class for a tax-exempt buyer.
+     *
      * @param Quote $subject
      * @param mixed $result The class from the customer group.
      * @return mixed

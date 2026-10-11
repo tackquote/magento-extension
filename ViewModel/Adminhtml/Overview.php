@@ -436,7 +436,7 @@ class Overview implements ArgumentInterface
     /**
      * How many of the given rows are on, for a section's "N of M on" count.
      *
-     * @param array<int, array{on: bool|null}> $rows
+     * @param array<int,array{on:bool|null}> $rows
      * @return int
      */
     public function countOn(array $rows): int
@@ -454,7 +454,7 @@ class Overview implements ArgumentInterface
     /**
      * How many of the given rows are switches (on or off), for the "of M" half of the count.
      *
-     * @param array<int, array{on: bool|null}> $rows
+     * @param array<int,array{on:bool|null}> $rows
      * @return int
      */
     public function countSwitches(array $rows): int
@@ -482,6 +482,8 @@ class Overview implements ArgumentInterface
     }
 
     /**
+     * Whether the admin may open the TackQuote configuration.
+     *
      * Whether the signed-in admin may open Stores > Configuration > TackQuote. Without it the
      * Overview still shows every setting, but offers no links that would end on "access denied".
      *

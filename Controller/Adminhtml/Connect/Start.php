@@ -62,6 +62,8 @@ class Start extends Action implements HttpPostActionInterface
     }
 
     /**
+     * Start a connection and redirect the admin to TackQuote.
+     *
      * @return Redirect
      */
     public function execute()

@@ -30,6 +30,8 @@ class StylingValue extends Value
     public const FIELD_CUSTOM_CSS = 'custom_css';
 
     /**
+     * Validate the styling value before it is stored.
+     *
      * @return $this
      * @throws LocalizedException
      */
@@ -58,7 +60,10 @@ class StylingValue extends Value
                 $hex = $rules->normalizeHex($value);
                 if ($hex === null) {
                     throw new LocalizedException(
-                        __('The accent color must be a hex color such as #1e73be, or empty to use your theme\'s colors.')
+                        __(
+                            'The accent color must be a hex color such as #1e73be, or empty to use your '
+                            . 'theme\'s colors.'
+                        )
                     );
                 }
                 return $hex;

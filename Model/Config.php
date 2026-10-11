@@ -18,6 +18,9 @@ class Config
     private const XML_PATH_ENABLED = 'tackquote_quotes/general/enabled';
     private const XML_PATH_API_BASE_URL = 'tackquote_quotes/general/api_base_url';
     private const XML_PATH_API_KEY = 'tackquote_quotes/general/api_key';
+
+    /** The configuration path of the API key, for the Connect writer (Model\Connect\KeyStore). */
+    public const API_KEY_PATH = self::XML_PATH_API_KEY;
     private const XML_PATH_SHOW_BUTTON = 'tackquote_quotes/storefront/show_button';
     private const XML_PATH_BUTTON_LABEL = 'tackquote_quotes/storefront/button_label';
     private const XML_PATH_SHOW_ADD_TO_QUOTE = 'tackquote_quotes/storefront/show_add_to_quote';
@@ -180,16 +183,6 @@ class Config
         // for it. Falling back to the raw value keeps those installs working rather than
         // silently treating a valid key as absent.
         return trim($stored);
-    }
-
-    /**
-     * The configuration path of the API key, for the Connect writer (KeyStore).
-     *
-     * @return string
-     */
-    public static function apiKeyPath(): string
-    {
-        return self::XML_PATH_API_KEY;
     }
 
     /**
@@ -484,6 +477,8 @@ class Config
     }
 
     /**
+     * Customer groups allowed to see B2B data.
+     *
      * Customer groups allowed to see B2B data, raw ("1,3"); '' means every signed-in
      * customer. Parsed by QuoteOnlyRules::normaliseGroups(), the module's one group parser.
      *
@@ -517,6 +512,8 @@ class Config
     }
 
     /**
+     * Whether the "Wholesale account" tab shows in My Account.
+     *
      * Whether the "Wholesale account" tab shows in My Account. Requires isConfigured():
      * with no API key the form could not even be read.
      *
@@ -687,6 +684,8 @@ class Config
     }
 
     /**
+     * Whether accepted-quote checkout is active.
+     *
      * The quote-checkout switch AND a working connection: whether the landing route serves
      * and whether the ping advertises it (Model\QuoteCheckout\LandingUrl).
      *

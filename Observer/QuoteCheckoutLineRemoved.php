@@ -52,6 +52,8 @@ class QuoteCheckoutLineRemoved implements ObserverInterface
     }
 
     /**
+     * Remove the rest of an accepted quote when one of its lines leaves the cart.
+     *
      * @param Observer $observer
      * @return void
      */

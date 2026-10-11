@@ -30,72 +30,135 @@ use PHPUnit\Framework\TestCase;
 class ConfigPathInvarianceTest extends TestCase
 {
     private const FIELDS_BEFORE = [
-        'tackquote_quotes/b2b/customer_groups' => 'type=multiselect|default=1|website=1|store=0|config_path=|source=Magento\\Customer\\Model\\Config\\Source\\Group\\Multiselect|backend=|frontend=|can_be_empty=1',
-        'tackquote_quotes/b2b/enable_account_price' => 'type=select|default=1|website=1|store=0|config_path=|source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/b2b/enable_buyer_group_badge' => 'type=select|default=1|website=1|store=0|config_path=|source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/b2b/enable_order_limits' => 'type=select|default=1|website=1|store=0|config_path=|source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/b2b/enable_quantity_breaks' => 'type=select|default=1|website=1|store=0|config_path=|source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/b2b_checkout/enforce_order_limits' => 'type=select|default=1|website=1|store=0|config_path=|source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/b2b_checkout/enforce_prices' => 'type=select|default=1|website=1|store=0|config_path=|source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/b2b_groups/catalog_visibility_map' => 'type=textarea|default=1|website=1|store=0|config_path=|source=|backend=TackQuote\\Quotes\\Model\\Groups\\Config\\RuleMapBackend|frontend=|can_be_empty=',
-        'tackquote_quotes/b2b_groups/customer_groups' => 'type=multiselect|default=1|website=1|store=0|config_path=|source=Magento\\Customer\\Model\\Config\\Source\\Group\\Multiselect|backend=|frontend=|can_be_empty=1',
-        'tackquote_quotes/b2b_groups/enable_catalog_visibility' => 'type=select|default=1|website=1|store=0|config_path=|source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/b2b_groups/enable_group_mirror' => 'type=select|default=1|website=1|store=0|config_path=|source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/b2b_groups/enable_restrictions' => 'type=select|default=1|website=1|store=0|config_path=|source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/b2b_groups/enable_shipping_discounts' => 'type=select|default=1|website=1|store=0|config_path=|source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/b2b_groups/enable_tax_exempt' => 'type=select|default=1|website=1|store=0|config_path=|source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/b2b_groups/group_mirror_map' => 'type=textarea|default=1|website=1|store=0|config_path=|source=|backend=TackQuote\\Quotes\\Model\\Groups\\Config\\RuleMapBackend|frontend=|can_be_empty=',
-        'tackquote_quotes/b2b_groups/hide_catalog_when_unknown' => 'type=select|default=1|website=1|store=0|config_path=|source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/b2b_groups/payment_map' => 'type=textarea|default=1|website=1|store=0|config_path=|source=|backend=TackQuote\\Quotes\\Model\\Groups\\Config\\RuleMapBackend|frontend=|can_be_empty=',
-        'tackquote_quotes/b2b_groups/restrict_when_unknown' => 'type=select|default=1|website=1|store=0|config_path=|source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/b2b_groups/shipping_discount_map' => 'type=textarea|default=1|website=1|store=0|config_path=|source=|backend=TackQuote\\Quotes\\Model\\Groups\\Config\\RuleMapBackend|frontend=|can_be_empty=',
-        'tackquote_quotes/b2b_groups/shipping_map' => 'type=textarea|default=1|website=1|store=0|config_path=|source=|backend=TackQuote\\Quotes\\Model\\Groups\\Config\\RuleMapBackend|frontend=|can_be_empty=',
-        'tackquote_quotes/b2b_groups/tax_exempt_class' => 'type=select|default=1|website=1|store=0|config_path=|source=Magento\\Tax\\Model\\TaxClass\\Source\\Customer|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/forms/enable_net_terms_tab' => 'type=select|default=1|website=1|store=0|config_path=|source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/forms/enable_wholesale_tab' => 'type=select|default=1|website=1|store=0|config_path=|source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/forms/wholesale_form_slug' => 'type=text|default=1|website=1|store=0|config_path=|source=|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/general/api_base_url' => 'type=text|default=1|website=1|store=0|config_path=|source=|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/general/api_key' => 'type=obscure|default=1|website=1|store=0|config_path=|source=|backend=Magento\\Config\\Model\\Config\\Backend\\Encrypted|frontend=|can_be_empty=',
-        'tackquote_quotes/general/connect_with_tackquote' => 'type=|default=1|website=0|store=0|config_path=|source=|backend=|frontend=TackQuote\\Quotes\\Block\\Adminhtml\\System\\Config\\ConnectButton|can_be_empty=',
-        'tackquote_quotes/general/enabled' => 'type=select|default=1|website=1|store=0|config_path=|source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/general/test_connection' => 'type=|default=1|website=1|store=0|config_path=|source=|backend=|frontend=TackQuote\\Quotes\\Block\\Adminhtml\\System\\Config\\TestConnection|can_be_empty=',
-        'tackquote_quotes/net_terms/active' => 'type=select|default=1|website=1|store=0|config_path=payment/tackquote_net_terms/active|source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/net_terms/description' => 'type=textarea|default=1|website=1|store=0|config_path=payment/tackquote_net_terms/description|source=|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/net_terms/po_number' => 'type=select|default=1|website=1|store=0|config_path=payment/tackquote_net_terms/po_number|source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/net_terms/sort_order' => 'type=text|default=1|website=1|store=0|config_path=payment/tackquote_net_terms/sort_order|source=|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/net_terms/title' => 'type=text|default=1|website=1|store=0|config_path=payment/tackquote_net_terms/title|source=|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/quote_checkout/enabled' => 'type=select|default=1|website=1|store=1|config_path=|source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/quote_only/applies_to' => 'type=select|default=1|website=1|store=0|config_path=|source=TackQuote\\Quotes\\Model\\Config\\Source\\QuoteOnlyScope|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/quote_only/customer_groups' => 'type=multiselect|default=1|website=1|store=0|config_path=|source=Magento\\Customer\\Model\\Config\\Source\\Group\\Multiselect|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/quote_only/enabled' => 'type=select|default=1|website=1|store=0|config_path=|source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/quote_only/hide_prices' => 'type=select|default=1|website=1|store=0|config_path=|source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/quote_request/cart_button_label' => 'type=text|default=1|website=1|store=0|config_path=|source=|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/quote_request/enable_attachments' => 'type=select|default=1|website=1|store=0|config_path=|source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/quote_request/enable_cart_button' => 'type=select|default=1|website=1|store=0|config_path=|source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/quote_request/enable_quote_page' => 'type=select|default=1|website=1|store=0|config_path=|source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/quote_request/enable_target_price' => 'type=select|default=1|website=1|store=0|config_path=|source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/quote_request/quote_page_link_label' => 'type=text|default=1|website=1|store=0|config_path=|source=|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/storefront/add_to_quote_label' => 'type=text|default=1|website=1|store=0|config_path=|source=|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/storefront/button_label' => 'type=text|default=1|website=1|store=0|config_path=|source=|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/storefront/checkout_button_label' => 'type=text|default=1|website=1|store=0|config_path=|source=|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/storefront/show_add_to_quote' => 'type=select|default=1|website=1|store=0|config_path=|source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/storefront/show_button' => 'type=select|default=1|website=1|store=0|config_path=|source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/storefront/show_on_listing' => 'type=select|default=1|website=1|store=0|config_path=|source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/b2b/customer_groups' => 'type=multiselect|default=1|website=1|store=0|config_path=|'
+            . 'source=Magento\\Customer\\Model\\Config\\Source\\Group\\Multiselect|backend=|frontend=|can_be_empty=1',
+        'tackquote_quotes/b2b/enable_account_price' => 'type=select|default=1|website=1|store=0|config_path=|'
+            . 'source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/b2b/enable_buyer_group_badge' => 'type=select|default=1|website=1|store=0|config_path=|'
+            . 'source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/b2b/enable_order_limits' => 'type=select|default=1|website=1|store=0|config_path=|'
+            . 'source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/b2b/enable_quantity_breaks' => 'type=select|default=1|website=1|store=0|config_path=|'
+            . 'source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/b2b_checkout/enforce_order_limits' => 'type=select|default=1|website=1|store=0|'
+            . 'config_path=|source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/b2b_checkout/enforce_prices' => 'type=select|default=1|website=1|store=0|config_path=|'
+            . 'source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/b2b_groups/catalog_visibility_map' => 'type=textarea|default=1|website=1|store=0|'
+            . 'config_path=|source=|backend=TackQuote\\Quotes\\Model\\Groups\\Config\\RuleMapBackend|frontend=|'
+            . 'can_be_empty=',
+        'tackquote_quotes/b2b_groups/customer_groups' => 'type=multiselect|default=1|website=1|store=0|config_path=|'
+            . 'source=Magento\\Customer\\Model\\Config\\Source\\Group\\Multiselect|backend=|frontend=|can_be_empty=1',
+        'tackquote_quotes/b2b_groups/enable_catalog_visibility' => 'type=select|default=1|website=1|store=0|'
+            . 'config_path=|source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/b2b_groups/enable_group_mirror' => 'type=select|default=1|website=1|store=0|config_path=|'
+            . 'source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/b2b_groups/enable_restrictions' => 'type=select|default=1|website=1|store=0|config_path=|'
+            . 'source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/b2b_groups/enable_shipping_discounts' => 'type=select|default=1|website=1|store=0|'
+            . 'config_path=|source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/b2b_groups/enable_tax_exempt' => 'type=select|default=1|website=1|store=0|config_path=|'
+            . 'source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/b2b_groups/group_mirror_map' => 'type=textarea|default=1|website=1|store=0|config_path=|'
+            . 'source=|backend=TackQuote\\Quotes\\Model\\Groups\\Config\\RuleMapBackend|frontend=|can_be_empty=',
+        'tackquote_quotes/b2b_groups/hide_catalog_when_unknown' => 'type=select|default=1|website=1|store=0|'
+            . 'config_path=|source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/b2b_groups/payment_map' => 'type=textarea|default=1|website=1|store=0|config_path=|source=|'
+            . 'backend=TackQuote\\Quotes\\Model\\Groups\\Config\\RuleMapBackend|frontend=|can_be_empty=',
+        'tackquote_quotes/b2b_groups/restrict_when_unknown' => 'type=select|default=1|website=1|store=0|config_path=|'
+            . 'source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/b2b_groups/shipping_discount_map' => 'type=textarea|default=1|website=1|store=0|'
+            . 'config_path=|source=|backend=TackQuote\\Quotes\\Model\\Groups\\Config\\RuleMapBackend|frontend=|'
+            . 'can_be_empty=',
+        'tackquote_quotes/b2b_groups/shipping_map' => 'type=textarea|default=1|website=1|store=0|config_path=|'
+            . 'source=|backend=TackQuote\\Quotes\\Model\\Groups\\Config\\RuleMapBackend|frontend=|can_be_empty=',
+        'tackquote_quotes/b2b_groups/tax_exempt_class' => 'type=select|default=1|website=1|store=0|config_path=|'
+            . 'source=Magento\\Tax\\Model\\TaxClass\\Source\\Customer|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/forms/enable_net_terms_tab' => 'type=select|default=1|website=1|store=0|config_path=|'
+            . 'source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/forms/enable_wholesale_tab' => 'type=select|default=1|website=1|store=0|config_path=|'
+            . 'source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/forms/wholesale_form_slug' => 'type=text|default=1|website=1|store=0|config_path=|source=|'
+            . 'backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/general/api_base_url' => 'type=text|default=1|website=1|store=0|config_path=|source=|'
+            . 'backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/general/api_key' => 'type=obscure|default=1|website=1|store=0|config_path=|source=|'
+            . 'backend=Magento\\Config\\Model\\Config\\Backend\\Encrypted|frontend=|can_be_empty=',
+        'tackquote_quotes/general/connect_with_tackquote' => 'type=|default=1|website=0|store=0|config_path=|source=|'
+            . 'backend=|frontend=TackQuote\\Quotes\\Block\\Adminhtml\\System\\Config\\ConnectButton|can_be_empty=',
+        'tackquote_quotes/general/enabled' => 'type=select|default=1|website=1|store=0|config_path=|'
+            . 'source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/general/test_connection' => 'type=|default=1|website=1|store=0|config_path=|source=|'
+            . 'backend=|frontend=TackQuote\\Quotes\\Block\\Adminhtml\\System\\Config\\TestConnection|can_be_empty=',
+        'tackquote_quotes/net_terms/active' => 'type=select|default=1|website=1|store=0|'
+            . 'config_path=payment/tackquote_net_terms/active|source=Magento\\Config\\Model\\Config\\Source\\Yesno|'
+            . 'backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/net_terms/description' => 'type=textarea|default=1|website=1|store=0|'
+            . 'config_path=payment/tackquote_net_terms/description|source=|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/net_terms/po_number' => 'type=select|default=1|website=1|store=0|'
+            . 'config_path=payment/tackquote_net_terms/po_number|'
+            . 'source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/net_terms/sort_order' => 'type=text|default=1|website=1|store=0|'
+            . 'config_path=payment/tackquote_net_terms/sort_order|source=|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/net_terms/title' => 'type=text|default=1|website=1|store=0|'
+            . 'config_path=payment/tackquote_net_terms/title|source=|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/quote_checkout/enabled' => 'type=select|default=1|website=1|store=1|config_path=|'
+            . 'source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/quote_only/applies_to' => 'type=select|default=1|website=1|store=0|config_path=|'
+            . 'source=TackQuote\\Quotes\\Model\\Config\\Source\\QuoteOnlyScope|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/quote_only/customer_groups' => 'type=multiselect|default=1|website=1|store=0|config_path=|'
+            . 'source=Magento\\Customer\\Model\\Config\\Source\\Group\\Multiselect|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/quote_only/enabled' => 'type=select|default=1|website=1|store=0|config_path=|'
+            . 'source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/quote_only/hide_prices' => 'type=select|default=1|website=1|store=0|config_path=|'
+            . 'source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/quote_request/cart_button_label' => 'type=text|default=1|website=1|store=0|config_path=|'
+            . 'source=|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/quote_request/enable_attachments' => 'type=select|default=1|website=1|store=0|config_path=|'
+            . 'source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/quote_request/enable_cart_button' => 'type=select|default=1|website=1|store=0|config_path=|'
+            . 'source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/quote_request/enable_quote_page' => 'type=select|default=1|website=1|store=0|config_path=|'
+            . 'source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/quote_request/enable_target_price' => 'type=select|default=1|website=1|store=0|'
+            . 'config_path=|source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/quote_request/quote_page_link_label' => 'type=text|default=1|website=1|store=0|'
+            . 'config_path=|source=|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/storefront/add_to_quote_label' => 'type=text|default=1|website=1|store=0|config_path=|'
+            . 'source=|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/storefront/button_label' => 'type=text|default=1|website=1|store=0|config_path=|source=|'
+            . 'backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/storefront/checkout_button_label' => 'type=text|default=1|website=1|store=0|config_path=|'
+            . 'source=|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/storefront/show_add_to_quote' => 'type=select|default=1|website=1|store=0|config_path=|'
+            . 'source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/storefront/show_button' => 'type=select|default=1|website=1|store=0|config_path=|'
+            . 'source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/storefront/show_on_listing' => 'type=select|default=1|website=1|store=0|config_path=|'
+            . 'source=Magento\\Config\\Model\\Config\\Source\\Yesno|backend=|frontend=|can_be_empty=',
     ];
     private const FIELDS_ADDED = [
-        'tackquote_quotes/styling/accent_color' => 'type=text|default=1|website=1|store=0|config_path=|source=|backend=TackQuote\\Quotes\\Model\\Config\\Backend\\StylingValue|frontend=|can_be_empty=',
-        'tackquote_quotes/styling/button_style' => 'type=select|default=1|website=1|store=0|config_path=|source=TackQuote\\Quotes\\Model\\Config\\Source\\ButtonStyle|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/styling/custom_css' => 'type=textarea|default=1|website=1|store=0|config_path=|source=|backend=TackQuote\\Quotes\\Model\\Config\\Backend\\StylingValue|frontend=|can_be_empty=',
-        'tackquote_quotes/styling/launcher_label' => 'type=text|default=1|website=1|store=0|config_path=|source=|backend=TackQuote\\Quotes\\Model\\Config\\Backend\\StylingValue|frontend=|can_be_empty=',
-        'tackquote_quotes/styling/launcher_offset' => 'type=text|default=1|website=1|store=0|config_path=|source=|backend=TackQuote\\Quotes\\Model\\Config\\Backend\\StylingValue|frontend=|can_be_empty=',
-        'tackquote_quotes/styling/launcher_position' => 'type=select|default=1|website=1|store=0|config_path=|source=TackQuote\\Quotes\\Model\\Config\\Source\\LauncherPosition|backend=|frontend=|can_be_empty=',
-        'tackquote_quotes/styling/launcher_size' => 'type=select|default=1|website=1|store=0|config_path=|source=TackQuote\\Quotes\\Model\\Config\\Source\\LauncherSize|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/styling/accent_color' => 'type=text|default=1|website=1|store=0|config_path=|source=|'
+            . 'backend=TackQuote\\Quotes\\Model\\Config\\Backend\\StylingValue|frontend=|can_be_empty=',
+        'tackquote_quotes/styling/button_style' => 'type=select|default=1|website=1|store=0|config_path=|'
+            . 'source=TackQuote\\Quotes\\Model\\Config\\Source\\ButtonStyle|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/styling/custom_css' => 'type=textarea|default=1|website=1|store=0|config_path=|source=|'
+            . 'backend=TackQuote\\Quotes\\Model\\Config\\Backend\\StylingValue|frontend=|can_be_empty=',
+        'tackquote_quotes/styling/launcher_label' => 'type=text|default=1|website=1|store=0|config_path=|source=|'
+            . 'backend=TackQuote\\Quotes\\Model\\Config\\Backend\\StylingValue|frontend=|can_be_empty=',
+        'tackquote_quotes/styling/launcher_offset' => 'type=text|default=1|website=1|store=0|config_path=|source=|'
+            . 'backend=TackQuote\\Quotes\\Model\\Config\\Backend\\StylingValue|frontend=|can_be_empty=',
+        'tackquote_quotes/styling/launcher_position' => 'type=select|default=1|website=1|store=0|config_path=|'
+            . 'source=TackQuote\\Quotes\\Model\\Config\\Source\\LauncherPosition|backend=|frontend=|can_be_empty=',
+        'tackquote_quotes/styling/launcher_size' => 'type=select|default=1|website=1|store=0|config_path=|'
+            . 'source=TackQuote\\Quotes\\Model\\Config\\Source\\LauncherSize|backend=|frontend=|can_be_empty=',
     ];
     private const DEFAULTS_BEFORE = [
         'payment/tackquote_net_terms/active' => '0',
         'payment/tackquote_net_terms/can_use_checkout' => '1',
         'payment/tackquote_net_terms/can_use_internal' => '0',
-        'payment/tackquote_net_terms/description' => 'Place this order on your approved payment terms. We will send an invoice.',
+        'payment/tackquote_net_terms/description' =>
+            'Place this order on your approved payment terms. We will send an invoice.',
         'payment/tackquote_net_terms/group' => 'offline',
         'payment/tackquote_net_terms/is_offline' => '1',
         'payment/tackquote_net_terms/model' => 'TackQuote\\Quotes\\Model\\Payment\\NetTermsMethod',

@@ -33,7 +33,10 @@ class ApplicationStatusTest extends TestCase
             'rejected' => [$ok(['status' => 'application', 'state' => 'rejected']), ApplicationStatus::DECLINED],
             'none' => [$ok(['status' => 'application', 'state' => 'none']), ApplicationStatus::NONE],
             'unknown state' => [$ok(['status' => 'application', 'state' => 'approvedish']), ApplicationStatus::UNKNOWN],
-            'unlinked' => [$ok(['status' => 'unlinked', 'reason' => 'customer_not_linked']), ApplicationStatus::UNKNOWN],
+            'unlinked' => [
+                $ok(['status' => 'unlinked', 'reason' => 'customer_not_linked']),
+                ApplicationStatus::UNKNOWN
+            ],
             'anonymous' => [$ok(['status' => 'anonymous']), ApplicationStatus::UNKNOWN],
             'a failed call carrying approved data' => [
                 ['ok' => false, 'status' => 500, 'data' => ['status' => 'application', 'state' => 'approved']],
@@ -48,7 +51,10 @@ class ApplicationStatusTest extends TestCase
      */
     public function testStateOf(array $result, string $expected): void
     {
-        self::assertSame($expected, ApplicationStatus::stateOf($result));
+        self::assertSame(
+            $expected,
+            (new ApplicationStatus($this->createMock(AccountApiClient::class)))->stateOf($result)
+        );
     }
 
     public function testNoCustomerIdAsksNothingAndKnowsNothing(): void

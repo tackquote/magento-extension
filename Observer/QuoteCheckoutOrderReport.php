@@ -41,6 +41,8 @@ class QuoteCheckoutOrderReport implements ObserverInterface
     }
 
     /**
+     * Report an order placed from an accepted quote to TackQuote.
+     *
      * @param Observer $observer
      * @return void
      */

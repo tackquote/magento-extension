@@ -49,6 +49,8 @@ class Test extends Action implements HttpPostActionInterface
     }
 
     /**
+     * Test the saved TackQuote credentials and answer with the result as JSON.
+     *
      * @return JsonResult
      */
     public function execute()
