@@ -1680,7 +1680,7 @@ magento-extension/                              (repository root)
 
 ## Changelog
 
-### Unreleased
+### 1.5.1 (2026-10-11)
 
 - **Order limits on a brand-new cart (devstore Q/A finding #39).** The first product added to a
   signed-in customer's brand-new cart skipped the order-limit check: Magento gives a quote its
