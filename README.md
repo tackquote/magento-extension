@@ -728,6 +728,14 @@ It is declared for the storefront only. The cart, mini-cart and checkout totals,
 and the quote request sent to TackQuote (which still carries Magento's price) are unchanged.
 It changes what is displayed, not what is published: see *Known limitations*.
 
+**The cart keeps showing prices, deliberately.** With "Price on request" on, a line that is
+already in a cart (added before the switch, or by a shopper the quote-only scope does not
+cover) still shows its price and the cart its totals. That is a decision, not a gap: whatever
+can be checked out is charged what the cart says, so the cart must say it, and the WooCommerce
+plugin makes the same choice (it hides product prices only). The account price is not charged
+while prices are hidden (see *B2B checkout*). The field's own comment in Stores > Configuration
+says the same.
+
 ### Existing carts and the checkout route
 
 Turning the mode on **does not empty anybody's cart**. Magento persists carts server-side in
