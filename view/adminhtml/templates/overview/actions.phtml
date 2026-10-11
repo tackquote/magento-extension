@@ -5,9 +5,9 @@
  * refreshstatistics.phtml.
  *
  * One primary action, as the Admin Pattern Library asks: "Settings" opens the configuration
- * section, so it is a link styled as the primary action. "Test connection" stays on this page
- * and is a <button>; TackQuote_Quotes/js/test-connection posts it and writes the answer into
- * the #tq-test-result message under the page title.
+ * section (TackQuote_Quotes/js/go-to, like the admin's own setLocation() buttons, without an
+ * inline handler). "Test connection" is secondary; TackQuote_Quotes/js/test-connection posts
+ * it and writes the answer into the #tq-test-result message under the page title.
  *
  * @var \Magento\Backend\Block\Template $block
  * @var \Magento\Framework\Escaper $escaper
@@ -22,6 +22,7 @@ $testInit = [
         'target' => '#tq-test-result',
     ],
 ];
+$settingsInit = ['TackQuote_Quotes/js/go-to' => ['url' => $overview->getSettingsUrl()]];
 ?>
 <div class="page-actions">
     <div class="page-actions-inner">
@@ -34,10 +35,13 @@ $testInit = [
                 <span><?= $escaper->escapeHtml(__('Test connection')) ?></span>
             </button>
             <?php if ($overview->canConfigure()): ?>
-                <a class="action-primary"
-                   href="<?= $escaper->escapeUrl($overview->getSettingsUrl()) ?>">
+                <button type="button"
+                        id="tq-settings"
+                        class="action-primary"
+                        title="<?= $escaper->escapeHtmlAttr(__('Settings')) ?>"
+                        data-mage-init="<?= $escaper->escapeHtmlAttr(json_encode($settingsInit)) ?>">
                     <span><?= $escaper->escapeHtml(__('Settings')) ?></span>
-                </a>
+                </button>
             <?php endif; ?>
         </div>
     </div>

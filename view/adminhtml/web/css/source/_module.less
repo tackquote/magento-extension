@@ -69,6 +69,8 @@
 .tq-overview__count {
     color: @color-brownie;
     float: right;
+    font-size: @font-size__base;
+    line-height: 2.4rem;
     white-space: nowrap;
 }
 
@@ -86,6 +88,13 @@
     display: grid;
     gap: @indent__base @indent__l;
     grid-template-columns: minmax(0, 1fr);
+
+    //  The admin clearfix pseudo-elements on admin__page-section-content would be grid items
+    &:before,
+    &:after {
+        content: none;
+        display: none;
+    }
 }
 
 //
