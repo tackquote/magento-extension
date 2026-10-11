@@ -76,24 +76,32 @@ class Client
     private $landingUrl;
 
     /**
+     * @var PluginHeaders
+     */
+    private $pluginHeaders;
+
+    /**
      * @param Config $config
      * @param Curl $curl
      * @param Json $json
      * @param LoggerInterface $logger
      * @param LandingUrl $landingUrl The accepted-quote checkout landing, advertised on every ping.
+     * @param PluginHeaders $pluginHeaders
      */
     public function __construct(
         Config $config,
         Curl $curl,
         Json $json,
         LoggerInterface $logger,
-        LandingUrl $landingUrl
+        LandingUrl $landingUrl,
+        PluginHeaders $pluginHeaders
     ) {
         $this->config = $config;
         $this->curl = $curl;
         $this->json = $json;
         $this->logger = $logger;
         $this->landingUrl = $landingUrl;
+        $this->pluginHeaders = $pluginHeaders;
     }
 
     /**
@@ -242,6 +250,10 @@ class Client
             // Where this store takes an accepted-quote checkout link, or `off`
             // (Model\QuoteCheckout\LandingUrl). An older server ignores the header.
             $this->curl->addHeader(LandingUrl::HEADER, $this->landingUrl->headerValue($storeId));
+        }
+        // Informational, on every request (Model\Api\PluginHeaders); never a credential.
+        foreach ($this->pluginHeaders->get($storeId) as $name => $value) {
+            $this->curl->addHeader($name, $value);
         }
 
         /*

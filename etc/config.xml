@@ -56,6 +56,20 @@
                 <tax_exempt_class>0</tax_exempt_class>
                 <enable_group_mirror>0</enable_group_mirror>
             </b2b_groups>
+            <!--
+              Storefront styling. These defaults reproduce the look the storefront always had:
+              the theme's own button colors, filled buttons, the launcher bottom right 20px from
+              the edges, labelled "Quote list" (an empty label), regular size, no custom CSS.
+            -->
+            <styling>
+                <accent_color></accent_color>
+                <button_style>filled</button_style>
+                <launcher_position>right</launcher_position>
+                <launcher_offset>20</launcher_offset>
+                <launcher_label></launcher_label>
+                <launcher_size>regular</launcher_size>
+                <custom_css></custom_css>
+            </styling>
         </tackquote_quotes>
         <!--
           "Pay on net terms" (lane MG-FORMS-TERMS). Off until the merchant turns it on.

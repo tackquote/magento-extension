@@ -4,7 +4,7 @@
 
 A Magento 2 Composer module (`tackquote/module-quotes`, module name `TackQuote_Quotes`)
 that adds B2B quoting to the storefront: a **"Request a Quote"** button on product pages, a
-multi-product **quote list** with its own drawer, and an admin dashboard with a connection
+multi-product **quote list** with its own drawer, and an admin Overview with a connection
 test. Submissions create real quote requests — and, where the seller's policy allows it,
 real buyer companies — in TackQuote. It is the Magento counterpart to the TackQuote
 WooCommerce plugin.
@@ -160,31 +160,61 @@ token. Target prices travel on the quote request's lines (or in its note).
 - Only an allow-list of company fields is forwarded, so a crafted form cannot smuggle
   arbitrary keys into the company record.
 
-### Admin
+### Admin overview
+
+**TackQuote → Overview** (`Controller/Adminhtml/Dashboard/Index.php`,
+`Block/Adminhtml/Dashboard.php`, `view/adminhtml/templates/dashboard.phtml`) is laid out like
+the WooCommerce plugin's Overview tab: a row of tabs, then one card per settings area in the
+plugin's tab order. Each card shows what is switched on and ends with links that open the
+matching group of **Stores → Configuration → TackQuote**, already expanded (the URL fragment
+`#tackquote_quotes_<group>-link`, which Magento's configuration page expands on load). An admin
+without the configuration permission sees every card but no links.
+
+| Card | Shows | Links to |
+| --- | --- | --- |
+| Connect with TackQuote | How the store is connected; **Connect** and **Disconnect** | |
+| Setup | Checklist: TackQuote enabled, API key set, quote button on, each with the fix | |
+| Connection | API base URL, whether a key is saved, the button label; **Test connection** result | Connection |
+| Storefront | Quote buttons, quote list, listing buttons, quote page, cart button, target price, attachments; quote-only store; styling (accent color swatch, button style, launcher, custom CSS) | Quote buttons, Quote page and attachments, Quote-only store, Styling |
+| B2B pricing | The four display switches and the two cart and checkout switches, "N of 6 on" | What customers see, Cart and checkout |
+| Buyer groups | The five buyer-group rule switches | Buyer groups: rules for signed-in customers |
+| Forms | Wholesale account tab, Net terms tab, Pay on net terms | Application tabs, Pay on net terms |
+| Orders | Accepted quote checkout on or off; where order, product and stock sync is set up (in TackQuote) | Accepted quote checkout |
+| Help | Module version, setup guide, support | |
+
+The switches are shown as the merchant set them at the default scope, even while the module
+cannot act on them yet (the Setup checklist and the card notes say why); a website can
+override any of them, and the page says so.
+
+Screenshots for this section (captured during Q/A):
+
+- [ ] Overview, top: header, status banner, tab row, Connect and Setup cards
+- [ ] Overview: Storefront card with an accent color set
+- [ ] Overview: B2B pricing, Buyer groups and Forms cards
+- [ ] Stores → Configuration → TackQuote opened from a card link (group expanded)
+- [ ] Storefront: styling group with a refused accent color message
+- [ ] Storefront: a product page and the quote list launcher with an accent color, outlined
+  buttons and the launcher bottom left
+
+The rest of the admin:
 
 - A top-level **TackQuote** entry in the admin sidebar (`etc/adminhtml/menu.xml`) with
-  **Dashboard** and **Settings** items.
-- The **Dashboard** (`Controller/Adminhtml/Dashboard/Index.php`,
-  `Block/Adminhtml/Dashboard.php`, `view/adminhtml/templates/dashboard.phtml`) shows a
-  live/not-live status banner, a **setup checklist** naming exactly what is missing
-  (TackQuote enabled → API key set → quote button turned on, each with the fix), the
-  configured API base URL, whether a key is set, the current button label, and a **Test
-  connection** button.
+  **Overview** and **Settings** items.
 - **Test connection** exists in two places, both calling
   `Model\Api\Client::testConnection()` through the admin controller
   `Controller/Adminhtml/Connection/Test.php` (`POST tackquote/connection/test`):
-  the dashboard button, and an inline button in **Stores → Configuration → TackQuote**
+  the Overview button, and an inline button in **Stores → Configuration → TackQuote**
   (`Block/Adminhtml/System/Config/TestConnection.php`,
   `view/adminhtml/templates/system/config/test-connection.phtml`). The configuration screen
   is where an admin actually pastes a key, so testing without leaving the page is what stops
   stores sitting misconfigured.
   The controller distinguishes *disabled*, *no key set* and *configured but rejected*,
   because those need completely different fixes.
-- **Connect with TackQuote** (see the section below): a card on the Dashboard, and a compact
+- **Connect with TackQuote** (see the section below): a card on the Overview, and a compact
   one beside the API key field in **Stores → Configuration → TackQuote**, show how the store
   is connected (*Connected via Connect with TackQuote*, *Connected via API key* or *Not
   connected*) and offer **Connect with TackQuote** and **Disconnect**.
-- Two separate ACL resources on purpose (`etc/acl.xml`): `TackQuote_Quotes::dashboard`
+- Two separate ACL resources on purpose (`etc/acl.xml`): `TackQuote_Quotes::overview`
   (under a top-level `TackQuote_Quotes::tackquote`) backs the menu and connection test, so
   day-to-day TackQuote access can be granted **without** store-configuration rights;
   `TackQuote_Quotes::config` sits under `Magento_Config::config` because that is where
@@ -196,6 +226,17 @@ token. Target prices travel on the quote request's lines (or in its note).
 read through `Model/Config.php`). The section is scoped to default/website — not per store
 view.
 
+The groups follow the WooCommerce plugin's tabs, in this order, each label starting with its
+tab name: **Connection**; **Storefront:** quote buttons, quote page, cart button and
+attachments, quote-only store, styling; **B2B pricing:** what signed-in customers see, cart and
+checkout; **Buyer groups:** rules for signed-in customers; **Forms:** wholesale and net terms
+applications, pay on net terms; **Orders:** accepted quote checkout. Each group opens with a one-line description, and a field
+that only matters when a switch is on is hidden while that switch is off (`<depends>`).
+**No stored path changed** in this regrouping: every value is still saved under
+`tackquote_quotes/<group>/<field>` with the same group and field ids, which
+`Test/Unit/Config/ConfigPathInvarianceTest.php` holds byte for byte against the path set
+before it.
+
 | Group | Field | Notes |
 | --- | --- | --- |
 | Connection | **Enable TackQuote** | Master switch. |
@@ -203,38 +244,97 @@ view.
 | Connection | **Connect with TackQuote** | Button (no stored value): gets the API key below without copying it. See *Connect with TackQuote*. |
 | Connection | **TackQuote API Key** | Stored encrypted (`Magento\Config\Model\Config\Backend\Encrypted`) and decrypted on read. Needs the `quotes:write` scope. |
 | Connection | **Verify** | Inline "Test connection" button. |
-| Request a Quote button | **Show quote button on product pages** | Single-product request button. |
-| Request a Quote button | **Button label** | |
-| Request a Quote button | **Show "Add to Quote" button** | Turns on the multi-product quote list. |
-| Request a Quote button | **"Add to Quote" label** | |
-| Request a Quote button | **Show on category and search results** | Adds "Add to Quote" to listing tiles. |
-| Request a Quote button | **Quote list submit label** | Label on the drawer's submit button. |
-| Quote page, cart button and attachments | **Enable the quote page** | Off by default. `/tackquote/quote` plus a link from the quote list. Needs "Add to Quote". |
-| Quote page, cart button and attachments | **Quote page link label** | |
-| Quote page, cart button and attachments | **Ask for a target price per product** | Off by default. Optional target price per row in the form and on the quote page. |
-| Quote page, cart button and attachments | **Show a quote button on the cart page** | Off by default. Copies the cart into the quote list. Needs "Add to Quote". |
-| Quote page, cart button and attachments | **Cart button label** | |
-| Quote page, cart button and attachments | **Allow attachments on quote requests** | Off by default. Up to 3 files, PDF/JPEG/PNG, 5 MB each, sent to TackQuote. |
-| Quote-Only Store | **Enable quote-only mode** | Off by default. See *Quote-only mode*. |
-| Quote-Only Store | **Applies to** | Everyone / Guests only / Selected customer groups / Everyone except approved wholesale accounts. |
-| Quote-Only Store | **Show "Price on request" instead of prices** | Off by default. For the shoppers the mode applies to. |
-| Quote-Only Store | **Customer groups** | For *Selected customer groups*. |
+| Storefront: quote buttons | **Show quote button on product pages** | Single-product request button. |
+| Storefront: quote buttons | **Button label** | |
+| Storefront: quote buttons | **Show "Add to Quote" button** | Turns on the multi-product quote list. |
+| Storefront: quote buttons | **"Add to Quote" label** | |
+| Storefront: quote buttons | **Show on category and search results** | Adds "Add to Quote" to listing tiles. |
+| Storefront: quote buttons | **Quote list submit label** | Label on the drawer's submit button. |
+| Storefront: quote page, cart button and attachments | **Enable the quote page** | Off by default. `/tackquote/quote` plus a link from the quote list. Needs "Add to Quote". |
+| Storefront: quote page, cart button and attachments | **Quote page link label** | |
+| Storefront: quote page, cart button and attachments | **Ask for a target price per product** | Off by default. Optional target price per row in the form and on the quote page. |
+| Storefront: quote page, cart button and attachments | **Show a quote button on the cart page** | Off by default. Copies the cart into the quote list. Needs "Add to Quote". |
+| Storefront: quote page, cart button and attachments | **Cart button label** | |
+| Storefront: quote page, cart button and attachments | **Allow attachments on quote requests** | Off by default. Up to 3 files, PDF/JPEG/PNG, 5 MB each, sent to TackQuote. |
+| Storefront: quote-only store | **Enable quote-only mode** | Off by default. See *Quote-only mode*. |
+| Storefront: quote-only store | **Applies to** | Everyone / Guests only / Selected customer groups / Everyone except approved wholesale accounts. |
+| Storefront: quote-only store | **Show "Price on request" instead of prices** | Off by default. For the shoppers the mode applies to. |
+| Storefront: quote-only store | **Customer groups** | For *Selected customer groups*. |
+| Storefront: styling | **Accent color** | Empty by default (the theme's colors). A hex color such as `#1e73be`; anything else is refused on save. See *Storefront styling*. |
+| Storefront: styling | **Button style** | Filled (default) or Outlined. |
+| Storefront: styling | **Quote list launcher position** / **Launcher distance from the edges (px)** | Bottom right, 20 px by default. Bottom left or right; 0 to 200 px. |
+| Storefront: styling | **Launcher text** / **Launcher size** | Empty means "Quote list" (translated); at most 40 characters. Regular or Compact. |
+| Storefront: styling | **Custom CSS** | Empty by default. At most 10,000 characters, no `<`. |
 | Product (Catalog > Products) | **Quote only (TackQuote)** | Yes/No product attribute, default No. One product quote-only for everyone. |
-| B2B Display | **Show account price** | Off by default. "Your account price" for a signed-in customer. Display only. |
-| B2B Display | **Show volume pricing table** | Off by default. The customer's quantity breaks. Display only. |
-| B2B Display | **Show order limits notice** | Off by default. "Order between X and Y units". Not enforced in the cart yet. |
-| B2B Display | **Show buyer group badge** | Off by default. The customer's TackQuote buyer group. |
-| B2B Display | **Only for these customer groups** | Empty = every signed-in customer. See *B2B display* below. |
-| Buyer group rules | **Only for these customer groups** | Empty = ask about every signed-in customer. Others count as `@GUESTS`. See *Buyer group rules*. |
-| Buyer group rules | **Hide categories by buyer group** / **Categories hidden from groups** / **Hide when the buyer group is unknown** | Off by default. `category ID: CODE, @GUESTS` lines. |
-| Buyer group rules | **Restrict payment and shipping methods by buyer group** / **Payment methods by group** / **Shipping methods by group** / **Restrict when the buyer group is unknown** | Off by default. `method: CODE, CODE` lines. |
-| Buyer group rules | **Shipping discounts by buyer group** / **Shipping discount per group** | Off by default. `CODE: percent=15 \| carriers`, `free`, `free_only`. |
-| Buyer group rules | **Apply TackQuote tax exemptions** / **Customer tax class for tax-exempt buyers** | Off by default. |
-| Buyer group rules | **Set the customer group from the buyer group** / **Customer group per buyer group** | Off by default. `CODE: customer group ID` lines. |
-| Accepted quote checkout | **Open accepted quotes in the checkout** | On by default. The checkout link from TackQuote's buyer portal fills the cart with the accepted quote. See *Accepted quote checkout link*. |
+| B2B pricing: what signed-in customers see | **Show account price** | Off by default. "Your account price" for a signed-in customer. Display only. |
+| B2B pricing: what signed-in customers see | **Show volume pricing table** | Off by default. The customer's quantity breaks. Display only. |
+| B2B pricing: what signed-in customers see | **Show order limits notice** | Off by default. "Order between X and Y units". Not enforced in the cart yet. |
+| B2B pricing: what signed-in customers see | **Show buyer group badge** | Off by default. The customer's TackQuote buyer group. |
+| B2B pricing: what signed-in customers see | **Only for these customer groups** | Empty = every signed-in customer. See *B2B display* below. |
+| Buyer groups: rules for signed-in customers | **Only for these customer groups** | Empty = ask about every signed-in customer. Others count as `@GUESTS`. See *Buyer group rules*. |
+| Buyer groups: rules for signed-in customers | **Hide categories by buyer group** / **Categories hidden from groups** / **Hide when the buyer group is unknown** | Off by default. `category ID: CODE, @GUESTS` lines. |
+| Buyer groups: rules for signed-in customers | **Restrict payment and shipping methods by buyer group** / **Payment methods by group** / **Shipping methods by group** / **Restrict when the buyer group is unknown** | Off by default. `method: CODE, CODE` lines. |
+| Buyer groups: rules for signed-in customers | **Shipping discounts by buyer group** / **Shipping discount per group** | Off by default. `CODE: percent=15 \| carriers`, `free`, `free_only`. |
+| Buyer groups: rules for signed-in customers | **Apply TackQuote tax exemptions** / **Customer tax class for tax-exempt buyers** | Off by default. |
+| Buyer groups: rules for signed-in customers | **Set the customer group from the buyer group** / **Customer group per buyer group** | Off by default. `CODE: customer group ID` lines. |
+| Orders: accepted quote checkout | **Open accepted quotes in the checkout** | On by default. The checkout link from TackQuote's buyer portal fills the cart with the accepted quote. See *Accepted quote checkout link*. |
 
 Every storefront control is additionally gated on the module being enabled *and* an API key
 being present — offering a control that cannot submit would only produce a dead end.
+
+## Storefront styling
+
+Parity with the WooCommerce plugin's *Styling* and *Quote list & launcher* settings
+(`includes/class-tack-settings.php`, `includes/class-tack-widget.php`), plus a button style
+and a custom CSS field. Everything is optional; the defaults (`etc/config.xml`) reproduce the
+look the storefront always had, and with every setting at its default the module prints no
+CSS at all.
+
+- **How it reaches the page.** `ViewModel/Styling.php` reads the group and hands it to two
+  templates through `view/frontend/layout/default.xml`: `quote-list.phtml` (launcher text,
+  side and size, as the modifier classes `tackquote-app--launcher-left` and
+  `tackquote-app--launcher-compact`) and `styling.phtml`, which prints one `<style
+  id="tackquote-styling">` in the page head through `SecureHtmlRenderer`, so `Magento_Csp`
+  can hash it for `style-src`.
+- **CSS custom properties.** `--tackquote-accent`, `--tackquote-accent-text` (black or white,
+  whichever has the higher WCAG 2 contrast on the accent, the WooCommerce formula) and
+  `--tackquote-launcher-offset` (default `20px` in `request-quote.css`). The accent repaints
+  this module's own buttons only (product page, listing tiles, quote list, launcher, quote
+  form, quote page, cart button, quote-only notice) and the B2B account price and group
+  badge; selectors are scoped with `html:root body .action…`, never `!important`, so a
+  theme's or the merchant's own CSS can still override them.
+- **Validated twice.** On save, `Model/Config/Backend/StylingValue.php` refuses an accent
+  that is not `#rgb`/`#rrggbb`, a launcher distance outside 0 to 200, and custom CSS that
+  contains `<` or is longer than 10,000 characters, naming the problem. On every read,
+  `Model/Styling/StyleRules.php` checks the values again, so a value written around the
+  admin form (`config:set`, a database import) is dropped rather than printed.
+- **Custom CSS.** Printed after the module's own rules inside the same `<style>` element,
+  with every `<` and NUL byte removed and the text cut to 10,000 characters. Inside
+  `<style>` the browser only leaves the element at `</style`, so without a `<` the content
+  cannot end it early or open another tag.
+
+## Languages
+
+`i18n/` ships English (`en_US.csv`, the source) and the seven languages the WooCommerce
+plugin ships (`languages/`): German (`de_DE`), Spanish (`es_ES`), French (`fr_FR`), Italian
+(`it_IT`), Japanese (`ja_JP`, the plugin's `ja`), Dutch (`nl_NL`) and Portuguese, Brazil
+(`pt_BR`). Magento picks the file matching the store view's locale (**Stores → Configuration
+→ General → Locale Options**), for the storefront, and the admin user's interface locale for
+the admin.
+
+- **What is translated:** every storefront phrase (buttons, the quote form and quote page,
+  the quote list, B2B prices and notices, wholesale and net terms, checkout messages), the
+  default button labels when the merchant leaves a label empty, the admin Overview, and the
+  configuration screen's group and field labels and group descriptions. A label the merchant
+  types is shown as typed.
+- **Where the text comes from:** where the WooCommerce plugin's `.po` file has the same
+  English phrase, its vetted translation is reused (82 phrases per language); the rest were
+  translated for this module in plain merchant and shopper language.
+- **Kept honest by a test:** `Test/Unit/I18n/CatalogueTest.php` fails when a locale is
+  missing a phrase, has one en_US does not, repeats a phrase, leaves one empty, or changes a
+  placeholder (`%1`) or HTML tag; and when a `__()`, `$t()` or Knockout `i18n:` literal, a
+  `system.xml` label or group description, or a menu or ACL title is missing from
+  `en_US.csv`.
 
 ## The TackQuote endpoints this module calls
 
@@ -282,6 +382,22 @@ issued; the module records the same fact itself, so it does not depend on it. Ev
 carries `X-TackQuote-Quote-Checkout-Url`: the store view's https landing route for accepted
 quotes, or `off` (`Model/QuoteCheckout/LandingUrl.php`, see *Accepted quote checkout link*).
 
+Every request this module makes to TackQuote, through `Model/Api/Client.php`,
+`Model/Api/StorefrontClient.php` and `Model/Forms/AccountApiClient.php`, also carries two
+informational headers, like the WooCommerce plugin's (`class-tack-api-client.php`):
+
+| Header | Value |
+| --- | --- |
+| `X-TackQuote-Plugin-Version` | This module's version, `etc/module.xml` `setup_version` (read through `ModuleListInterface`). Sent only when it has the `1.2.3` or `1.2.3-pre.1` shape. |
+| `X-TackQuote-Site-Url` | The store's web base URL (`Store::getBaseUrl(URL_TYPE_WEB)`) for the store the request is made for, without a trailing slash. Sent only for a plain `http`/`https` URL. |
+
+Both are built in `Model/Api/PluginHeaders.php`. They are additive and are not credentials:
+`X-Api-Key` stays the only one (and `Authorization` keeps its existing role on the Magento
+plugin routes only). TackQuote records them for the WooCommerce routes today; on the
+`/storefront/v1` reads it ignores the site URL when `X-TackQuote-Platform: magento` is sent,
+and otherwise uses it only to narrow the tenant's own WooCommerce connections, falling back to
+the earlier behaviour when it matches none.
+
 ## Connect with TackQuote
 
 Connect this store by signing in to TackQuote and approving, instead of copying an API key.
@@ -289,7 +405,7 @@ The WooCommerce plugin has the same flow; the TackQuote side is shared
 (`apps/api/src/modules/integrations/storefront-connect/` and `magento/connect/` in tack).
 Pasting a key keeps working exactly as before.
 
-1. **Start.** An admin presses **Connect with TackQuote** (Dashboard or configuration). The
+1. **Start.** An admin presses **Connect with TackQuote** (Overview or configuration). The
    controller (`Controller/Adminhtml/Connect/Start.php`) is POST-only, so Magento checks the
    admin form key first, and needs both `TackQuote_Quotes::connect` and
    `TackQuote_Quotes::config`. The store's base URL must be https (see below). The module
@@ -309,7 +425,7 @@ Pasting a key keeps working exactly as before.
    server, with the verifier for an API key carrying `quotes:write` and `buyers:write` (the
    wholesale and net-terms application forms); never `orders:write`. The key is saved where a
    pasted key is, at the default scope, encrypted (`Model/Connect/KeyStore.php`), and tested.
-   The Dashboard says whether the test passed.
+   The Overview says whether the test passed.
 4. **Disconnect** (`Controller/Adminhtml/Connect/Disconnect.php`, POST) revokes the key in
    TackQuote when Connect issued it, then removes it from this store. A pasted key is only
    removed from this store; revoke it in TackQuote yourself.
@@ -1060,6 +1176,20 @@ redirect. The token is never put in a redirect target or a log line.
   not run there; TackQuote's order sync still links those orders from their lines.
 - **Accepted quote checkout: a quote's PO number is not filled in** at checkout. It stays on
   the quote in TackQuote; only the *Pay on net terms* method has a PO field here.
+- **Field help text in Stores → Configuration is English.** Group and field labels, group
+  descriptions, the Overview and every storefront phrase are translated; the longer help text
+  under each field is not, because Magento looks a comment up by its exact text, line breaks
+  and indentation included.
+- **Custom CSS is the merchant's own.** It is printed on every storefront page after the
+  module's rules. The module removes every `<` (so it cannot end the `<style>` element) and
+  caps it at 10,000 characters, but it does not check what the CSS does: a rule can still
+  hide or restyle anything on the page. Only admins with the TackQuote configuration
+  permission can set it.
+- **Styling and the page cache.** Styling is part of the cached page. After changing it,
+  refresh the Page Cache when Magento asks (System → Cache Management).
+- **The Overview shows the default scope.** A website-level override is applied on that
+  website's storefront but is not shown on the Overview; the configuration page's scope
+  switcher shows it.
 - No Magento Marketplace listing or Packagist publication (see Installation).
 
 ## Requirements
@@ -1199,18 +1329,18 @@ GitHub release.
 1. Go to **Stores → Configuration → TackQuote → TackQuote Settings**.
 2. Set **Enable TackQuote** to Yes.
 3. Set **TackQuote API Base URL** (default `https://api.tackquote.com/v1`).
-4. Press **Connect with TackQuote** (above the API key field, or on TackQuote → Dashboard),
+4. Press **Connect with TackQuote** (above the API key field, or on TackQuote → Overview),
    sign in to TackQuote and approve: the key is saved for you. Or paste a TackQuote
    **API Key**, generated in TackQuote under Settings → Developer → API
    Keys (or the "Inbound API key" section of Settings → Integrations → Magento in the
    seller portal). The key needs the `quotes:write` scope — that is the only scope this
    module's endpoints enforce, so do not grant it more.
-5. Click **Test connection** on that same screen (or on TackQuote → Dashboard) to confirm
+5. Click **Test connection** on that same screen (or on TackQuote → Overview) to confirm
    the key and base URL.
-6. Under **Request a Quote button**, enable **Show quote button on product pages** and/or
+6. Under **Storefront: quote buttons**, enable **Show quote button on product pages** and/or
    **Show "Add to Quote" button**, and optionally change the labels.
 7. Save config, then visit a product page on the storefront to confirm the controls appear
-   and submit successfully. TackQuote → Dashboard shows a checklist if anything is missing.
+   and submit successfully. TackQuote → Overview shows a checklist if anything is missing.
 
 > **Connecting the other direction (TackQuote → this store).**
 > The steps above cover store → TackQuote, which uses a TackQuote API key and is
@@ -1244,12 +1374,13 @@ magento-extension/                              (repository root)
 ├── phpcs.xml                                   Magento2 coding standard for a bare `phpcs`
 ├── i18n/en_US.csv                              Translation source strings
 │                                               (regenerate with i18n:collect-phrases)
+├── i18n/{de_DE,es_ES,fr_FR,it_IT,ja_JP,nl_NL,pt_BR}.csv   The seven translations
 ├── etc/module.xml                              Module declaration + sequence
-├── etc/config.xml                              Defaults: B2B display, B2B checkout, price-on-request off
+├── etc/config.xml                              Defaults: switches off, styling as it always looked
 ├── etc/acl.xml                                 Admin ACL: dashboard tree, connect, config resource
 ├── etc/crontab.xml                             Warms the registration policy every 5 min
 ├── etc/adminhtml/events.xml                    Flush the policy when settings are saved
-├── etc/adminhtml/menu.xml                      TackQuote sidebar menu (Dashboard, Settings)
+├── etc/adminhtml/menu.xml                      TackQuote sidebar menu (Overview, Settings)
 ├── etc/adminhtml/routes.xml                    Admin route tackquote/*
 ├── etc/adminhtml/system.xml                    Stores > Configuration > TackQuote fields
 ├── etc/frontend/routes.xml                     Storefront route tackquote/*
@@ -1266,6 +1397,11 @@ magento-extension/                              (repository root)
 ├── Model/Config.php                            Reads scoped config (enable/url/key/labels)
 ├── Model/Api/Client.php                        HTTP client for /v1/integrations/magento/*
 ├── Model/Api/StorefrontClient.php              Read client for /v1/storefront/v1/* (X-Api-Key only)
+├── Model/Api/PluginHeaders.php                 X-TackQuote-Plugin-Version + X-TackQuote-Site-Url
+├── Model/Styling/StyleRules.php                Styling validators and the CSS they produce
+├── Model/Config/Backend/StylingValue.php       Refuses a styling value it cannot use, on save
+├── Model/Config/Source/{ButtonStyle,LauncherPosition,LauncherSize}.php   Styling dropdowns
+├── ViewModel/Styling.php                       Styling settings for the storefront templates
 ├── Model/B2bDisplay/ResponseMapper.php         TackQuote answers -> facts, fail closed
 ├── Model/B2bDisplay/DataProvider.php           Asks the switched-on routes, short per-customer cache
 ├── Model/B2bDisplay/Presenter.php              Formats money (tax basis, no conversion) + sentences
@@ -1359,7 +1495,7 @@ magento-extension/                              (repository root)
 ├── Block/QuotePage.php                         The full quote page (/tackquote/quote)
 ├── Block/CartQuoteButton.php                   Cart page: "Request a quote for your cart"
 ├── Block/B2bDisplay.php                        Product-page B2B placeholder (no customer data)
-├── Block/Adminhtml/Dashboard.php               Dashboard status + setup checklist
+├── Block/Adminhtml/Dashboard.php               Overview cards, deep links, setup checklist
 ├── Block/Adminhtml/System/Config/TestConnection.php   Inline config-screen test button
 ├── Block/Adminhtml/ConnectCard.php             Connect card: state, Connect, Disconnect
 ├── Block/Adminhtml/System/Config/ConnectButton.php    Compact Connect card in the config screen
@@ -1379,7 +1515,7 @@ magento-extension/                              (repository root)
 ├── Observer/QuoteCheckoutLineRemoved.php       One quoted line removed -> the quote leaves whole
 ├── view/frontend/layout/tackquote_checkout_start.xml  The link's notice page (not cacheable)
 ├── Controller/B2b/Display.php                  Signed-in customer's B2B data (POST, form key)
-├── Controller/Adminhtml/Dashboard/Index.php    Admin dashboard page
+├── Controller/Adminhtml/Dashboard/Index.php    Admin Overview page
 ├── Controller/Adminhtml/Connection/Test.php    Admin "Test connection" AJAX endpoint
 ├── Controller/Adminhtml/Connect/Start.php      Connect with TackQuote (POST, form key)
 ├── Controller/Adminhtml/Connect/Callback.php   Return from TackQuote (GET, secret key, state)
@@ -1403,18 +1539,19 @@ magento-extension/                              (repository root)
 │   ├── templates/quote-list.phtml              Drawer + multi-step form markup
 │   ├── templates/quote-page.phtml              The full quote page
 │   ├── templates/cart-quote-button.phtml       Cart-page quote button
+│   ├── templates/styling.phtml                 The merchant's styling, one <style> in the head
 │   ├── web/js/quote-app.js                     RequireJS component: list, drawer, form,
 │   │                                           quote page, cart copy, attachments
 │   ├── web/js/cart-seed.js                     Cart items -> quote-list rows (pure; Test/Js)
 │   ├── web/js/b2b-display.js                   Fills the B2B placeholder (text only)
 │   └── web/css/request-quote.css               Storefront styles
 └── view/adminhtml/
-    ├── layout/tackquote_dashboard_index.xml    Dashboard layout
+    ├── layout/tackquote_dashboard_index.xml    Overview layout
     ├── layout/adminhtml_system_config_edit.xml Loads the config-screen control stylesheet
-    ├── templates/dashboard.phtml               Dashboard markup + test-connection JS
+    ├── templates/dashboard.phtml               Overview markup + test-connection JS
     ├── templates/system/config/test-connection.phtml   Config-screen button markup
-    ├── templates/connect-card.phtml            Connect card (Dashboard + compact config)
-    ├── web/css/dashboard.css                   Admin dashboard styles
+    ├── templates/connect-card.phtml            Connect card (Overview + compact config)
+    ├── web/css/dashboard.css                   Admin Overview styles
     └── web/css/config-test-connection.css      "Verify" result pill (was an inline <style>)
 ```
 
@@ -1422,6 +1559,34 @@ magento-extension/                              (repository root)
 
 ### Unreleased
 
+- **Admin Overview, styling and seven languages** (WooCommerce 1.11.0 parity).
+  - **Overview** (TackQuote → Overview, was Dashboard): a tab row and one card per settings
+    area in the WooCommerce plugin's order (Connection, Storefront, B2B pricing, Buyer groups,
+    Forms, Orders, Help), each showing what is on and linking straight to its configuration
+    group, opened. The *B2B features* card is split into B2B pricing and Buyer groups; the
+    quote-only and styling settings join the Storefront card.
+    The *Accepted quote checkout* group is now labelled *Orders: accepted quote checkout*
+    and linked from the Orders card.
+  - **Configuration regrouped, no path changed:** groups reordered into the plugin's tab
+    order, each label prefixed with its tab and given a one-line description; "Button label"
+    hides while the product-page button is off and "Wholesale form slug" while the Wholesale
+    tab is off. Every stored path, id and default is unchanged
+    (`Test/Unit/Config/ConfigPathInvarianceTest.php`).
+  - **Storefront styling** (new group, all optional, defaults unchanged): accent color, filled
+    or outlined buttons, launcher position, distance from the edges, text and size, and custom
+    CSS. Validated on save and again on read; see *Storefront styling*.
+  - **Languages:** `de_DE`, `es_ES`, `fr_FR`, `it_IT`, `ja_JP`, `nl_NL` and `pt_BR`, every
+    phrase of `en_US.csv`; the default button labels are now translated too. Stale phrases no
+    source uses any more were removed from `en_US.csv`. See *Languages*.
+  - **Request headers:** every request to TackQuote carries `X-TackQuote-Plugin-Version` and
+    `X-TackQuote-Site-Url`, like the WooCommerce plugin. Additive; `X-Api-Key` stays the only
+    credential.
+  - New unit tests: `Test/Unit/Config/ConfigPathInvarianceTest.php`,
+    `Test/Unit/I18n/CatalogueTest.php`, `Test/Unit/Model/Styling/StyleRulesTest.php`,
+    `Test/Unit/Model/Config/Backend/StylingValueTest.php`, `Test/Unit/ViewModel/StylingTest.php`,
+    `Test/Unit/Model/Api/PluginHeadersTest.php` and
+    `Test/Unit/Model/Api/PluginHeadersOnRequestsTest.php`. `composer.json` maps the new
+    `ViewModel\` namespace.
 - **Accepted quote checkout link** (on by default; new group *Accepted quote checkout*). A buyer
   who accepts a quote in TackQuote's buyer portal can check it out in this store:
   `/tackquote/checkout/start` exchanges TackQuote's single-use link, fills the cart with the

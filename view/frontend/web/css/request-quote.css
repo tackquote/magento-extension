@@ -371,11 +371,28 @@
  * own cart.
  * ------------------------------------------------------------------------ */
 
+/*
+ * Launcher position, offset and size come from the Styling settings. The offset arrives as
+ * --tackquote-launcher-offset (printed by view/frontend/templates/styling.phtml only when it
+ * is not the 20px default); side and size as modifier classes on .tackquote-app
+ * (ViewModel\Styling::getLauncherClasses()). With nothing set this is the layout the
+ * launcher always had: bottom right, 20px from each edge.
+ */
 .tackquote-widget {
   position: fixed;
-  right: 20px;
-  bottom: 20px;
+  right: var(--tackquote-launcher-offset, 20px);
+  bottom: var(--tackquote-launcher-offset, 20px);
   z-index: 700;
+}
+
+.tackquote-app--launcher-left .tackquote-widget {
+  right: auto;
+  left: var(--tackquote-launcher-offset, 20px);
+}
+
+.tackquote-app--launcher-compact .action.tackquote-widget__toggle {
+  padding: 6px 12px;
+  font-size: 1.3rem;
 }
 
 .tackquote-widget__toggle {
@@ -402,8 +419,8 @@
 
 .tackquote-drawer {
   position: fixed;
-  right: 20px;
-  bottom: 74px;
+  right: var(--tackquote-launcher-offset, 20px);
+  bottom: calc(var(--tackquote-launcher-offset, 20px) + 54px);
   z-index: 701;
   width: 320px;
   max-width: calc(100vw - 40px);
@@ -414,6 +431,11 @@
   border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 4px;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+}
+
+.tackquote-app--launcher-left .tackquote-drawer {
+  right: auto;
+  left: var(--tackquote-launcher-offset, 20px);
 }
 
 .tackquote-drawer__head {

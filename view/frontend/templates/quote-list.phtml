@@ -18,6 +18,13 @@ $customFields = $block->getCustomFields();
 $quotePageLink = $block->getQuotePageLink();
 $attachmentsOn = $block->isAttachmentsEnabled();
 
+// Launcher label, side and size (group `styling`), passed in by layout (default.xml).
+/** @var \TackQuote\Quotes\ViewModel\Styling|null $styling */
+$styling = $block->getData('styling_view_model');
+$styling = $styling instanceof \TackQuote\Quotes\ViewModel\Styling ? $styling : null;
+$launcherLabel = $styling !== null ? $styling->getLauncherLabel() : (string) __('Quote list');
+$launcherClasses = $styling !== null ? $styling->getLauncherClasses() : '';
+
 $companyFieldLabels = [
     'phone' => __('Company phone'),
     'website' => __('Company website'),
@@ -37,7 +44,7 @@ $companyFieldsToRender = array_values(array_unique(array_merge(
     $requiredCompanyFields
 )));
 ?>
-<div class="tackquote-app"
+<div class="tackquote-app<?= $launcherClasses !== '' ? ' ' . $escaper->escapeHtmlAttr($launcherClasses) : '' ?>"
      data-submit-url="<?= $escaper->escapeUrl($block->getSubmitUrl()) ?>"
      data-company-mode="<?= $companyRequired ? 'required' : ($showCompany ? 'optional' : 'off') ?>">
 
@@ -45,7 +52,7 @@ $companyFieldsToRender = array_values(array_unique(array_merge(
         <?php /* Hidden until the list has something in it — drawn client-side from localStorage. */ ?>
         <div class="tackquote-widget" data-role="tackquote-widget" hidden>
             <button type="button" class="action primary tackquote-widget__toggle" aria-expanded="false">
-                <span><?= $escaper->escapeHtml(__('Quote list')) ?></span>
+                <span><?= $escaper->escapeHtml($launcherLabel) ?></span>
                 <span class="tackquote-widget__count" data-role="tackquote-count">0</span>
             </button>
         </div>

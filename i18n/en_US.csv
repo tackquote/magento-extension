@@ -1,7 +1,6 @@
 "TackQuote is enabled","TackQuote is enabled"
 "Turn on ""Enable TackQuote"" in Settings.","Turn on ""Enable TackQuote"" in Settings."
 "API key is set","API key is set"
-"Create a key in TackQuote under Settings > Developer > API Keys, with the quotes:write scope.","Create a key in TackQuote under Settings > Developer > API Keys, with the quotes:write scope."
 "Quote button is turned on","Quote button is turned on"
 "Enable ""Show quote button on product pages"" in Settings. It also needs an API key.","Enable ""Show quote button on product pages"" in Settings. It also needs an API key."
 "Test connection","Test connection"
@@ -28,8 +27,6 @@
 "This store is quote-only. Add the products you need to your quote list and request a price — checkout is not available here.","This store is quote-only. Add the products you need to your quote list and request a price — checkout is not available here."
 "B2B quoting and CPQ for your Magento storefront.","B2B quoting and CPQ for your Magento storefront."
 "Settings","Settings"
-"Ready — the quote button is live on your product pages.","Ready — the quote button is live on your product pages."
-"Not live yet — finish the steps below to show the quote button.","Not live yet — finish the steps below to show the quote button."
 "Setup","Setup"
 "Connection","Connection"
 "API base URL","API base URL"
@@ -94,85 +91,21 @@
 "TackQuote Section","TackQuote Section"
 "TackQuote Settings","TackQuote Settings"
 "Enable TackQuote","Enable TackQuote"
-"Turns the storefront ""Request a Quote"" button and quote-request calls
-                        on or off.","Turns the storefront ""Request a Quote"" button and quote-request calls
-                        on or off."
 "TackQuote API Base URL","TackQuote API Base URL"
-"Default is https://api.tackquote.com/v1. Include the /v1 path, no
-                        trailing slash. Change only for a staging/custom deployment.","Default is https://api.tackquote.com/v1. Include the /v1 path, no
-                        trailing slash. Change only for a staging/custom deployment."
 "TackQuote API Key","TackQuote API Key"
-"Create an API key in TackQuote under
-                        <strong>Settings &gt; Developer &gt; API Keys</strong> with the
-                        <code>quotes:write</code> scope, then paste it here. Stored encrypted
-                        using Magento's crypt key.<br>
-                        <em>Until a key is saved the storefront quote button stays hidden.</em>","Create an API key in TackQuote under
-                        <strong>Settings &gt; Developer &gt; API Keys</strong> with the
-                        <code>quotes:write</code> scope, then paste it here. Stored encrypted
-                        using Magento's crypt key.<br>
-                        <em>Until a key is saved the storefront quote button stays hidden.</em>"
 "Verify","Verify"
-"Quote-Only Store (B2B Catalog)","Quote-Only Store (B2B Catalog)"
 "Enable quote-only mode","Enable quote-only mode"
-"Turns the whole storefront into a B2B catalog: Add to
-                        Cart and checkout are <strong>refused by the server</strong>, and
-                        shoppers request a quote instead. This is enforced in PHP, not by
-                        hiding buttons, so a crafted request cannot get around it.<br>
-                        <strong>Existing carts are not emptied.</strong> They can still be
-                        viewed and emptied; they simply cannot grow or be checked out, and
-                        they work normally again the moment you switch this off.<br>
-                        Creating orders from the Admin (Sales &gt; Orders &gt; Create New
-                        Order) is unaffected, and so is TackQuote turning an accepted quote
-                        into a real order.<br>
-                        <em>Requires a saved API key above — without one no quote button can
-                        render, so quote-only mode stays inactive rather than leaving your
-                        storefront with no way to buy AND no way to ask.</em>","Turns the whole storefront into a B2B catalog: Add to
-                        Cart and checkout are <strong>refused by the server</strong>, and
-                        shoppers request a quote instead. This is enforced in PHP, not by
-                        hiding buttons, so a crafted request cannot get around it.<br>
-                        <strong>Existing carts are not emptied.</strong> They can still be
-                        viewed and emptied; they simply cannot grow or be checked out, and
-                        they work normally again the moment you switch this off.<br>
-                        Creating orders from the Admin (Sales &gt; Orders &gt; Create New
-                        Order) is unaffected, and so is TackQuote turning an accepted quote
-                        into a real order.<br>
-                        <em>Requires a saved API key above — without one no quote button can
-                        render, so quote-only mode stays inactive rather than leaving your
-                        storefront with no way to buy AND no way to ask.</em>"
 "Applies to","Applies to"
-"Who sees the quote-only storefront. ""Guests only"" is the usual
-                        B2B setup: the public gets a catalog, and approved customers who have
-                        signed in keep a normal cart and checkout.","Who sees the quote-only storefront. ""Guests only"" is the usual
-                        B2B setup: the public gets a catalog, and approved customers who have
-                        signed in keep a normal cart and checkout."
 "Customer groups","Customer groups"
 "Used only when ""Applies to"" is set to selected customer groups.
                         NOT LOGGED IN is a real group here and can be selected on its own —
                         that is equivalent to ""Guests only"".","Used only when ""Applies to"" is set to selected customer groups.
                         NOT LOGGED IN is a real group here and can be selected on its own —
                         that is equivalent to ""Guests only""."
-"Request a Quote button","Request a Quote button"
 "Show quote button on product pages","Show quote button on product pages"
-"When enabled, shoppers see a ""Request a Quote"" button on the product
-                        view page. Submitting it creates a quote request in TackQuote — it
-                        does not add to cart or affect checkout.","When enabled, shoppers see a ""Request a Quote"" button on the product
-                        view page. Submitting it creates a quote request in TackQuote — it
-                        does not add to cart or affect checkout."
 "Show ""Add to Quote"" button","Show ""Add to Quote"" button"
-"Lets shoppers collect several products into a quote list and submit
-                        them as one request. The list is held in the browser and never touches
-                        the Magento cart, so stock, cart totals and checkout are unaffected.","Lets shoppers collect several products into a quote list and submit
-                        them as one request. The list is held in the browser and never touches
-                        the Magento cart, so stock, cart totals and checkout are unaffected."
 """Add to Quote"" label","""Add to Quote"" label"
 "Show on category and search results","Show on category and search results"
-"Adds ""Add to Quote"" to product listings, so a buyer can build a large
-                        request without opening every product page. Products with required
-                        options (configurable, bundle) link to the product page instead, since
-                        a quote needs the chosen variant.","Adds ""Add to Quote"" to product listings, so a buyer can build a large
-                        request without opening every product page. Products with required
-                        options (configurable, bundle) link to the product page instead, since
-                        a quote needs the chosen variant."
 "Quote list submit label","Quote list submit label"
 "Your account price","Your account price"
 "Store price","Store price"
@@ -189,12 +122,9 @@
 "Volume pricing table","Volume pricing table"
 "Order limits notice","Order limits notice"
 "Buyer group badge","Buyer group badge"
-"B2B features","B2B features"
 "On","On"
 "Off","Off"
-"Shown to signed-in customers on product pages. Display only: the cart and checkout still charge Magento prices.","Shown to signed-in customers on product pages. Display only: the cart and checkout still charge Magento prices."
 "Needs TackQuote enabled and an API key before anything is shown.","Needs TackQuote enabled and an API key before anything is shown."
-"B2B Display (signed-in customers)","B2B Display (signed-in customers)"
 "Show account price","Show account price"
 "Show volume pricing table","Show volume pricing table"
 "Show order limits notice","Show order limits notice"
@@ -226,8 +156,6 @@
 "Too many files were sent in a short time. Please try again shortly.","Too many files were sent in a short time. Please try again shortly."
 "- %1 (%2) x%3: %4 %5","- %1 (%2) x%3: %4 %5"
 "Up to %1 files, PDF, JPEG or PNG, at most %2 MB each.","Up to %1 files, PDF, JPEG or PNG, at most %2 MB each."
-"Quote page, cart button and attachments","Quote page, cart button and attachments"
-"The quote page and the cart button need ""Show Add to Quote button"" above.","The quote page and the cart button need ""Show Add to Quote button"" above."
 "Enable the quote page","Enable the quote page"
 "Quote page link label","Quote page link label"
 "Ask for a target price per product","Ask for a target price per product"
@@ -236,10 +164,6 @@
 "Allow attachments on quote requests","Allow attachments on quote requests"
 "Open the quote page","Open the quote page"
 "Request a quote for your cart","Request a quote for your cart"
-"Adds a full page at /tackquote/quote showing the shopper's quote list, where quantities can be changed and a message added before sending, and a link to it from the quote list. No CMS page is needed.","Adds a full page at /tackquote/quote showing the shopper's quote list, where quantities can be changed and a message added before sending, and a link to it from the quote list. No CMS page is needed."
-"An optional ""Target price"" field per product in the quote form and on the quote page. It is sent to TackQuote as the price the buyer asked for; it never sets the quoted price.","An optional ""Target price"" field per product in the quote form and on the quote page. It is sent to TackQuote as the price the buyer asked for; it never sets the quoted price."
-"Copies the products and quantities in the shopper's cart into their quote list. The cart itself is not changed. Bundle products and products with custom options are left out and named, because a quote needs them chosen on their product page.","Copies the products and quantities in the shopper's cart into their quote list. The cart itself is not changed. Bundle products and products with custom options are left out and named, because a quote needs them chosen on their product page."
-"Shoppers can attach up to 3 files (PDF, JPEG or PNG, 5 MB each) to a quote request. Each file is checked by this store, then sent to TackQuote with its file name; nothing is saved in Magento.<br> Shown once TackQuote confirms it accepts files, checked by Magento cron every 5 minutes.","Shoppers can attach up to 3 files (PDF, JPEG or PNG, 5 MB each) to a quote request. Each file is checked by this store, then sent to TackQuote with its file name; nothing is saved in Magento.<br> Shown once TackQuote confirms it accepts files, checked by Magento cron every 5 minutes."
 "%1 is available on quote only. Add it to your quote list and request a price.","%1 is available on quote only. Add it to your quote list and request a price."
 "This item is available on quote only. Its quantity cannot be increased — request a quote instead.","This item is available on quote only. Its quantity cannot be increased — request a quote instead."
 "Your basket holds a product that is available on quote only. Remove it, or request a quote for it, before checking out.","Your basket holds a product that is available on quote only. Remove it, or request a quote for it, before checking out."
@@ -354,23 +278,16 @@
 "You need to be signed in to your account to apply.","You need to be signed in to your account to apply."
 "Purchase order number (optional)","Purchase order number (optional)"
 "Place Order","Place Order"
-"Wholesale and Net Terms Applications","Wholesale and Net Terms Applications"
 "Show ""Wholesale account"" tab","Show ""Wholesale account"" tab"
 "Wholesale form slug","Wholesale form slug"
 "Show ""Net terms"" tab","Show ""Net terms"" tab"
-"Pay on Net Terms (checkout)","Pay on Net Terms (checkout)"
 "Enabled","Enabled"
 "Title","Title"
 "Description","Description"
 "Ask for a purchase order number","Ask for a purchase order number"
 "Sort order","Sort order"
-"The application form you built in TackQuote, including file uploads. After applying, the tab shows whether the application is being reviewed, approved or declined.","The application form you built in TackQuote, including file uploads. After applying, the tab shows whether the application is being reviewed, approved or declined."
-"Which TackQuote wholesale form to show. Leave empty for your default form.","Which TackQuote wholesale form to show. Leave empty for your default form."
-"A net terms application, and the customer's approved terms and credit limit once you approve them in TackQuote.","A net terms application, and the customer's approved terms and credit limit once you approve them in TackQuote."
-"An optional field under this payment method. The number is saved on the order and sent to TackQuote with it.","An optional field under this payment method. The number is saved on the order and sent to TackQuote with it."
 "Adds tabs to My Account where a signed-in customer applies for a wholesale account or for net terms and sees where the application stands. Applications go to TackQuote for your review. The customer's email address and Magento customer ID are sent to TackQuote with each application.","Adds tabs to My Account where a signed-in customer applies for a wholesale account or for net terms and sees where the application stands. Applications go to TackQuote for your review. The customer's email address and Magento customer ID are sent to TackQuote with each application."
 "A checkout payment method shown only to a signed-in customer you approved for net terms in TackQuote, when their available credit covers the order in the order's currency. The order is placed as Pending; collect payment by invoice. Requires the ""Net terms"" approval to be linked to the customer's Magento account, which happens when you approve their application from this store.","A checkout payment method shown only to a signed-in customer you approved for net terms in TackQuote, when their available credit covers the order in the order's currency. The order is placed as Pending; collect payment by invoice. Requires the ""Net terms"" approval to be linked to the customer's Magento account, which happens when you approve their application from this store."
-"B2B Checkout (signed-in customers)","B2B Checkout (signed-in customers)"
 "Charge account prices in the cart","Charge account prices in the cart"
 "Enforce order limits","Enforce order limits"
 "Account prices charged in cart","Account prices charged in cart"
@@ -379,28 +296,18 @@
 "%1: %2 You have %3 in your cart.","%1: %2 You have %3 in your cart."
 "The order total must be at least %1.","The order total must be at least %1."
 "The order total must be at most %1.","The order total must be at most %1."
-"Buyer group rules (signed-in customers)","Buyer group rules (signed-in customers)"
-"Leave empty to ask TackQuote about every signed-in customer. TackQuote finds the account by email address, and Magento does not confirm an address unless account confirmation is on. Selecting the groups you put trade customers in keeps a new account that typed someone else's address from getting that buyer's group. Customers outside the selection count as @GUESTS.","Leave empty to ask TackQuote about every signed-in customer. TackQuote finds the account by email address, and Magento does not confirm an address unless account confirmation is on. Selecting the groups you put trade customers in keeps a new account that typed someone else's address from getting that buyer's group. Customers outside the selection count as @GUESTS."
 "Hide categories by buyer group","Hide categories by buyer group"
-"Hidden categories, and the products in them, leave the menu, category and search listings; their pages answer ""page not found"" and their products cannot be added to the cart. Child categories are hidden with their parent.","Hidden categories, and the products in them, leave the menu, category and search listings; their pages answer ""page not found"" and their products cannot be added to the cart. Child categories are hidden with their parent."
 "Categories hidden from groups","Categories hidden from groups"
 "Hide when the buyer group is unknown","Hide when the buyer group is unknown"
-"When TackQuote cannot be reached, a signed-in customer's group is unknown. No: the categories are shown. Yes: every category hidden from any group is hidden. Guests are always @GUESTS and need no lookup.","When TackQuote cannot be reached, a signed-in customer's group is unknown. No: the categories are shown. Yes: every category hidden from any group is hidden. Guests are always @GUESTS and need no lookup."
 "Restrict payment and shipping methods by buyer group","Restrict payment and shipping methods by buyer group"
-"A method with no line below stays available to everyone. A method with a line is available only to the groups it names. If the lines would leave a cart with no payment method or no shipping method, every method stays available and the store log says so.","A method with no line below stays available to everyone. A method with a line is available only to the groups it names. If the lines would leave a cart with no payment method or no shipping method, every method stays available and the store log says so."
 "Payment methods by group","Payment methods by group"
 "Shipping methods by group","Shipping methods by group"
 "Restrict when the buyer group is unknown","Restrict when the buyer group is unknown"
-"When TackQuote cannot be reached. No: restricted methods stay available, so an outage does not stop anyone paying. Yes: they are withheld. A customer TackQuote places in no group never gets a restricted method.","When TackQuote cannot be reached. No: restricted methods stay available, so an outage does not stop anyone paying. Yes: they are withheld. A customer TackQuote places in no group never gets a restricted method."
 "Shipping discounts by buyer group","Shipping discounts by buyer group"
-"Only customers TackQuote places in a group get a discount. Applied after the restrictions above.","Only customers TackQuote places in a group get a discount. Applied after the restrictions above."
 "Shipping discount per group","Shipping discount per group"
 "Apply TackQuote tax exemptions","Apply TackQuote tax exemptions"
-"When TackQuote marks the buyer tax exempt, the cart and checkout charge the customer tax class below instead of the group's. The customer's group is not changed. An outage, or no answer, charges tax as usual. TackQuote sends an exemption only for a customer it has linked to this store's customer account (an approved wholesale or credit application made from this store), never for an email match alone.","When TackQuote marks the buyer tax exempt, the cart and checkout charge the customer tax class below instead of the group's. The customer's group is not changed. An outage, or no answer, charges tax as usual. TackQuote sends an exemption only for a customer it has linked to this store's customer account (an approved wholesale or credit application made from this store), never for an email match alone."
 "Customer tax class for tax-exempt buyers","Customer tax class for tax-exempt buyers"
-"Create a customer tax class that no tax rule uses (Stores > Tax Rules) and choose it here. Catalog prices shown including tax are not changed; the cart and checkout charge no tax.","Create a customer tax class that no tax rule uses (Stores > Tax Rules) and choose it here. Catalog prices shown including tax are not changed; the cart and checkout charge no tax."
 "Set the customer group from the buyer group","Set the customer group from the buyer group"
-"On sign-in, and at most every 5 minutes after, a customer whose TackQuote group is listed below is moved to that customer group. Only customers in the website's default group, or in a group this setting put them in, are moved; when TackQuote stops listing them they go back to the group they came from. Every change is written to the store log.","On sign-in, and at most every 5 minutes after, a customer whose TackQuote group is listed below is moved to that customer group. Only customers in the website's default group, or in a group this setting put them in, are moved; when TackQuote stops listing them they go back to the group they came from. Every change is written to the store log."
 "Customer group per buyer group","Customer group per buyer group"
 "Hidden categories by buyer group","Hidden categories by buyer group"
 "Payment and shipping methods by buyer group","Payment and shipping methods by buyer group"
@@ -425,3 +332,88 @@
 "Your cart no longer matched the accepted quote, so the quote was removed. Open the quote again to check it out.","Your cart no longer matched the accepted quote, so the quote was removed. Open the quote again to check it out."
 "This quote could not be opened in the store.","This quote could not be opened in the store."
 "Back to your quotes","Back to your quotes"
+"Storefront","Storefront"
+"B2B pricing","B2B pricing"
+"Buyer groups","Buyer groups"
+"Forms","Forms"
+"Orders","Orders"
+"Help","Help"
+"""Request a Quote"" on product pages","""Request a Quote"" on product pages"
+"""Add to Quote"" and the quote list","""Add to Quote"" and the quote list"
+"""Add to Quote"" on category and search pages","""Add to Quote"" on category and search pages"
+"Quote page","Quote page"
+"Quote button on the cart page","Quote button on the cart page"
+"Target price per product","Target price per product"
+"Attachments","Attachments"
+"Bottom left","Bottom left"
+"Bottom right","Bottom right"
+"Compact","Compact"
+"Regular","Regular"
+"Accent color","Accent color"
+"Your theme's colors","Your theme's colors"
+"Button style","Button style"
+"Outlined","Outlined"
+"Filled","Filled"
+"Quote list launcher","Quote list launcher"
+"%1, %2 px from the edges, %3, ""%4""","%1, %2 px from the edges, %3, ""%4"""
+"Custom CSS","Custom CSS"
+"Added","Added"
+"None","None"
+"""Wholesale account"" tab","""Wholesale account"" tab"
+"""Net terms"" tab","""Net terms"" tab"
+"Pay on net terms at checkout","Pay on net terms at checkout"
+"Add to Quote","Add to Quote"
+"Request quote for these items","Request quote for these items"
+"The accent color must be a hex color such as #1e73be, or empty to use your theme's colors.","The accent color must be a hex color such as #1e73be, or empty to use your theme's colors."
+"The launcher distance from the edges must be a whole number of pixels from %1 to %2.","The launcher distance from the edges must be a whole number of pixels from %1 to %2."
+"Custom CSS cannot contain the ""<"" character, so it was not saved.","Custom CSS cannot contain the ""<"" character, so it was not saved."
+"Custom CSS can be at most %1 characters, so it was not saved.","Custom CSS can be at most %1 characters, so it was not saved."
+"Filled (solid background)","Filled (solid background)"
+"Outlined (border only)","Outlined (border only)"
+"%1 of %2 on","%1 of %2 on"
+"Ready: the quote button is live on your product pages.","Ready: the quote button is live on your product pages."
+"Not live yet. Finish the steps below to show the quote button.","Not live yet. Finish the steps below to show the quote button."
+"TackQuote settings areas","TackQuote settings areas"
+"These are the Default Config settings. A website can override any of them: choose it in the scope switcher on the configuration page.","These are the Default Config settings. A website can override any of them: choose it in the scope switcher on the configuration page."
+"Connection settings","Connection settings"
+"Styling","Styling"
+"Quote buttons","Quote buttons"
+"Quote page and attachments","Quote page and attachments"
+"Shown to signed-in customers on product pages. The cart charges these prices only when ""Account prices charged in cart"" is on.","Shown to signed-in customers on product pages. The cart charges these prices only when ""Account prices charged in cart"" is on."
+"What customers see","What customers see"
+"Cart and checkout","Cart and checkout"
+"These need an API key before they take effect.","These need an API key before they take effect."
+"Buyer group rules","Buyer group rules"
+"Application tabs","Application tabs"
+"Pay on net terms","Pay on net terms"
+"Module version","Module version"
+"Setup guide","Setup guide"
+"(opens in a new tab)","(opens in a new tab)"
+"Support","Support"
+"Connect this store to your TackQuote account. Quote requests and every B2B feature below need a saved API key.","Connect this store to your TackQuote account. Quote requests and every B2B feature below need a saved API key."
+"Storefront: quote-only store (B2B catalog)","Storefront: quote-only store (B2B catalog)"
+"Turn the store into a catalog where shoppers request a quote instead of checking out, for everyone or for the shoppers you choose. Off by default.","Turn the store into a catalog where shoppers request a quote instead of checking out, for everyone or for the shoppers you choose. Off by default."
+"Storefront: styling","Storefront: styling"
+"How the quote buttons, the quote list launcher and the B2B prices look. Everything here is optional: with the defaults they use your theme's own buttons and colors.","How the quote buttons, the quote list launcher and the B2B prices look. Everything here is optional: with the defaults they use your theme's own buttons and colors."
+"Quote list launcher position","Quote list launcher position"
+"Launcher distance from the edges (px)","Launcher distance from the edges (px)"
+"Launcher text","Launcher text"
+"Launcher size","Launcher size"
+"B2B pricing: what signed-in customers see","B2B pricing: what signed-in customers see"
+"Shows a signed-in customer what TackQuote holds for their account on the product page, read live from TackQuote and never stored in the page cache. <strong>Display only:</strong> the cart and checkout charge Magento's own prices unless ""Charge account prices in the cart"" in the next group is on. The customer's email address, the product SKU and the store currency are sent to TackQuote to find the account.","Shows a signed-in customer what TackQuote holds for their account on the product page, read live from TackQuote and never stored in the page cache. <strong>Display only:</strong> the cart and checkout charge Magento's own prices unless ""Charge account prices in the cart"" in the next group is on. The customer's email address, the product SKU and the store currency are sent to TackQuote to find the account."
+"B2B pricing: cart and checkout","B2B pricing: cart and checkout"
+"Makes the cart and checkout follow TackQuote for signed-in customers in the customer groups chosen in the previous group (empty: every signed-in customer). Guests, the admin order editor and API integrations are never affected. The customer's email address, the cart's SKUs and quantities and the cart currency are sent to TackQuote.","Makes the cart and checkout follow TackQuote for signed-in customers in the customer groups chosen in the previous group (empty: every signed-in customer). Guests, the admin order editor and API integrations are never affected. The customer's email address, the cart's SKUs and quantities and the cart currency are sent to TackQuote."
+"Orders: accepted quote checkout","Orders: accepted quote checkout"
+"When a buyer accepts a quote in TackQuote, the buyer portal can send them to this store with a checkout link. The store then fills the cart with the quoted products at the quoted prices, quantities locked, and the order is linked back to the quote.","When a buyer accepts a quote in TackQuote, the buyer portal can send them to this store with a checkout link. The store then fills the cart with the quoted products at the quoted prices, quantities locked, and the order is linked back to the quote."
+"Open accepted quotes in the checkout","Open accepted quotes in the checkout"
+"Storefront: quote buttons","Storefront: quote buttons"
+"Where shoppers can ask for a quote. These buttons create quote requests in TackQuote; they never change the cart or checkout.","Where shoppers can ask for a quote. These buttons create quote requests in TackQuote; they never change the cart or checkout."
+"Storefront: quote page, cart button and attachments","Storefront: quote page, cart button and attachments"
+"More ways to build and send a quote request. The quote page and the cart button need ""Show Add to Quote button"" in the previous group.","More ways to build and send a quote request. The quote page and the cart button need ""Show Add to Quote button"" in the previous group."
+"Forms: wholesale and net terms applications","Forms: wholesale and net terms applications"
+"Forms: pay on net terms (checkout)","Forms: pay on net terms (checkout)"
+"Buyer groups: rules for signed-in customers","Buyer groups: rules for signed-in customers"
+"Rules keyed on the customer's TackQuote buyer group code, read from TackQuote when it is needed and kept for 60 seconds per customer. The customer's email address (and, where TackQuote supports it, the Magento customer ID) is sent to TackQuote to find the account. Rules use group CODES (for example GOLD), compared without regard to case. <strong>@GUESTS</strong> means everybody outside a group: guests, customers TackQuote places in no group, and customers outside the groups selected below. The admin and integrations (TackQuote's own quote conversion included) are never affected.","Rules keyed on the customer's TackQuote buyer group code, read from TackQuote when it is needed and kept for 60 seconds per customer. The customer's email address (and, where TackQuote supports it, the Magento customer ID) is sent to TackQuote to find the account. Rules use group CODES (for example GOLD), compared without regard to case. <strong>@GUESTS</strong> means everybody outside a group: guests, customers TackQuote places in no group, and customers outside the groups selected below. The admin and integrations (TackQuote's own quote conversion included) are never affected."
+"Overview","Overview"
+"TackQuote reads this store's orders, products and stock through the Magento Admin REST API. Set that up in TackQuote under Settings > Integrations > Magento. The switch above is the only order setting in this module.","TackQuote reads this store's orders, products and stock through the Magento Admin REST API. Set that up in TackQuote under Settings > Integrations > Magento. The switch above is the only order setting in this module."
+"Accepted quote checkout","Accepted quote checkout"

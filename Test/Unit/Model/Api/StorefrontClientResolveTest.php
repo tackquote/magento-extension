@@ -22,6 +22,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use TackQuote\Quotes\Model\Api\StorefrontClient;
 use TackQuote\Quotes\Model\Config;
+use TackQuote\Quotes\Model\Api\PluginHeaders;
 
 /**
  * @covers \TackQuote\Quotes\Model\Api\StorefrontClient
@@ -93,7 +94,7 @@ class StorefrontClientResolveTest extends TestCase
             });
         }
 
-        return new StorefrontClient($this->config, $this->curlFactory, new Json(), $logger);
+        return new StorefrontClient($this->config, $this->curlFactory, new Json(), $logger, $this->createConfiguredMock(PluginHeaders::class, ['get' => []]));
     }
 
     private function respond(int $status, string $body): void
@@ -192,7 +193,7 @@ class StorefrontClientResolveTest extends TestCase
     {
         $config = $this->createMock(Config::class);
         $config->method('getApiKey')->willReturn('');
-        $client = new StorefrontClient($config, $this->curlFactory, new Json(), $this->createMock(LoggerInterface::class));
+        $client = new StorefrontClient($config, $this->curlFactory, new Json(), $this->createMock(LoggerInterface::class), $this->createConfiguredMock(PluginHeaders::class, ['get' => []]));
 
         self::assertFalse($client->resolvePricing(self::lines(1), self::EMAIL)['ok']);
         self::assertSame([], $this->urls);

@@ -25,9 +25,6 @@ class QuoteRequestConfig
 {
     private const PREFIX = 'tackquote_quotes/quote_request/';
 
-    private const DEFAULT_PAGE_LINK_LABEL = 'Open the quote page';
-    private const DEFAULT_CART_BUTTON_LABEL = 'Request a quote for your cart';
-
     /**
      * @var ScopeConfigInterface
      */
@@ -69,7 +66,7 @@ class QuoteRequestConfig
      */
     public function getQuotePageLinkLabel(?int $storeId = null): string
     {
-        return $this->text('quote_page_link_label', self::DEFAULT_PAGE_LINK_LABEL, $storeId);
+        return $this->text('quote_page_link_label', (string) __('Open the quote page'), $storeId);
     }
 
     /**
@@ -104,7 +101,7 @@ class QuoteRequestConfig
      */
     public function getCartButtonLabel(?int $storeId = null): string
     {
-        return $this->text('cart_button_label', self::DEFAULT_CART_BUTTON_LABEL, $storeId);
+        return $this->text('cart_button_label', (string) __('Request a quote for your cart'), $storeId);
     }
 
     /**

@@ -4,6 +4,21 @@
   Mirrors what the TackQuote WooCommerce plugin stores as wp_options
   (tack_quotes_api_url / tack_quotes_api_key / tack_quotes_button_label),
   scoped per-website here via Magento's standard scope switcher.
+
+  ORDER AND NAMES follow the WooCommerce plugin's settings tabs (class-tack-settings.php,
+  tabs()): Connection, Storefront, B2B pricing, Buyer groups, Forms, Order sync (Orders here). Magento has no tabs inside
+  one configuration section, so each group's label starts with its tab name, the groups are
+  ordered by sortOrder (10s Connection, 20s Storefront, 30s B2B pricing, 40s Buyer groups, 50s
+  Forms, 60s Orders), and the TackQuote Overview (Block\Adminhtml\Dashboard) links straight to each group.
+
+  NO CONFIG PATH MAY CHANGE HERE. Group and field ids are the stored paths
+  (tackquote_quotes/<group>/<field>); merchants' saved values live under them and the module
+  reads them by path. Reordering is done with sortOrder only, never by moving a field to
+  another group. Test/Unit/Config/ConfigPathInvarianceTest.php holds the full path set.
+
+  Group comments are written on ONE line on purpose: Magento translates a comment with its
+  exact text as the key (Config\Model\Config\Structure\AbstractElement::getComment()), so a
+  comment wrapped over several lines would need its indentation in every i18n/*.csv file.
 -->
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
@@ -16,9 +31,10 @@
             <label>TackQuote Settings</label>
             <tab>tackquote</tab>
             <resource>TackQuote_Quotes::config</resource>
-            <group id="general" translate="label" type="text" sortOrder="10"
+            <group id="general" translate="label comment" type="text" sortOrder="10"
                    showInDefault="1" showInWebsite="1" showInStore="0">
                 <label>Connection</label>
+                <comment>Connect this store to your TackQuote account. Quote requests and every B2B feature below need a saved API key.</comment>
                 <field id="enabled" translate="label comment" type="select" sortOrder="10"
                        showInDefault="1" showInWebsite="1" showInStore="0">
                     <label>Enable TackQuote</label>
@@ -67,9 +83,10 @@
                     <comment>Save the settings above first, then test.</comment>
                 </field>
             </group>
-            <group id="quote_only" translate="label" type="text" sortOrder="30"
+            <group id="quote_only" translate="label comment" type="text" sortOrder="24"
                    showInDefault="1" showInWebsite="1" showInStore="0">
-                <label>Quote-Only Store (B2B Catalog)</label>
+                <label>Storefront: quote-only store (B2B catalog)</label>
+                <comment>Turn the store into a catalog where shoppers request a quote instead of checking out, for everyone or for the shoppers you choose. Off by default.</comment>
                 <field id="enabled" translate="label comment" type="select" sortOrder="10"
                        showInDefault="1" showInWebsite="1" showInStore="0">
                     <label>Enable quote-only mode</label>
@@ -141,20 +158,70 @@
                 </field>
             </group>
             <!--
+              Storefront styling (parity with the WooCommerce plugin 1.10.0+ "Styling" and
+              "Quote list & launcher" settings, plus a button style and custom CSS). Read by
+              ViewModel\Styling; every value is validated on save (Model\Config\Backend\
+              StylingValue) and again on read (Model\Styling\StyleRules). Defaults in
+              etc/config.xml reproduce the look the storefront always had.
+            -->
+            <group id="styling" translate="label comment" type="text" sortOrder="26"
+                   showInDefault="1" showInWebsite="1" showInStore="0">
+                <label>Storefront: styling</label>
+                <comment>How the quote buttons, the quote list launcher and the B2B prices look. Everything here is optional: with the defaults they use your theme's own buttons and colors.</comment>
+                <field id="accent_color" translate="label comment" type="text" sortOrder="10"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Accent color</label>
+                    <backend_model>TackQuote\Quotes\Model\Config\Backend\StylingValue</backend_model>
+                    <comment>Optional. A hex color such as #1e73be. Repaints the quote buttons, the quote list launcher and the B2B account price, with black or white text, whichever is easier to read. Leave empty to use your theme's colors.</comment>
+                </field>
+                <field id="button_style" translate="label comment" type="select" sortOrder="20"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Button style</label>
+                    <source_model>TackQuote\Quotes\Model\Config\Source\ButtonStyle</source_model>
+                    <comment>Filled: solid buttons, like your theme's. Outlined: a border and no fill, in the accent color when one is set.</comment>
+                </field>
+                <field id="launcher_position" translate="label comment" type="select" sortOrder="30"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Quote list launcher position</label>
+                    <source_model>TackQuote\Quotes\Model\Config\Source\LauncherPosition</source_model>
+                    <comment>The floating button that opens the shopper's quote list. Shown once a product is in the list, when "Show Add to Quote button" is on.</comment>
+                </field>
+                <field id="launcher_offset" translate="label comment" type="text" sortOrder="40"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Launcher distance from the edges (px)</label>
+                    <frontend_class>validate-digits validate-digits-range digits-range-0-200</frontend_class>
+                    <backend_model>TackQuote\Quotes\Model\Config\Backend\StylingValue</backend_model>
+                    <comment>From the bottom and side of the window, 0 to 200. Default 20.</comment>
+                </field>
+                <field id="launcher_label" translate="label comment" type="text" sortOrder="50"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Launcher text</label>
+                    <backend_model>TackQuote\Quotes\Model\Config\Backend\StylingValue</backend_model>
+                    <comment>Leave empty for "Quote list". At most 40 characters.</comment>
+                </field>
+                <field id="launcher_size" translate="label" type="select" sortOrder="60"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Launcher size</label>
+                    <source_model>TackQuote\Quotes\Model\Config\Source\LauncherSize</source_model>
+                </field>
+                <field id="custom_css" translate="label comment" type="textarea" sortOrder="70"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Custom CSS</label>
+                    <frontend_class>validate-length maximum-length-10000</frontend_class>
+                    <backend_model>TackQuote\Quotes\Model\Config\Backend\StylingValue</backend_model>
+                    <comment><![CDATA[Optional CSS added to every storefront page after this module's own styles, for example <code>.tackquote-request-btn { border-radius: 0; }</code>. At most 10,000 characters. The &lt; character is not allowed.]]></comment>
+                </field>
+            </group>
+            <!--
               B2B display (1.5.0): what TackQuote says about the SIGNED-IN customer, shown on
               the product page. Mirrors the WooCommerce plugin's "B2B features". DISPLAY ONLY:
               nothing here changes what the cart or checkout charges. Every switch defaults
               to No (etc/config.xml).
             -->
-            <group id="b2b" translate="label comment" type="text" sortOrder="25"
+            <group id="b2b" translate="label comment" type="text" sortOrder="30"
                    showInDefault="1" showInWebsite="1" showInStore="0">
-                <label>B2B Display (signed-in customers)</label>
-                <comment><![CDATA[Shows a signed-in customer what TackQuote holds for their
-                    account, read live from TackQuote and never stored in the page cache.
-                    <strong>Display only:</strong> the cart and checkout charge Magento's own
-                    prices unless "Charge account prices in the cart" under B2B Checkout is on.
-                    The customer's email address, the product SKU and
-                    the store currency are sent to TackQuote to look the account up.]]></comment>
+                <label>B2B pricing: what signed-in customers see</label>
+                <comment><![CDATA[Shows a signed-in customer what TackQuote holds for their account on the product page, read live from TackQuote and never stored in the page cache. <strong>Display only:</strong> the cart and checkout charge Magento's own prices unless "Charge account prices in the cart" in the next group is on. The customer's email address, the product SKU and the store currency are sent to TackQuote to find the account.]]></comment>
                 <field id="enable_account_price" translate="label comment" type="select" sortOrder="10"
                        showInDefault="1" showInWebsite="1" showInStore="0">
                     <label>Show account price</label>
@@ -204,14 +271,10 @@
                         that buyer's prices. NOT LOGGED IN is never shown B2B data.]]></comment>
                 </field>
             </group>
-            <group id="b2b_checkout" translate="label comment" type="text" sortOrder="26"
+            <group id="b2b_checkout" translate="label comment" type="text" sortOrder="32"
                    showInDefault="1" showInWebsite="1" showInStore="0">
-                <label>B2B Checkout (signed-in customers)</label>
-                <comment><![CDATA[Makes the cart and checkout follow TackQuote for signed-in
-                    customers in the B2B customer groups above (empty: every signed-in
-                    customer). Guests, the admin order editor and API integrations are never
-                    affected. The customer's email address, the cart's SKUs and quantities and
-                    the cart currency are sent to TackQuote.]]></comment>
+                <label>B2B pricing: cart and checkout</label>
+                <comment>Makes the cart and checkout follow TackQuote for signed-in customers in the customer groups chosen in the previous group (empty: every signed-in customer). Guests, the admin order editor and API integrations are never affected. The customer's email address, the cart's SKUs and quantities and the cart currency are sent to TackQuote.</comment>
                 <field id="enforce_prices" translate="label comment" type="select" sortOrder="10"
                        showInDefault="1" showInWebsite="1" showInStore="0">
                     <label>Charge account prices in the cart</label>
@@ -243,13 +306,10 @@
               storefront route tackquote/checkout/start and what the ping tells TackQuote
               (Model\QuoteCheckout\LandingUrl).
             -->
-            <group id="quote_checkout" translate="label comment" type="text" sortOrder="27"
+            <group id="quote_checkout" translate="label comment" type="text" sortOrder="60"
                    showInDefault="1" showInWebsite="1" showInStore="1">
-                <label>Accepted quote checkout</label>
-                <comment><![CDATA[When a buyer accepts a quote in TackQuote, the buyer portal can
-                    send them to this store with a checkout link. The store then fills the cart with
-                    the quoted products at the quoted prices, quantities locked, and the order is
-                    linked back to the quote.]]></comment>
+                <label>Orders: accepted quote checkout</label>
+                <comment>When a buyer accepts a quote in TackQuote, the buyer portal can send them to this store with a checkout link. The store then fills the cart with the quoted products at the quoted prices, quantities locked, and the order is linked back to the quote.</comment>
                 <field id="enabled" translate="label comment" type="select" sortOrder="10"
                        showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Open accepted quotes in the checkout</label>
@@ -262,9 +322,10 @@
                         mode: an accepted quote is the one checkout it allows.]]></comment>
                 </field>
             </group>
-            <group id="storefront" translate="label" type="text" sortOrder="20"
+            <group id="storefront" translate="label comment" type="text" sortOrder="20"
                    showInDefault="1" showInWebsite="1" showInStore="0">
-                <label>Request a Quote button</label>
+                <label>Storefront: quote buttons</label>
+                <comment>Where shoppers can ask for a quote. These buttons create quote requests in TackQuote; they never change the cart or checkout.</comment>
                 <field id="show_button" translate="label comment" type="select" sortOrder="10"
                        showInDefault="1" showInWebsite="1" showInStore="0">
                     <label>Show quote button on product pages</label>
@@ -278,6 +339,7 @@
                 <field id="button_label" translate="label" type="text" sortOrder="20"
                        showInDefault="1" showInWebsite="1" showInStore="0">
                     <label>Button label</label>
+                    <depends><field id="show_button">1</field></depends>
                 </field>
                 <!--
                   Multi-product quoting. Kept as separate toggles (rather than one
@@ -325,8 +387,8 @@
             -->
             <group id="quote_request" translate="label comment" type="text" sortOrder="22"
                    showInDefault="1" showInWebsite="1" showInStore="0">
-                <label>Quote page, cart button and attachments</label>
-                <comment>The quote page and the cart button need "Show Add to Quote button" above.</comment>
+                <label>Storefront: quote page, cart button and attachments</label>
+                <comment>More ways to build and send a quote request. The quote page and the cart button need "Show Add to Quote button" in the previous group.</comment>
                 <field id="enable_quote_page" translate="label comment" type="select" sortOrder="10"
                        showInDefault="1" showInWebsite="1" showInStore="0">
                     <label>Enable the quote page</label>
@@ -377,14 +439,10 @@
               Wholesale account and Net terms tabs in My Account (lane MG-FORMS-TERMS).
               Mirrors the WooCommerce plugin's "Wholesale account" and "Net terms" tabs.
             -->
-            <group id="forms" translate="label comment" type="text" sortOrder="40"
+            <group id="forms" translate="label comment" type="text" sortOrder="50"
                    showInDefault="1" showInWebsite="1" showInStore="0">
-                <label>Wholesale and Net Terms Applications</label>
-                <comment><![CDATA[Adds tabs to My Account where a signed-in customer applies
-                    for a wholesale account or for net terms and sees where the application
-                    stands. Applications go to TackQuote for your review. The customer's email
-                    address and Magento customer ID are sent to TackQuote with each
-                    application.]]></comment>
+                <label>Forms: wholesale and net terms applications</label>
+                <comment>Adds tabs to My Account where a signed-in customer applies for a wholesale account or for net terms and sees where the application stands. Applications go to TackQuote for your review. The customer's email address and Magento customer ID are sent to TackQuote with each application.</comment>
                 <field id="enable_wholesale_tab" translate="label comment" type="select" sortOrder="10"
                        showInDefault="1" showInWebsite="1" showInStore="0">
                     <label>Show "Wholesale account" tab</label>
@@ -398,6 +456,7 @@
                     <label>Wholesale form slug</label>
                     <comment>Which TackQuote wholesale form to show. Leave empty for your default
                         form.</comment>
+                    <depends><field id="enable_wholesale_tab">1</field></depends>
                 </field>
                 <field id="enable_net_terms_tab" translate="label comment" type="select" sortOrder="30"
                        showInDefault="1" showInWebsite="1" showInStore="0">
@@ -412,15 +471,10 @@
               beside the rest of TackQuote, through config_path; the values are the payment
               method's own.
             -->
-            <group id="net_terms" translate="label comment" type="text" sortOrder="45"
+            <group id="net_terms" translate="label comment" type="text" sortOrder="52"
                    showInDefault="1" showInWebsite="1" showInStore="0">
-                <label>Pay on Net Terms (checkout)</label>
-                <comment><![CDATA[A checkout payment method shown only to a signed-in customer
-                    you approved for net terms in TackQuote, when their available credit covers
-                    the order in the order's currency. The order is placed as Pending; collect
-                    payment by invoice. Requires the "Net terms" approval to be linked to the
-                    customer's Magento account, which happens when you approve their
-                    application from this store.]]></comment>
+                <label>Forms: pay on net terms (checkout)</label>
+                <comment>A checkout payment method shown only to a signed-in customer you approved for net terms in TackQuote, when their available credit covers the order in the order's currency. The order is placed as Pending; collect payment by invoice. Requires the "Net terms" approval to be linked to the customer's Magento account, which happens when you approve their application from this store.</comment>
                 <field id="active" translate="label" type="select" sortOrder="10"
                        showInDefault="1" showInWebsite="1" showInStore="0">
                     <label>Enabled</label>
@@ -458,18 +512,10 @@
               (etc/config.xml); the rule fields refuse a line that does not parse
               (Model\Groups\Config\RuleMapBackend).
             -->
-            <group id="b2b_groups" translate="label comment" type="text" sortOrder="27"
+            <group id="b2b_groups" translate="label comment" type="text" sortOrder="40"
                    showInDefault="1" showInWebsite="1" showInStore="0">
-                <label>Buyer group rules (signed-in customers)</label>
-                <comment><![CDATA[Rules keyed on the customer's TackQuote buyer group code, read
-                    from TackQuote when it is needed and kept for 60 seconds per customer. The
-                    customer's email address (and, where TackQuote supports it, the Magento
-                    customer id) is sent to TackQuote to find the account. Rules use
-                    group CODES (for example GOLD), compared without regard to case.
-                    <strong>@GUESTS</strong> means everybody outside a group: guests, customers
-                    TackQuote places in no group, and customers outside the groups selected
-                    below. The admin and integrations (TackQuote's own quote conversion
-                    included) are never affected.]]></comment>
+                <label>Buyer groups: rules for signed-in customers</label>
+                <comment><![CDATA[Rules keyed on the customer's TackQuote buyer group code, read from TackQuote when it is needed and kept for 60 seconds per customer. The customer's email address (and, where TackQuote supports it, the Magento customer ID) is sent to TackQuote to find the account. Rules use group CODES (for example GOLD), compared without regard to case. <strong>@GUESTS</strong> means everybody outside a group: guests, customers TackQuote places in no group, and customers outside the groups selected below. The admin and integrations (TackQuote's own quote conversion included) are never affected.]]></comment>
                 <field id="customer_groups" translate="label comment" type="multiselect" sortOrder="5"
                        showInDefault="1" showInWebsite="1" showInStore="0">
                     <label>Only for these customer groups</label>

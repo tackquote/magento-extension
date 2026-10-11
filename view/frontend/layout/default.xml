@@ -6,6 +6,11 @@
   Magento's own page layouts) because a shopper builds a quote list across category pages,
   search results and product pages — the same reasoning behind a theme's persistent
   mini-cart. Putting it only on product pages would strand the list everywhere else.
+
+  The styling settings (group `styling`) reach the templates through the ViewModel\Styling
+  argument: the launcher's label, side and size in the quote list, and one <style> element
+  in head.additional (the head block Magento_PageCache's own default.xml adds to the same
+  way) for the accent color, button style, launcher offset and custom CSS.
 -->
 <page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
@@ -13,10 +18,23 @@
         <css src="TackQuote_Quotes::css/request-quote.css"/>
     </head>
     <body>
+        <referenceBlock name="head.additional">
+            <block class="Magento\Framework\View\Element\Template"
+                   name="tackquote.styling"
+                   template="TackQuote_Quotes::styling.phtml">
+                <arguments>
+                    <argument name="styling_view_model" xsi:type="object">TackQuote\Quotes\ViewModel\Styling</argument>
+                </arguments>
+            </block>
+        </referenceBlock>
         <referenceContainer name="before.body.end">
             <block class="TackQuote\Quotes\Block\QuoteList"
                    name="tackquote.quote.list"
-                   template="TackQuote_Quotes::quote-list.phtml"/>
+                   template="TackQuote_Quotes::quote-list.phtml">
+                <arguments>
+                    <argument name="styling_view_model" xsi:type="object">TackQuote\Quotes\ViewModel\Styling</argument>
+                </arguments>
+            </block>
         </referenceContainer>
     </body>
 </page>

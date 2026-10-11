@@ -32,6 +32,7 @@
             <directory suffix=".php">../../Observer</directory>
             <directory suffix=".php">../../Plugin</directory>
             <directory suffix=".php">../../Setup</directory>
+            <directory suffix=".php">../../ViewModel</directory>
         </include>
     </source>
     <php>

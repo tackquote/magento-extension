@@ -17,6 +17,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use TackQuote\Quotes\Model\Api\StorefrontClient;
 use TackQuote\Quotes\Model\Config;
+use TackQuote\Quotes\Model\Api\PluginHeaders;
 
 /**
  * @covers \TackQuote\Quotes\Model\Api\StorefrontClient
@@ -46,7 +47,7 @@ class StorefrontClientIdentityHeadersTest extends TestCase
             ->getMock();
         $factory->method('create')->willReturn($curl);
 
-        (new StorefrontClient($config, $factory, new Json(), $this->createMock(LoggerInterface::class)))
+        (new StorefrontClient($config, $factory, new Json(), $this->createMock(LoggerInterface::class), $this->createConfiguredMock(PluginHeaders::class, ['get' => []])))
             ->get(StorefrontClient::ROUTE_BUYER_GROUP, ['buyerEmail' => 'b@example.test'], 1, $identityHeaders);
 
         return $sent;
