@@ -18,6 +18,7 @@
         <!-- ko template: getTemplate() --><!-- /ko -->
         <!--/ko-->
         <p data-bind="visible: getDescription(), text: getDescription()"></p>
+        <p class="tackquote-net-terms__terms" data-bind="visible: getTermsSummary(), text: getTermsSummary()"></p>
         <!-- ko if: isPoNumberEnabled() -->
         <div class="field">
             <label class="label" data-bind="attr: {'for': getCode() + '_po_number'}">

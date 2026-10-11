@@ -49,7 +49,6 @@ use Magento\Payment\Model\Method\Adapter;
 use Magento\Quote\Api\Data\CartInterface;
 use Psr\Log\LoggerInterface;
 use TackQuote\Quotes\Model\Config;
-use TackQuote\Quotes\Model\Forms\IdentityResolver;
 
 class NetTermsMethod extends Adapter
 {
@@ -64,14 +63,9 @@ class NetTermsMethod extends Adapter
     public const PO_MAX_LENGTH = 64;
 
     /**
-     * @var IdentityResolver
+     * @var NetTermsBuyer
      */
-    private $identities;
-
-    /**
-     * @var NetTermsStanding
-     */
-    private $standing;
+    private $buyer;
 
     /**
      * @var NetTermsEligibility
@@ -92,8 +86,7 @@ class NetTermsMethod extends Adapter
      * @param ManagerInterface $eventManager
      * @param ValueHandlerPoolInterface $valueHandlerPool
      * @param PaymentDataObjectFactory $paymentDataObjectFactory
-     * @param IdentityResolver $identities
-     * @param NetTermsStanding $standing
+     * @param NetTermsBuyer $buyer
      * @param NetTermsEligibility $eligibility
      * @param Config $moduleConfig
      * @param LoggerInterface $netTermsLogger
@@ -109,8 +102,7 @@ class NetTermsMethod extends Adapter
         ManagerInterface $eventManager,
         ValueHandlerPoolInterface $valueHandlerPool,
         PaymentDataObjectFactory $paymentDataObjectFactory,
-        IdentityResolver $identities,
-        NetTermsStanding $standing,
+        NetTermsBuyer $buyer,
         NetTermsEligibility $eligibility,
         Config $moduleConfig,
         LoggerInterface $netTermsLogger,
@@ -134,8 +126,7 @@ class NetTermsMethod extends Adapter
             $commandExecutor,
             $logger
         );
-        $this->identities = $identities;
-        $this->standing = $standing;
+        $this->buyer = $buyer;
         $this->eligibility = $eligibility;
         $this->moduleConfig = $moduleConfig;
         $this->netTermsLogger = $netTermsLogger;
@@ -268,13 +259,14 @@ class NetTermsMethod extends Adapter
      */
     private function decide(array $subject, bool $fresh): array
     {
-        $who = $this->identities->forCustomer($subject['customerId'], $subject['email'], $subject['storeId']);
-        if (!$who->carriesCustomerId()) {
+        // The same read as the checkout panel's terms line (NetTermsBuyer).
+        $standing = $this->buyer->standingOf($subject, $fresh);
+        if (!$standing['identified']) {
             // Credit is only ever read for the customer TackQuote can tie to a buyer by a
             // seller-made link; an email alone never spends a credit line.
             return ['eligible' => false, 'reason' => 'customer_not_identified', 'termsDays' => 0];
         }
-        $answer = $this->standing->read($who, $subject['storeId'], $fresh);
+        $answer = $standing['answer'];
         if ($answer === null) {
             return ['eligible' => false, 'reason' => 'lookup_failed', 'termsDays' => 0];
         }
@@ -305,12 +297,7 @@ class NetTermsMethod extends Adapter
     }
 
     /**
-     * The registered customer and the total of a quote or an order, from its own data.
-     *
-     * Read with getData() on the stored fields (`customer_id`, `customer_is_guest`,
-     * `customer_email`, `store_id`, `grand_total`, the currency code), which both
-     * Magento\Quote\Model\Quote and Magento\Sales\Model\Order carry. A quote's
-     * `customer_email` for a signed-in customer is the account email Magento copied onto it.
+     * The registered customer and the total of a quote or an order (NetTermsBuyer::subjectOf()).
      *
      * @param mixed $owner
      * @param string $currencyKey
@@ -318,22 +305,7 @@ class NetTermsMethod extends Adapter
      */
     public function subjectOf($owner, string $currencyKey): ?array
     {
-        if (!$owner instanceof DataObject) {
-            return null;
-        }
-        $customerId = (int) $owner->getData('customer_id');
-        if ($customerId <= 0 || (bool) $owner->getData('customer_is_guest')) {
-            return null;
-        }
-        $storeId = $owner->getData('store_id');
-
-        return [
-            'storeId' => $storeId !== null ? (int) $storeId : null,
-            'customerId' => $customerId,
-            'email' => (string) $owner->getData('customer_email'),
-            'amount' => $owner->getData('grand_total'),
-            'currency' => (string) $owner->getData($currencyKey),
-        ];
+        return $this->buyer->subjectOf($owner, $currencyKey);
     }
 
     /**

@@ -25,6 +25,7 @@ use Psr\Log\LoggerInterface;
 use TackQuote\Quotes\Model\Config;
 use TackQuote\Quotes\Model\Forms\AccountIdentity;
 use TackQuote\Quotes\Model\Forms\IdentityResolver;
+use TackQuote\Quotes\Model\Payment\NetTermsBuyer;
 use TackQuote\Quotes\Model\Payment\NetTermsEligibility;
 use TackQuote\Quotes\Model\Payment\NetTermsMethod;
 use TackQuote\Quotes\Model\Payment\NetTermsStanding;
@@ -95,8 +96,7 @@ class NetTermsMethodTest extends TestCase
             $this->createMock(ManagerInterface::class),
             $pool,
             $this->createMock(PaymentDataObjectFactory::class),
-            new IdentityResolver($config, $capabilities),
-            $standing,
+            new NetTermsBuyer(new IdentityResolver($config, $capabilities), $standing),
             new NetTermsEligibility(),
             $config,
             $this->createMock(LoggerInterface::class),

@@ -1,5 +1,6 @@
 /**
- * "Pay on net terms" at checkout: the method, its description and the optional PO number.
+ * "Pay on net terms" at checkout: the method, its description, the buyer's terms and the
+ * optional PO number.
  *
  * The PO number goes out as the payment's own `po_number` (PaymentInterface), which
  * Model\Payment\NetTermsMethod::assignData() stores. Nothing here decides whether the method
@@ -42,6 +43,16 @@ define([
         /** @returns {String} */
         getDescription: function () {
             return settings().description || '';
+        },
+
+        /**
+         * The buyer's own terms ("Net 30 terms. $5,000.00 available."), built and formatted by
+         * the server (Model\Payment\NetTermsConfigProvider); '' when there is nothing to say.
+         *
+         * @returns {String}
+         */
+        getTermsSummary: function () {
+            return typeof settings().terms === 'string' ? settings().terms : '';
         },
 
         /** @returns {Object} */

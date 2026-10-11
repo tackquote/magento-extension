@@ -48,6 +48,12 @@
             </argument>
         </arguments>
     </type>
+    <!-- The terms line reads the checkout session's quote; a Proxy keeps construction session-free. -->
+    <type name="TackQuote\Quotes\Model\Payment\NetTermsConfigProvider">
+        <arguments>
+            <argument name="checkoutSession" xsi:type="object">Magento\Checkout\Model\Session\Proxy</argument>
+        </arguments>
+    </type>
     <type name="TackQuote\Quotes\Model\QuoteOnly\SessionVisitorContext">
         <arguments>
             <argument name="customerSession" xsi:type="object">Magento\Customer\Model\Session\Proxy</argument>
