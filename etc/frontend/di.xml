@@ -48,6 +48,19 @@
             </argument>
         </arguments>
     </type>
+    <!--
+      The quote form's "Your details" prefill for a signed-in customer (Model\CustomerData\
+      BuyerDetails): a customer-data section, because the form itself is full-page cached.
+      Same area as Magento_Customer's own registration, so the two maps are merged item by item.
+    -->
+    <type name="Magento\Customer\CustomerData\SectionPoolInterface">
+        <arguments>
+            <argument name="sectionSourceMap" xsi:type="array">
+                <item name="tackquote-buyer" xsi:type="string">TackQuote\Quotes\Model\CustomerData\BuyerDetails</item>
+            </argument>
+        </arguments>
+    </type>
+
     <!-- The terms line reads the checkout session's quote; a Proxy keeps construction session-free. -->
     <type name="TackQuote\Quotes\Model\Payment\NetTermsConfigProvider">
         <arguments>

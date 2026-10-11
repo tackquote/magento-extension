@@ -55,6 +55,12 @@ WooCommerce, which needs the plugin to push.
   to their product page instead of being added.
 - The list is capped at 50 items in the browser and again at 50 server-side, matching the
   API's own `MAX_ITEMS`.
+- **Signed-in customers find "Your details" filled in**: first and last name, the account
+  email (read-only, as the submit controller uses the account email anyway) and the default
+  billing address's telephone. They come from Magento's own customer record through a
+  customer-data section, `tackquote-buyer` (`Model/CustomerData/BuyerDetails.php`), loaded
+  with Magento's own sections, never from the full-page-cached form HTML (which Magento shares
+  between customers of a group) and never from TackQuote. UNVERIFIED in a browser.
 
 **Prices are always re-resolved server-side.** The browser stores and sends only a SKU, a
 display name and a quantity — never a price. `Controller/Quote/Submit.php` looks every SKU

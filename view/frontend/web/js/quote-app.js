@@ -566,19 +566,42 @@ define([
             return valid;
         }
 
+        /**
+         * Fill an empty field, never overwriting what the shopper typed.
+         *
+         * @param {String} name
+         * @param {*} value
+         */
+        function fillIfEmpty(name, value) {
+            var $field = $form.find('[name="' + name + '"]');
+
+            if (typeof value === 'string' && value !== '' && !$field.val()) {
+                $field.val(value);
+            }
+        }
+
+        /**
+         * "Your details" for a signed-in customer: name, account email and default billing
+         * telephone from the `tackquote-buyer` customer-data section (Model\CustomerData\
+         * BuyerDetails), never from the full-page-cached HTML and never from TackQuote. The
+         * email is the account's and is read-only, as in the WooCommerce plugin: the submit
+         * controller uses the account email for a signed-in customer whatever is posted.
+         * A guest's section is empty, so the fields stay as they are and the email editable.
+         */
         function prefillFromCustomer() {
-            var customer = customerData.get('customer')();
+            var buyer = customerData.get('tackquote-buyer')() || {},
+                customer = customerData.get('customer')() || {},
+                $email = $form.find('[name="email"]'),
+                signedIn = typeof buyer.email === 'string' && buyer.email !== '';
 
-            if (!customer || !customer.firstname) {
-                return;
-            }
+            fillIfEmpty('firstName', buyer.firstname || customer.firstname);
+            fillIfEmpty('lastName', buyer.lastname);
+            fillIfEmpty('phone', buyer.telephone);
 
-            if (!$form.find('[name="firstName"]').val()) {
-                $form.find('[name="firstName"]').val(customer.firstname);
-            }
-
-            if (customer.lastname && !$form.find('[name="lastName"]').val()) {
-                $form.find('[name="lastName"]').val(customer.lastname);
+            if (signedIn) {
+                $email.val(buyer.email).prop('readOnly', true).attr('aria-readonly', 'true');
+            } else if ($email.prop('readOnly')) {
+                $email.prop('readOnly', false).removeAttr('aria-readonly').val('');
             }
         }
 
