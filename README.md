@@ -1680,6 +1680,13 @@ magento-extension/                              (repository root)
 
 ## Changelog
 
+### 1.5.2 (2026-10-11)
+
+- **PHP 8.5 added to the Composer constraint.** `composer.json` now requires
+  `~8.1.0||~8.2.0||~8.3.0||~8.4.0||~8.5.0`: the Adobe Commerce Marketplace validator refuses a
+  package whose PHP constraint leaves out the newest PHP the 2.4 line supports. PHPCompatibility
+  reports nothing for 8.5; the unit and standards gates run on 8.1 to 8.4. No code change.
+
 ### 1.5.1 (2026-10-11)
 
 - **Order limits on a brand-new cart (devstore Q/A finding #39).** The first product added to a
