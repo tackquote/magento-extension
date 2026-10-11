@@ -1,0 +1,65 @@
+<?php
+/**
+ * The wholesale application form (account tab and CMS pages).
+ *
+ * In the account tab the customer's own state comes first: approved replaces the form, an
+ * application under review replaces it, a declined one is said and the form is offered
+ * again. Anything unknown shows the form and claims nothing.
+ *
+ * @var \TackQuote\Quotes\Block\Account\WholesaleForm $block
+ * @var \Magento\Framework\Escaper $escaper
+ * @package TackQuote_Quotes
+ */
+
+use TackQuote\Quotes\Model\Forms\ApplicationStatus;
+
+if (!$block->isEnabled()) {
+    return;
+}
+$state = $block->getState();
+if ($state === ApplicationStatus::APPROVED): ?>
+    <div class="message success"><div><?= $escaper->escapeHtml(__('Your wholesale account is approved.')) ?></div></div>
+    <?php return; ?>
+<?php endif; ?>
+<?php if ($state === ApplicationStatus::PENDING): ?>
+    <div class="message info"><div><?= $escaper->escapeHtml(__('Your wholesale application is being reviewed. We will email you when it has been decided.')) ?></div></div>
+    <?php return; ?>
+<?php endif; ?>
+<?php $form = $block->getForm(); ?>
+<?php if ($form === null): ?>
+    <div class="message info"><div><?= $escaper->escapeHtml(__('The application form is not available right now. Please try again later.')) ?></div></div>
+    <?php return; ?>
+<?php endif; ?>
+<?php if ($state === ApplicationStatus::DECLINED): ?>
+    <div class="message notice"><div><?= $escaper->escapeHtml(__('Your last wholesale application was not approved. You can apply again below.')) ?></div></div>
+<?php endif; ?>
+<div class="tackquote-application tackquote-application--wholesale">
+    <?php if ($form['name'] !== ''): ?>
+        <h2 class="tackquote-application__title"><?= $escaper->escapeHtml($form['name']) ?></h2>
+    <?php endif; ?>
+    <?php if ($form['description'] !== ''): ?>
+        <p class="tackquote-application__intro"><?= $escaper->escapeHtml($form['description']) ?></p>
+    <?php endif; ?>
+    <form class="form tackquote-application__form"
+          action="<?= $escaper->escapeUrl($block->getActionUrl()) ?>"
+          method="post"<?= $block->hasFileField() ? ' enctype="multipart/form-data"' : '' ?>
+          data-mage-init='{"validation":{}}'>
+        <?= $block->getBlockHtml('formkey') ?>
+        <input type="hidden" name="tack_slug" value="<?= $escaper->escapeHtmlAttr($block->getSlug()) ?>"/>
+        <fieldset class="fieldset">
+            <?php foreach ($form['fields'] as $field): ?>
+                <?= /* @noEscape escaped field by field in FieldRenderer */ $block->renderField($field) ?>
+            <?php endforeach; ?>
+        </fieldset>
+        <?php if (!$block->getData('show_status')): ?>
+            <p class="note"><?= $escaper->escapeHtml(__('You need to be signed in to your account to apply.')) ?></p>
+        <?php endif; ?>
+        <div class="actions-toolbar">
+            <div class="primary">
+                <button type="submit" class="action submit primary">
+                    <span><?= $escaper->escapeHtml(__('Submit application')) ?></span>
+                </button>
+            </div>
+        </div>
+    </form>
+</div>

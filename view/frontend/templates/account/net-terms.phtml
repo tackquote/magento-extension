@@ -1,0 +1,111 @@
+<?php
+/**
+ * My Account > Net terms: approved terms and credit, a pending or declined notice, or the
+ * application form. The applicant and contact email are the signed-in account's.
+ *
+ * @var \TackQuote\Quotes\Block\Account\NetTermsForm $block
+ * @var \Magento\Framework\Escaper $escaper
+ * @package TackQuote_Quotes
+ */
+
+$view = $block->getView();
+if ($view['state'] === 'active'): ?>
+    <div class="tackquote-net-terms">
+        <div class="message success"><div><?= $escaper->escapeHtml(__('You can pay on net terms.')) ?></div></div>
+        <dl class="tackquote-net-terms__summary">
+            <dt><?= $escaper->escapeHtml(__('Payment terms')) ?></dt>
+            <dd><?= $escaper->escapeHtml(__('Net %1 days', $view['termsDays'])) ?></dd>
+            <?php if ($view['creditLimit'] !== ''): ?>
+                <dt><?= $escaper->escapeHtml(__('Credit limit')) ?></dt>
+                <dd><?= $escaper->escapeHtml($block->formatMoney($view['creditLimit'], $view['currency'])) ?></dd>
+            <?php endif; ?>
+            <?php if ($view['available'] !== ''): ?>
+                <dt><?= $escaper->escapeHtml(__('Available credit')) ?></dt>
+                <dd><?= $escaper->escapeHtml($block->formatMoney($view['available'], $view['currency'])) ?></dd>
+            <?php endif; ?>
+        </dl>
+        <p><?= $escaper->escapeHtml(__('Choose "Pay on net terms" at checkout when it is offered for your order.')) ?></p>
+    </div>
+    <?php return; ?>
+<?php endif; ?>
+<?php if ($view['state'] === 'pending'): ?>
+    <div class="message info"><div><?= $escaper->escapeHtml(__('Your net terms application is being reviewed.')) ?></div></div>
+    <?php return; ?>
+<?php endif; ?>
+<?php if (!$block->canApply()): ?>
+    <div class="message info"><div><?= $escaper->escapeHtml(__('Net terms applications are not available from this store right now. Please contact us.')) ?></div></div>
+    <?php return; ?>
+<?php endif; ?>
+<?php if ($view['state'] === 'declined'): ?>
+    <div class="message notice"><div><?= $escaper->escapeHtml(__('Your last net terms application was not approved. You can apply again below.')) ?></div></div>
+<?php endif; ?>
+<form class="form tackquote-application tackquote-application--net-terms"
+      action="<?= $escaper->escapeUrl($block->getActionUrl()) ?>"
+      method="post"
+      data-mage-init='{"validation":{}}'>
+    <?= $block->getBlockHtml('formkey') ?>
+    <fieldset class="fieldset">
+        <legend class="legend"><span><?= $escaper->escapeHtml(__('Apply for net terms')) ?></span></legend>
+        <p><?= $escaper->escapeHtml(__('We will reply to %1.', $block->getAccountEmail())) ?></p>
+        <div class="field required">
+            <label class="label" for="tq-ct-name"><span><?= $escaper->escapeHtml(__('Legal business name')) ?></span></label>
+            <div class="control"><input type="text" id="tq-ct-name" name="tack_ct[legalBusinessName]" maxlength="200" required/></div>
+        </div>
+        <div class="field">
+            <label class="label" for="tq-ct-phone"><span><?= $escaper->escapeHtml(__('Contact phone')) ?></span></label>
+            <div class="control"><input type="tel" id="tq-ct-phone" name="tack_ct[contactPhone]" maxlength="40"/></div>
+        </div>
+        <div class="field">
+            <label class="label" for="tq-ct-tax"><span><?= $escaper->escapeHtml(__('Tax / VAT ID')) ?></span></label>
+            <div class="control"><input type="text" id="tq-ct-tax" name="tack_ct[taxId]" maxlength="64"/></div>
+        </div>
+        <div class="field">
+            <label class="label" for="tq-ct-limit"><span><?= $escaper->escapeHtml(__('Requested credit limit')) ?></span></label>
+            <div class="control"><input type="number" id="tq-ct-limit" name="tack_ct[requestedLimit]" min="0" max="100000000" step="0.01"/></div>
+        </div>
+        <div class="field">
+            <label class="label" for="tq-ct-days"><span><?= $escaper->escapeHtml(__('Requested payment terms')) ?></span></label>
+            <div class="control">
+                <select id="tq-ct-days" name="tack_ct[requestedTermsDays]">
+                    <option value=""><?= $escaper->escapeHtml(__('Please select')) ?></option>
+                    <?php foreach ($block->getTermsDays() as $days): ?>
+                        <option value="<?= (int) $days ?>"><?= $escaper->escapeHtml(__('Net %1 days', $days)) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+    </fieldset>
+    <fieldset class="fieldset">
+        <legend class="legend"><span><?= $escaper->escapeHtml(__('Billing address')) ?></span></legend>
+        <?php foreach ($block->getAddressParts() as $part => $label): ?>
+            <div class="field">
+                <label class="label" for="tq-ct-addr-<?= $escaper->escapeHtmlAttr($part) ?>"><span><?= $escaper->escapeHtml($label) ?></span></label>
+                <div class="control"><input type="text" id="tq-ct-addr-<?= $escaper->escapeHtmlAttr($part) ?>" name="tack_ct[billingAddress][<?= $escaper->escapeHtmlAttr($part) ?>]" maxlength="200"/></div>
+            </div>
+        <?php endforeach; ?>
+    </fieldset>
+    <fieldset class="fieldset">
+        <legend class="legend"><span><?= $escaper->escapeHtml(__('Trade references')) ?></span></legend>
+        <?php for ($i = 0; $i < $block->getReferenceCount(); $i++): ?>
+            <div class="field">
+                <div class="control">
+                    <input type="text" name="tack_ct[tradeReferences][<?= (int) $i ?>][companyName]" maxlength="200" placeholder="<?= $escaper->escapeHtmlAttr(__('Company')) ?>" aria-label="<?= $escaper->escapeHtmlAttr(__('Company')) ?>"/>
+                    <input type="text" name="tack_ct[tradeReferences][<?= (int) $i ?>][contactName]" maxlength="200" placeholder="<?= $escaper->escapeHtmlAttr(__('Contact name')) ?>" aria-label="<?= $escaper->escapeHtmlAttr(__('Contact name')) ?>"/>
+                    <input type="email" name="tack_ct[tradeReferences][<?= (int) $i ?>][email]" maxlength="320" placeholder="<?= $escaper->escapeHtmlAttr(__('Email')) ?>" aria-label="<?= $escaper->escapeHtmlAttr(__('Email')) ?>"/>
+                    <input type="tel" name="tack_ct[tradeReferences][<?= (int) $i ?>][phone]" maxlength="40" placeholder="<?= $escaper->escapeHtmlAttr(__('Phone')) ?>" aria-label="<?= $escaper->escapeHtmlAttr(__('Phone')) ?>"/>
+                </div>
+            </div>
+        <?php endfor; ?>
+    </fieldset>
+    <fieldset class="fieldset">
+        <div class="field">
+            <label class="label" for="tq-ct-notes"><span><?= $escaper->escapeHtml(__('Notes')) ?></span></label>
+            <div class="control"><textarea id="tq-ct-notes" name="tack_ct[notes]" rows="4" maxlength="2000"></textarea></div>
+        </div>
+    </fieldset>
+    <div class="actions-toolbar">
+        <div class="primary">
+            <button type="submit" class="action submit primary"><span><?= $escaper->escapeHtml(__('Submit application')) ?></span></button>
+        </div>
+    </div>
+</form>

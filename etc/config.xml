@@ -27,6 +27,34 @@
                 <enable_cart_button>0</enable_cart_button>
                 <enable_attachments>0</enable_attachments>
             </quote_request>
+            <!-- Wholesale account and Net terms tabs in My Account (lane MG-FORMS-TERMS). -->
+            <forms>
+                <enable_wholesale_tab>0</enable_wholesale_tab>
+                <wholesale_form_slug></wholesale_form_slug>
+                <enable_net_terms_tab>0</enable_net_terms_tab>
+            </forms>
         </tackquote_quotes>
+        <!--
+          "Pay on net terms" (lane MG-FORMS-TERMS). Off until the merchant turns it on.
+          Offline, no payment_action: Magento places the order in state "new" with
+          order_status "pending" (Magento\Sales\Model\Order\Payment::place()). Not offered
+          in admin order creation (can_use_internal 0): there is no shopper's TackQuote
+          standing to read there.
+        -->
+        <payment>
+            <tackquote_net_terms>
+                <model>TackQuote\Quotes\Model\Payment\NetTermsMethod</model>
+                <active>0</active>
+                <title>Pay on net terms</title>
+                <description>Place this order on your approved payment terms. We will send an invoice.</description>
+                <order_status>pending</order_status>
+                <is_offline>1</is_offline>
+                <can_use_checkout>1</can_use_checkout>
+                <can_use_internal>0</can_use_internal>
+                <po_number>0</po_number>
+                <sort_order>100</sort_order>
+                <group>offline</group>
+            </tackquote_net_terms>
+        </payment>
     </default>
 </config>
