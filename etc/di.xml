@@ -68,13 +68,12 @@
         </arguments>
     </type>
 
-    <!-- window.checkoutConfig.payment.tackquote_net_terms for the checkout renderer. -->
-    <type name="Magento\Checkout\Model\CompositeConfigProvider">
-        <arguments>
-            <argument name="configProviders" xsi:type="array">
-                <item name="tackquote_net_terms_config_provider"
-                      xsi:type="object">TackQuote\Quotes\Model\Payment\NetTermsConfigProvider</item>
-            </argument>
-        </arguments>
-    </type>
+    <!--
+      NOT HERE: the checkout config provider (window.checkoutConfig.payment.tackquote_net_terms)
+      is registered in etc/frontend/di.xml. Magento merges an area's DI arguments over the global
+      ones per type with a NON-recursive array_replace
+      (Magento\Framework\ObjectManager\Config\Config::_mergeConfiguration()), so Magento_Checkout's
+      own etc/frontend/di.xml `configProviders` array would replace a global registration whole
+      and the renderer would read nothing. Test/Unit/Layout/NetTermsConfigProviderWiringTest pins it.
+    -->
 </config>

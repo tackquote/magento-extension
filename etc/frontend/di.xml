@@ -30,6 +30,24 @@
     -->
     <preference for="TackQuote\Quotes\Model\QuoteOnly\VisitorContextInterface"
                 type="TackQuote\Quotes\Model\QuoteOnly\SessionVisitorContext"/>
+
+    <!--
+      "Pay on net terms": window.checkoutConfig.payment.tackquote_net_terms for the checkout
+      renderer. FRONTEND, not global: Magento_Checkout registers its own providers on this type in
+      ITS etc/frontend/di.xml, and an area's arguments replace the global ones per type with a
+      non-recursive array_replace (Magento\Framework\ObjectManager\Config\Config::
+      _mergeConfiguration(), read in Magento 2.4.8-p5). Files of the SAME area are merged item by
+      item, which is why every core module registers its provider here. A global registration was
+      silently dropped on the live checkout (39 providers, none of them this one).
+    -->
+    <type name="Magento\Checkout\Model\CompositeConfigProvider">
+        <arguments>
+            <argument name="configProviders" xsi:type="array">
+                <item name="tackquote_net_terms_config_provider"
+                      xsi:type="object">TackQuote\Quotes\Model\Payment\NetTermsConfigProvider</item>
+            </argument>
+        </arguments>
+    </type>
     <type name="TackQuote\Quotes\Model\QuoteOnly\SessionVisitorContext">
         <arguments>
             <argument name="customerSession" xsi:type="object">Magento\Customer\Model\Session\Proxy</argument>
