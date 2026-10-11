@@ -1672,7 +1672,30 @@ magento-extension/                              (repository root)
 
 ## Changelog
 
-### Unreleased
+### 1.5.0 (2026-10-11)
+
+- **Fixes from the Magento devstore Q/A pass (PR #13).**
+  - "Pay on net terms" at checkout now shows its description, the buyer's terms ("Net 30 terms.
+    $5,000.00 available.") and the optional purchase-order field: the checkout config provider is
+    registered in `etc/frontend/di.xml`, because Magento replaces a type's argument array per area
+    and the global registration never reached the checkout (`NetTermsConfigProviderWiringTest`).
+  - "Connect with TackQuote" finishes on stores with "Add Secret Key to URLs" on (Magento's
+    default): the return route is built before the key-less dashboard URL and the secret key is
+    switched back on, because `Backend\Model\Url` keeps the `_nosecret` flag between calls
+    (`StoreInfoTest`).
+  - Server capabilities (target prices, attachments, customer identity, store checkout) are
+    fetched on demand when the cache is cold, so a `cache:flush`, a settings save or a fresh install
+    no longer hides them until the next cron run; a failed check is logged at WARNING with the HTTP
+    status and shown on the Overview's cron row; an unrelated settings save keeps the cache.
+  - The quote form prefills a signed-in customer's name, email (read-only) and billing telephone
+    from a private customer-data section (`tackquote-buyer`), loaded once for sessions that
+    predate the section.
+  - A wholesale application is refused with a clear message until the Magento identity is
+    available; after a submission the customer returns to the Wholesale account tab with a
+    success message.
+  - Order-limit refusals say what was attempted instead of a cart count; the Overview's positive
+    status lines are green; the Storefront rows say when a feature is still waiting for the first
+    server check; README documents that the cart keeps showing prices in "Price on request" mode.
 
 - **Admin Overview rebuilt on the Magento Admin Design Pattern Library.**
   - Real tabs (`mage/backend/tabs`, the core Dashboard's horizontal tabs) replace the anchor
