@@ -24,20 +24,28 @@ if ($view['state'] === 'active'): ?>
                 <dd><?= $escaper->escapeHtml($block->formatMoney($view['available'], $view['currency'])) ?></dd>
             <?php endif; ?>
         </dl>
-        <p><?= $escaper->escapeHtml(__('Choose "Pay on net terms" at checkout when it is offered for your order.')) ?></p>
+        <p><?= $escaper->escapeHtml(
+            __('Choose "Pay on net terms" at checkout when it is offered for your order.')
+        ) ?></p>
     </div>
     <?php return; ?>
 <?php endif; ?>
 <?php if ($view['state'] === 'pending'): ?>
-    <div class="message info"><div><?= $escaper->escapeHtml(__('Your net terms application is being reviewed.')) ?></div></div>
+    <div class="message info"><div><?= $escaper->escapeHtml(
+        __('Your net terms application is being reviewed.')
+    ) ?></div></div>
     <?php return; ?>
 <?php endif; ?>
 <?php if (!$block->canApply()): ?>
-    <div class="message info"><div><?= $escaper->escapeHtml(__('Net terms applications are not available from this store right now. Please contact us.')) ?></div></div>
+    <div class="message info"><div><?= $escaper->escapeHtml(__(
+        'Net terms applications are not available from this store right now. Please contact us.'
+    )) ?></div></div>
     <?php return; ?>
 <?php endif; ?>
 <?php if ($view['state'] === 'declined'): ?>
-    <div class="message notice"><div><?= $escaper->escapeHtml(__('Your last net terms application was not approved. You can apply again below.')) ?></div></div>
+    <div class="message notice"><div><?= $escaper->escapeHtml(__(
+        'Your last net terms application was not approved. You can apply again below.'
+    )) ?></div></div>
 <?php endif; ?>
 <form class="form tackquote-application tackquote-application--net-terms"
       action="<?= $escaper->escapeUrl($block->getActionUrl()) ?>"
@@ -48,8 +56,11 @@ if ($view['state'] === 'active'): ?>
         <legend class="legend"><span><?= $escaper->escapeHtml(__('Apply for net terms')) ?></span></legend>
         <p><?= $escaper->escapeHtml(__('We will reply to %1.', $block->getAccountEmail())) ?></p>
         <div class="field required">
-            <label class="label" for="tq-ct-name"><span><?= $escaper->escapeHtml(__('Legal business name')) ?></span></label>
-            <div class="control"><input type="text" id="tq-ct-name" name="tack_ct[legalBusinessName]" maxlength="200" required/></div>
+            <label class="label" for="tq-ct-name"><span><?= $escaper->escapeHtml(
+                __('Legal business name')
+            ) ?></span></label>
+            <div class="control"><input type="text" id="tq-ct-name" name="tack_ct[legalBusinessName]"
+                                        maxlength="200" required/></div>
         </div>
         <div class="field">
             <label class="label" for="tq-ct-phone"><span><?= $escaper->escapeHtml(__('Contact phone')) ?></span></label>
@@ -60,16 +71,23 @@ if ($view['state'] === 'active'): ?>
             <div class="control"><input type="text" id="tq-ct-tax" name="tack_ct[taxId]" maxlength="64"/></div>
         </div>
         <div class="field">
-            <label class="label" for="tq-ct-limit"><span><?= $escaper->escapeHtml(__('Requested credit limit')) ?></span></label>
-            <div class="control"><input type="number" id="tq-ct-limit" name="tack_ct[requestedLimit]" min="0" max="100000000" step="0.01"/></div>
+            <label class="label" for="tq-ct-limit"><span><?= $escaper->escapeHtml(
+                __('Requested credit limit')
+            ) ?></span></label>
+            <div class="control"><input type="number" id="tq-ct-limit" name="tack_ct[requestedLimit]"
+                                        min="0" max="100000000" step="0.01"/></div>
         </div>
         <div class="field">
-            <label class="label" for="tq-ct-days"><span><?= $escaper->escapeHtml(__('Requested payment terms')) ?></span></label>
+            <label class="label" for="tq-ct-days"><span><?= $escaper->escapeHtml(
+                __('Requested payment terms')
+            ) ?></span></label>
             <div class="control">
                 <select id="tq-ct-days" name="tack_ct[requestedTermsDays]">
                     <option value=""><?= $escaper->escapeHtml(__('Please select')) ?></option>
                     <?php foreach ($block->getTermsDays() as $days): ?>
-                        <option value="<?= (int) $days ?>"><?= $escaper->escapeHtml(__('Net %1 days', $days)) ?></option>
+                        <option value="<?= (int) $days ?>"><?= $escaper->escapeHtml(
+                            __('Net %1 days', $days)
+                        ) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -79,8 +97,13 @@ if ($view['state'] === 'active'): ?>
         <legend class="legend"><span><?= $escaper->escapeHtml(__('Billing address')) ?></span></legend>
         <?php foreach ($block->getAddressParts() as $part => $label): ?>
             <div class="field">
-                <label class="label" for="tq-ct-addr-<?= $escaper->escapeHtmlAttr($part) ?>"><span><?= $escaper->escapeHtml($label) ?></span></label>
-                <div class="control"><input type="text" id="tq-ct-addr-<?= $escaper->escapeHtmlAttr($part) ?>" name="tack_ct[billingAddress][<?= $escaper->escapeHtmlAttr($part) ?>]" maxlength="200"/></div>
+                <label class="label" for="tq-ct-addr-<?= $escaper->escapeHtmlAttr($part) ?>"><span><?=
+                    $escaper->escapeHtml($label)
+                ?></span></label>
+                <div class="control"><input type="text"
+                                            id="tq-ct-addr-<?= $escaper->escapeHtmlAttr($part) ?>"
+                                            name="tack_ct[billingAddress][<?= $escaper->escapeHtmlAttr($part) ?>]"
+                                            maxlength="200"/></div>
             </div>
         <?php endforeach; ?>
     </fieldset>
@@ -89,10 +112,18 @@ if ($view['state'] === 'active'): ?>
         <?php for ($i = 0; $i < $block->getReferenceCount(); $i++): ?>
             <div class="field">
                 <div class="control">
-                    <input type="text" name="tack_ct[tradeReferences][<?= (int) $i ?>][companyName]" maxlength="200" placeholder="<?= $escaper->escapeHtmlAttr(__('Company')) ?>" aria-label="<?= $escaper->escapeHtmlAttr(__('Company')) ?>"/>
-                    <input type="text" name="tack_ct[tradeReferences][<?= (int) $i ?>][contactName]" maxlength="200" placeholder="<?= $escaper->escapeHtmlAttr(__('Contact name')) ?>" aria-label="<?= $escaper->escapeHtmlAttr(__('Contact name')) ?>"/>
-                    <input type="email" name="tack_ct[tradeReferences][<?= (int) $i ?>][email]" maxlength="320" placeholder="<?= $escaper->escapeHtmlAttr(__('Email')) ?>" aria-label="<?= $escaper->escapeHtmlAttr(__('Email')) ?>"/>
-                    <input type="tel" name="tack_ct[tradeReferences][<?= (int) $i ?>][phone]" maxlength="40" placeholder="<?= $escaper->escapeHtmlAttr(__('Phone')) ?>" aria-label="<?= $escaper->escapeHtmlAttr(__('Phone')) ?>"/>
+                    <input type="text" name="tack_ct[tradeReferences][<?= (int) $i ?>][companyName]" maxlength="200"
+                           placeholder="<?= $escaper->escapeHtmlAttr(__('Company')) ?>"
+                           aria-label="<?= $escaper->escapeHtmlAttr(__('Company')) ?>"/>
+                    <input type="text" name="tack_ct[tradeReferences][<?= (int) $i ?>][contactName]" maxlength="200"
+                           placeholder="<?= $escaper->escapeHtmlAttr(__('Contact name')) ?>"
+                           aria-label="<?= $escaper->escapeHtmlAttr(__('Contact name')) ?>"/>
+                    <input type="email" name="tack_ct[tradeReferences][<?= (int) $i ?>][email]" maxlength="320"
+                           placeholder="<?= $escaper->escapeHtmlAttr(__('Email')) ?>"
+                           aria-label="<?= $escaper->escapeHtmlAttr(__('Email')) ?>"/>
+                    <input type="tel" name="tack_ct[tradeReferences][<?= (int) $i ?>][phone]" maxlength="40"
+                           placeholder="<?= $escaper->escapeHtmlAttr(__('Phone')) ?>"
+                           aria-label="<?= $escaper->escapeHtmlAttr(__('Phone')) ?>"/>
                 </div>
             </div>
         <?php endfor; ?>
@@ -100,12 +131,15 @@ if ($view['state'] === 'active'): ?>
     <fieldset class="fieldset">
         <div class="field">
             <label class="label" for="tq-ct-notes"><span><?= $escaper->escapeHtml(__('Notes')) ?></span></label>
-            <div class="control"><textarea id="tq-ct-notes" name="tack_ct[notes]" rows="4" maxlength="2000"></textarea></div>
+            <div class="control"><textarea id="tq-ct-notes" name="tack_ct[notes]" rows="4"
+                                           maxlength="2000"></textarea></div>
         </div>
     </fieldset>
     <div class="actions-toolbar">
         <div class="primary">
-            <button type="submit" class="action submit primary"><span><?= $escaper->escapeHtml(__('Submit application')) ?></span></button>
+            <button type="submit" class="action submit primary"><span><?= $escaper->escapeHtml(
+                __('Submit application')
+            ) ?></span></button>
         </div>
     </div>
 </form>

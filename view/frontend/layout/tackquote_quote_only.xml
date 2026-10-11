@@ -6,7 +6,7 @@
   visitors the merchant scoped the mode to (everyone / guests / selected customer groups).
 
   All this handle does is mark the page. The `tackquote-quote-only` body class is what
-  view/frontend/web/css/request-quote.css keys off to hide the Add to Cart button inside
+  view/frontend/web/css/source/_module.less keys off to hide the Add to Cart button inside
   category and search product tiles — that button is hard-coded in
   Magento_Catalog::product/list.phtml (line 108, `class="action tocart primary"`), not
   rendered as a block, so there is no block to remove and overriding the template would

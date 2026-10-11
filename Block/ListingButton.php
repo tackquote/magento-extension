@@ -77,7 +77,7 @@ class ListingButton extends ItemBlock
         // Quote-only mode overrides the listing toggle, for the same reason
         // RequestQuote::isEnabled() overrides `show_button`: the tile's own Add to Cart
         // button is hidden on a quote-only storefront (the `tackquote-quote-only` body class
-        // plus the rule in view/frontend/web/css/request-quote.css), so leaving this off
+        // plus the rule in view/frontend/web/css/source/_module.less), so leaving this off
         // would produce a category page whose tiles offer no action at all.
         //
         // Still gated on the quote LIST being available, because that is what this tile
@@ -92,7 +92,7 @@ class ListingButton extends ItemBlock
      * Whether "Add to Quote" renders on THIS tile.
      *
      * Adds the per-product case to isEnabled(): a product quote-only by its own flag has its
-     * tile's Add to Cart hidden (request-quote.css, keyed off the "Available on quote" label
+     * tile's Add to Cart hidden (_module.less, keyed off the "Available on quote" label
      * Plugin\Pricing\QuoteOnlyPriceRender adds), so it gets the quote control instead — still
      * only when the quote list exists for it to add to.
      *

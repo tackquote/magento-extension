@@ -61,7 +61,7 @@ class QuoteOnlyPriceRender
     /** CSS hook of the replacement text. */
     public const CLASS_PRICE_ON_REQUEST = 'tackquote-price-on-request';
 
-    /** CSS hook of the per-product label (request-quote.css keys the tile rule off it). */
+    /** CSS hook of the per-product label (_module.less keys the tile rule off it). */
     public const CLASS_AVAILABLE_ON_QUOTE = 'tackquote-available-on-quote';
 
     /**

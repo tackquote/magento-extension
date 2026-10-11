@@ -6,7 +6,9 @@
  * describes (developer.adobe.com/commerce/php/development/cache/page/private-content).
  * Magento's `customer` customer-data section tells us whether anyone is signed in, so a
  * guest's page view costs no request at all. The section can lag behind the session, so
- * it only decides whether to ASK; the controller decides what is true.
+ * it only decides whether to ASK; the controller decides what is true. When the section
+ * is empty AND `section_data_ids` has no `customer` entry (the section was never loaded in
+ * this session), it is reloaded once before giving up.
  *
  * Native fetch() rather than jQuery.ajax on purpose: Magento_Customer/js/customer-data
  * listens to jQuery's ajaxComplete and reloads customer sections after POSTs it sees.
@@ -90,22 +92,28 @@ define([
      * @return {HTMLElement|null}
      */
     function renderPrice(price) {
-        var row;
+        var row, del, ins;
 
         if (!price || !isText(price.price)) {
             return null;
         }
 
-        row = el('p', 'tackquote-b2b__price');
+        // `.price-box` with `.old-price` and `.price` spans, so the theme's price typography
+        // applies (the same classes the product page's own price uses).
+        row = el('p', 'price-box tackquote-b2b__price');
 
         if (isText(price.storePrice)) {
             row.appendChild(el('span', 'tackquote-b2b__sr', (price.storePriceLabel || '') + ': '));
-            row.appendChild(el('del', 'tackquote-b2b__store-price', price.storePrice));
+            del = el('del', 'old-price tackquote-b2b__store-price');
+            del.appendChild(el('span', 'price', price.storePrice));
+            row.appendChild(del);
             row.appendChild(document.createTextNode(' '));
         }
 
         row.appendChild(el('span', 'tackquote-b2b__sr', (price.label || '') + ': '));
-        row.appendChild(el('ins', 'tackquote-b2b__account-price', price.price));
+        ins = el('ins', 'tackquote-b2b__account-price');
+        ins.appendChild(el('span', 'price', price.price));
+        row.appendChild(ins);
         row.appendChild(document.createTextNode(' '));
         row.appendChild(el('span', 'tackquote-b2b__label', price.label || ''));
         row.lastChild.setAttribute('aria-hidden', 'true');
@@ -204,6 +212,31 @@ define([
     }
 
     /**
+     * Whether Magento's `section_data_ids` cookie already records a `customer` section.
+     * When it does not, the browser never loaded that section in this session (for example
+     * after an account was created or signed in through a plain form POST that
+     * customer-data.js did not see), so an empty section proves nothing about the visitor.
+     *
+     * @return {Boolean}
+     */
+    function customerSectionKnown() {
+        var match = document.cookie.match(/(?:^|;\s*)section_data_ids=([^;]*)/),
+            ids;
+
+        if (!match) {
+            return false;
+        }
+
+        try {
+            ids = JSON.parse(decodeURIComponent(match[1]));
+        } catch (e) {
+            return false;
+        }
+
+        return !!ids && typeof ids === 'object' && Object.prototype.hasOwnProperty.call(ids, 'customer');
+    }
+
+    /**
      * @param {HTMLElement} root
      * @param {Object} config
      */
@@ -267,5 +300,12 @@ define([
 
         subscription = customer.subscribe(maybeLoad);
         maybeLoad(customer());
+
+        // The section is empty and was never loaded in this session: reload it once (one
+        // GET to /customer/section/load), then decide. A guest whose section is already
+        // recorded costs no request; the subscription above picks up the reloaded data.
+        if (!asked && !customerSectionKnown()) {
+            customerData.reload(['customer'], false);
+        }
     };
 });

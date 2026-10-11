@@ -7,6 +7,11 @@
  * same for every visitor and safe for the full-page cache. Keep the data-role attributes:
  * the script finds the page by them.
  *
+ * Theme contract: `.table-wrapper > .data.table` with `.col` cells (quote-app.js gives each
+ * body cell the matching `.col` class and a data-th label for the theme's phone layout),
+ * `.input-text.qty`, a `.fieldset > .field` message, and an `.actions-toolbar` with
+ * `.action.primary` and `.action.secondary`.
+ *
  * @var \TackQuote\Quotes\Block\QuotePage $block
  * @var \Magento\Framework\Escaper $escaper
  * @package TackQuote_Quotes
@@ -26,12 +31,12 @@ $targets = $block->isTargetPriceEnabled();
             <caption class="table-caption"><?= $escaper->escapeHtml(__('Your quote list')) ?></caption>
             <thead>
                 <tr>
-                    <th scope="col" class="col"><?= $escaper->escapeHtml(__('Product')) ?></th>
-                    <th scope="col" class="col"><?= $escaper->escapeHtml(__('Quantity')) ?></th>
+                    <th scope="col" class="col name"><?= $escaper->escapeHtml(__('Product')) ?></th>
+                    <th scope="col" class="col qty"><?= $escaper->escapeHtml(__('Quantity')) ?></th>
                     <?php if ($targets): ?>
-                        <th scope="col" class="col"><?= $escaper->escapeHtml(__('Target price (optional)')) ?></th>
+                        <th scope="col" class="col target"><?= $escaper->escapeHtml(__('Target price (optional)')) ?></th>
                     <?php endif; ?>
-                    <th scope="col" class="col">
+                    <th scope="col" class="col actions">
                         <span class="tackquote-visually-hidden"><?= $escaper->escapeHtml(__('Remove')) ?></span>
                     </th>
                 </tr>
@@ -39,13 +44,15 @@ $targets = $block->isTargetPriceEnabled();
             <tbody data-role="tackquote-page-items"></tbody>
         </table>
     </div>
-    <div class="field tackquote-page__message" data-role="tackquote-page-message-field" hidden>
-        <label class="label" for="tq-page-message"><span><?= $escaper->escapeHtml(__('Message')) ?></span></label>
-        <div class="control">
-            <textarea id="tq-page-message" class="input-text" rows="3" maxlength="2000"
-                      data-role="tackquote-page-message"></textarea>
+    <fieldset class="fieldset tackquote-page__message" data-role="tackquote-page-message-field" hidden>
+        <div class="field">
+            <label class="label" for="tq-page-message"><span><?= $escaper->escapeHtml(__('Message')) ?></span></label>
+            <div class="control">
+                <textarea id="tq-page-message" class="input-text" rows="3" maxlength="2000"
+                          data-role="tackquote-page-message"></textarea>
+            </div>
         </div>
-    </div>
+    </fieldset>
     <div class="actions-toolbar tackquote-page__actions">
         <div class="primary">
             <button type="button" class="action primary" data-role="tackquote-page-submit" disabled>
@@ -53,7 +60,7 @@ $targets = $block->isTargetPriceEnabled();
             </button>
         </div>
         <div class="secondary">
-            <a class="action continue" href="<?= $escaper->escapeUrl($block->getContinueUrl()) ?>">
+            <a class="action secondary" href="<?= $escaper->escapeUrl($block->getContinueUrl()) ?>">
                 <span><?= $escaper->escapeHtml(__('Continue shopping')) ?></span>
             </a>
         </div>

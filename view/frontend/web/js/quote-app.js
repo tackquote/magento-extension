@@ -232,10 +232,13 @@ define([
             _.each(list, function (item) {
                 var $li = $('<li class="tackquote-drawer__item"></li>'),
                     $name = $('<span class="tackquote-drawer__name"></span>').text(item.name),
-                    $qty = $('<input type="number" min="1" class="input-text tackquote-drawer__qty">')
+                    $qty = $('<input type="number" min="1" class="input-text qty tackquote-drawer__qty">')
                         .val(item.qty)
                         .attr('aria-label', fill($t('Quantity for %1'), item.name)),
-                    $remove = $('<button type="button" class="action tackquote-drawer__remove">&times;</button>')
+                    // The theme's icon font draws the button; the text stays for screen
+                    // readers and for themes without the icon font.
+                    $remove = $('<button type="button" class="action tackquote-drawer__remove"></button>')
+                        .append($('<span></span>').text($t('Remove')))
                         .attr('aria-label', fill($t('Remove %1'), item.name));
 
                 $qty.on('change', function () {
@@ -259,7 +262,7 @@ define([
          * @param {Array} list
          */
         function renderPage(list) {
-            var $body, pageTargets;
+            var $body, pageTargets, headings;
 
             if (!$page.length) {
                 return;
@@ -273,6 +276,12 @@ define([
             $page.find('[data-role="tackquote-page-message-field"]').prop('hidden', list.length === 0);
             $page.find('[data-role="tackquote-page-submit"]').prop('disabled', list.length === 0);
 
+            // Header labels, repeated on each cell as data-th: the theme's phone layout for
+            // `.table-wrapper .data.table` shows them beside each value.
+            headings = $page.find('thead th').map(function () {
+                return $.trim($(this).text());
+            }).get();
+
             $body.empty();
             _.each(list, function (item, index) {
                 var $tr = $('<tr></tr>'),
@@ -284,8 +293,8 @@ define([
                         .attr('aria-label', fill($t('Remove %1'), item.name)),
                     $target;
 
-                $tr.append($('<td class="col"></td>').text(item.name));
-                $tr.append($('<td class="col"></td>').append($qty));
+                $tr.append($('<td class="col name"></td>').attr('data-th', headings[0] || '').text(item.name));
+                $tr.append($('<td class="col qty"></td>').attr('data-th', headings[1] || '').append($qty));
 
                 $qty.on('change', function () {
                     updateRow(index, {qty: Math.max(1, parseInt($(this).val(), 10) || 1)});
@@ -295,13 +304,13 @@ define([
                     $target = targetInput(item.targetPrice, item.name, function (value) {
                         updateRow(index, {targetPrice: value}, true);
                     });
-                    $tr.append($('<td class="col"></td>').append($target));
+                    $tr.append($('<td class="col target"></td>').attr('data-th', headings[2] || '').append($target));
                 }
 
                 $remove.on('click', function () {
                     removeRow(index);
                 });
-                $tr.append($('<td class="col"></td>').append($remove));
+                $tr.append($('<td class="col actions"></td>').append($remove));
                 $body.append($tr);
             });
         }
@@ -692,7 +701,10 @@ define([
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
             }).done(function (answer) {
                 if (!answer || !answer.success || !_.isArray(answer.files)) {
-                    fileStatus((answer && answer.message) || $t('That file could not be attached. Please try again.'), true);
+                    fileStatus(
+                        (answer && answer.message) || $t('That file could not be attached. Please try again.'),
+                        true
+                    );
 
                     return;
                 }

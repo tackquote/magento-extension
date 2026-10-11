@@ -60,8 +60,9 @@ $companyFieldsToRender = array_values(array_unique(array_merge(
         <div class="tackquote-drawer" data-role="tackquote-drawer" hidden>
             <div class="tackquote-drawer__head">
                 <strong><?= $escaper->escapeHtml(__('Your quote list')) ?></strong>
-                <button type="button" class="action tackquote-drawer__close"
-                        aria-label="<?= $escaper->escapeHtmlAttr(__('Close')) ?>">&times;</button>
+                <button type="button" class="action tackquote-drawer__close">
+                    <span><?= $escaper->escapeHtml(__('Close')) ?></span>
+                </button>
             </div>
             <ul class="tackquote-drawer__items" data-role="tackquote-items"></ul>
             <p class="tackquote-drawer__empty" data-role="tackquote-empty">
