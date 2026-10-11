@@ -156,6 +156,11 @@ view.
 | Request a Quote button | **"Add to Quote" label** | |
 | Request a Quote button | **Show on category and search results** | Adds "Add to Quote" to listing tiles. |
 | Request a Quote button | **Quote list submit label** | Label on the drawer's submit button. |
+| B2B Display | **Show account price** | Off by default. "Your account price" for a signed-in customer. Display only. |
+| B2B Display | **Show volume pricing table** | Off by default. The customer's quantity breaks. Display only. |
+| B2B Display | **Show order limits notice** | Off by default. "Order between X and Y units". Not enforced in the cart yet. |
+| B2B Display | **Show buyer group badge** | Off by default. The customer's TackQuote buyer group. |
+| B2B Display | **Only for these customer groups** | Empty = every signed-in customer. See *B2B display* below. |
 
 Every storefront control is additionally gated on the module being enabled *and* an API key
 being present — offering a control that cannot submit would only produce a dead end.
@@ -172,6 +177,15 @@ seller JWT:
 | `GET /v1/integrations/magento/ping` | none | Connection test. Deliberately unscoped so a *wrong key* is distinguishable from a *wrong base URL*. |
 | `GET /v1/integrations/magento/registration-config` | none | The seller's registration policy, to render the form. Exposes form shape only. |
 | `POST /v1/integrations/magento/quote-requests` | `quotes:write` | Register the buyer/company and create the quote. |
+| `GET /v1/storefront/v1/wholesale-price` | none | B2B display: the signed-in customer's account price for one SKU. |
+| `GET /v1/storefront/v1/quantity-breaks` | none | B2B display: the customer's quantity-break ladder for one SKU. |
+| `GET /v1/storefront/v1/order-limits` | none | B2B display: quantity limits for one SKU. |
+| `GET /v1/storefront/v1/buyer-group` | none | B2B display: the customer's buyer group. |
+
+The four `/storefront/v1` reads are TackQuote's platform-neutral storefront API
+(`apps/api/src/modules/storefront-api/storefront-v1.controller.ts`), called by
+`Model/Api/StorefrontClient.php` with the key in `X-Api-Key` **only** — that API refuses a
+request carrying a second credential in `Authorization`. They need no scope.
 
 That controller is separate from `MagentoController`, which is JWT-guarded and drives the
 opposite direction (Tack → the store: connect, sync, checkout). Quotes are tagged with the
@@ -315,6 +329,80 @@ bootstrap. The guard was mutation-tested with **12 deliberate breaks: 12 caught,
 php vendor/bin/phpunit -c app/code/TackQuote/Quotes/Test/Unit/phpunit.xml
 ```
 
+## B2B display (signed-in customers)
+
+**Stores > Configuration > TackQuote > TackQuote Settings > B2B Display (signed-in
+customers).** Gives a signed-in customer on a product page what the WooCommerce plugin's
+"B2B features" give a WooCommerce customer. Each part has its own switch, and **every switch
+is off by default** (`etc/config.xml`):
+
+| switch | shows | TackQuote route |
+|---|---|---|
+| Show account price | "Your account price" under the price, with the store's price struck through when the account price is lower | `wholesale-price` |
+| Show volume pricing table | Quantity → unit price, captioned "Volume pricing for your account" when the ladder is the customer's own | `quantity-breaks` |
+| Show order limits notice | "Order between X and Y units of this product." (or the minimum or maximum alone) | `order-limits` |
+| Show buyer group badge | The name of the customer's TackQuote buyer group | `buyer-group` |
+
+**Display only.** Nothing here changes what the Magento cart or checkout charges: the cart
+still uses Magento's own prices and does not enforce the order limit. Cart enforcement is a
+separate, later change. Turn the price switches on only if you honour the account price
+another way (for example by quote). Wherever an account price or volume table is shown, the
+shopper also sees: "Your account prices are shown here; the cart and checkout use the
+store's prices for now."
+
+### How it stays out of the page cache
+
+Product pages are full-page cached (built-in or Varnish), so nothing about the customer is
+rendered into them. `Block/B2bDisplay.php` renders an empty, hidden placeholder and the
+product id; after the page loads, `view/frontend/web/js/b2b-display.js` posts to this
+module's own `POST /tackquote/b2b/display` (`Controller/B2b/Display.php`), which answers for
+the signed-in customer in the session. Adobe's private-content guidance is to load
+per-customer data on the client, and only GET and HEAD are cacheable
+(<https://developer.adobe.com/commerce/php/development/cache/page/private-content>,
+<https://developer.adobe.com/commerce/php/development/cache/page/public-content>); the
+response is also sent `Cache-Control: no-store, private`. The POST carries the session's
+`form_key` (Magento's built-in CSRF check for `HttpPostActionInterface` controllers). A
+guest's page view sends no request at all: the script asks only when Magento's `customer`
+section shows someone signed in.
+
+### What is sent to TackQuote
+
+For a signed-in customer only, server to server with the store's API key:
+
+- the customer's **email address** (`buyerEmail`) — TackQuote finds the buyer by it;
+- the product **SKU**;
+- the **currency** the page shows, and for the price a **quantity** of 1.
+
+Nothing is sent for guests. The browser sends only the product id; it never chooses whose
+data is returned. Nothing is written in TackQuote: these routes are reads.
+
+### Who sees what
+
+- Only a customer TackQuote holds data for: an account price is shown only when TackQuote
+  marks it as **this account's own** (`accountSpecific`), never the public catalogue price.
+- **Only for these customer groups.** TackQuote finds the account by email address, and
+  Magento does not confirm an address a customer types at sign-up or changes later unless
+  account confirmation is on. Leaving the field empty shows B2B data to every signed-in
+  customer; selecting the groups you put approved trade customers in keeps a new account
+  that typed someone else's address from seeing that buyer's prices.
+- **Configurable, bundle and grouped products** show the badge and the order-limit notice
+  but not the account price or volume table: their page price follows the shopper's
+  selection, and a parent-level price beside a selected variant would describe another
+  product.
+- **Currency.** TackQuote prices are in the TackQuote account's currency. When the page
+  shows another currency the price and table are withheld, never converted.
+
+### Failure and caching
+
+Any failure — TackQuote unreachable, an error status, a body that is not JSON, an answer
+this module does not recognise — shows nothing, so the page looks exactly as Magento renders
+it. A complete answer is cached for **60 seconds** per store, customer, email, SKU, currency
+and switch set (`Model/B2bDisplay/DataProvider.php`; the cache id is a hash, so no email
+address appears in it), to absorb reloads: TackQuote throttles each `/storefront/v1` route
+at 60 requests a minute. A failed lookup is not retried for 30 seconds, an HTTP 429 pauses
+all lookups for the store for 60 seconds, and one customer can cause at most 30 uncached
+lookups a minute.
+
 ## Known limitations
 
 - **No cart-page quote button in normal mode.** Quoting runs off the module's own
@@ -365,6 +453,17 @@ php vendor/bin/phpunit -c app/code/TackQuote/Quotes/Test/Unit/phpunit.xml
   inline blocks on a Luma product page, including the RequireJS base-URL config, which takes
   the whole storefront's JavaScript down. That is a core limitation, not this module's, but
   it means a merchant cannot yet run the storefront with inline scripts fully disabled.
+- **B2B display is display only.** The account price and volume table are not charged in
+  the Magento cart, and the order-limit notice is not enforced there. Cart and checkout
+  enforcement is a later change.
+- **B2B display is product-page only.** Category and search listings show Magento's prices.
+- **B2B display and the customer's email.** TackQuote matches the buyer by email address,
+  which Magento does not verify on its own. Use *Only for these customer groups* (see
+  *B2B display*). TackQuote's `buyerExternalId` parameter is not sent: the server reads it as
+  a WordPress user id, and a Magento customer namespace needs a TackQuote change first.
+- **B2B display placement on custom themes.** The placeholder sits after
+  `product.info.price` in `product.info.main`. UNVERIFIED on themes that move or remove
+  that container (Hyvä included); it then lands at the end of `product.info.main`.
 - No Magento Marketplace listing or Packagist publication (see Installation).
 
 ## Requirements
@@ -514,22 +613,26 @@ GitHub release.
 7. Save config, then visit a product page on the storefront to confirm the controls appear
    and submit successfully. TackQuote → Dashboard shows a checklist if anything is missing.
 
-> **Connecting the other direction (TackQuote → this store) on Magento 2.4.4+.**
+> **Connecting the other direction (TackQuote → this store).**
 > The steps above cover store → TackQuote, which uses a TackQuote API key and is
 > unaffected. If you also connect *this store* to TackQuote so it can read the catalog
-> and create orders, TackQuote authenticates with the integration access token as a
-> **Bearer** token — and Adobe disabled that by default in 2.4.4, so it will be refused
-> with a 401 until you opt in:
+> and create orders, create an Integration in Magento (**System → Extensions →
+> Integrations**), activate it, and enter **all four** values it shows — Consumer Key,
+> Consumer Secret, Access Token and Access Token Secret — under Settings → Integrations →
+> Magento in TackQuote. TackQuote then **signs every request with OAuth 1.0a
+> (HMAC-SHA256)** rather than sending the access token as a Bearer token
+> (`authorizationHeader()` in tack
+> `apps/api/src/modules/integrations/magento/magento.service.ts:546-560`, signing in
+> `magento-oauth.ts`, `buildOauthHeader()` at line 84). That works on every Magento
+> version with **no store setting changed**: Adobe's 2.4.4+ default that refuses an
+> integration token as a standalone Bearer token
+> (`oauth/consumer/enable_integration_as_bearer`, off by default) does not apply to signed
+> requests, so you do **not** need to switch it on.
 >
-> ```bash
-> bin/magento config:set oauth/consumer/enable_integration_as_bearer 1
-> bin/magento cache:flush
-> ```
->
-> Or set **Stores → Configuration → Services → OAuth → Consumer Settings → Allow OAuth
-> Access Tokens to be used as standalone Bearer tokens** to **Yes**. Adobe turned this
-> off because integration tokens never expire; enable it knowingly. Of the four values
-> on Magento's integration screen, TackQuote uses only the **Access Token**.
+> TackQuote falls back to a Bearer token only when the three OAuth values are missing.
+> Only in that case would a 2.4.4+ store need the standalone-Bearer setting, and Adobe
+> turned it off because integration tokens never expire — entering all four values is the
+> better fix.
 > <https://developer.adobe.com/commerce/webapi/get-started/authentication/gs-authentication-token>
 
 ## File map
@@ -543,6 +646,7 @@ magento-extension/                              (repository root)
 ├── i18n/en_US.csv                              Translation source strings
 │                                               (regenerate with i18n:collect-phrases)
 ├── etc/module.xml                              Module declaration + sequence
+├── etc/config.xml                              Defaults: every B2B display switch off
 ├── etc/acl.xml                                 Admin ACL: dashboard tree + config resource
 ├── etc/crontab.xml                             Warms the registration policy every 5 min
 ├── etc/adminhtml/events.xml                    Flush the policy when settings are saved
@@ -555,6 +659,10 @@ magento-extension/                              (repository root)
 ├── etc/frontend/events.xml                     layout_load_before -> quote-only handles
 ├── Model/Config.php                            Reads scoped config (enable/url/key/labels)
 ├── Model/Api/Client.php                        HTTP client for /v1/integrations/magento/*
+├── Model/Api/StorefrontClient.php              Read client for /v1/storefront/v1/* (X-Api-Key only)
+├── Model/B2bDisplay/ResponseMapper.php         TackQuote answers -> facts, fail closed
+├── Model/B2bDisplay/DataProvider.php           Asks the switched-on routes, short per-customer cache
+├── Model/B2bDisplay/Presenter.php              Formats money (tax basis, no conversion) + sentences
 ├── Model/RegistrationConfigProvider.php        Fetches + caches the seller's policy
 ├── Model/ProductQuoteResolver.php              Server-side SKU -> priced line item
 ├── Model/ProductOptionRequirement.php          "Does this product need a selection first?"
@@ -571,9 +679,11 @@ magento-extension/                              (repository root)
 ├── Block/RequestQuote.php                      Product-page trigger view model
 ├── Block/ListingButton.php                     Category/search tile "Add to Quote"
 ├── Block/QuoteList.php                         Quote-list widget + shared form view model
+├── Block/B2bDisplay.php                        Product-page B2B placeholder (no customer data)
 ├── Block/Adminhtml/Dashboard.php               Dashboard status + setup checklist
 ├── Block/Adminhtml/System/Config/TestConnection.php   Inline config-screen test button
 ├── Controller/Quote/Submit.php                 Storefront quote-request POST handler
+├── Controller/B2b/Display.php                  Signed-in customer's B2B data (POST, form key)
 ├── Controller/Adminhtml/Dashboard/Index.php    Admin dashboard page
 ├── Controller/Adminhtml/Connection/Test.php    Admin "Test connection" AJAX endpoint
 ├── Cron/WarmRegistrationConfig.php             Keeps the policy out of the render path
@@ -586,10 +696,12 @@ magento-extension/                              (repository root)
 │   ├── layout/tackquote_quote_only_product.xml Quote-only: removes BOTH addtocart blocks
 │   ├── layout/tackquote_quote_only_cart.xml    Quote-only: cart-page notice
 │   ├── templates/quote-only-notice.phtml       Cart-page notice + CTA
+│   ├── templates/b2b-display.phtml             Product-page B2B placeholder + init
 │   ├── templates/button.phtml                  Product-page triggers
 │   ├── templates/listing-button.phtml          Listing-tile trigger
 │   ├── templates/quote-list.phtml              Drawer + multi-step form markup
 │   ├── web/js/quote-app.js                     RequireJS component: list, drawer, form
+│   ├── web/js/b2b-display.js                   Fills the B2B placeholder (text only)
 │   └── web/css/request-quote.css               Storefront styles
 └── view/adminhtml/
     ├── layout/tackquote_dashboard_index.xml    Dashboard layout
@@ -601,6 +713,21 @@ magento-extension/                              (repository root)
 ```
 
 ## Changelog
+
+### Unreleased
+
+- **B2B display for signed-in customers** (off by default; four switches under
+  *B2B Display*): the customer's TackQuote account price with the store price struck
+  through, their volume pricing table, the order-limits notice and the buyer-group badge
+  on the product page, read from TackQuote's `/storefront/v1` API. Loaded after the page
+  through a POST, so nothing customer-specific enters the full-page cache. Display only:
+  the cart and checkout are unchanged. An optional customer-group filter limits who sees
+  it. The admin Dashboard shows the four switches as On/Off. New phrases are in
+  `i18n/en_US.csv`.
+- **README:** the note on connecting TackQuote to this store said TackQuote sends the
+  integration access token as a Bearer token and asked merchants to enable Magento's
+  standalone-Bearer setting. TackQuote signs with OAuth 1.0a using all four Integration
+  values, so that setting is not needed.
 
 ### 1.4.1
 

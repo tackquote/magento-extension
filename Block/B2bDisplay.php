@@ -1,0 +1,81 @@
+<?php
+/**
+ * Product-page placeholder for the signed-in customer's B2B data.
+ *
+ * Renders NOTHING about the customer. Product pages are full-page cached, so this block
+ * only says where the data goes and which product the page is about; the data itself is
+ * fetched after the page loads by view/frontend/web/js/b2b-display.js from
+ * Controller/B2b/Display.php (see that controller for the full-page-cache reasoning).
+ * Everything this block reads is store configuration and the product id, which are the
+ * same for every visitor of the same URL, so the block is safe in a cached page.
+ *
+ * @package TackQuote_Quotes
+ */
+
+declare(strict_types=1);
+
+namespace TackQuote\Quotes\Block;
+
+use Magento\Catalog\Model\Product;
+use Magento\Framework\Registry;
+use Magento\Framework\View\Element\Template;
+use Magento\Framework\View\Element\Template\Context;
+use TackQuote\Quotes\Model\Config;
+
+class B2bDisplay extends Template
+{
+    /**
+     * @var Config
+     */
+    private $config;
+
+    /**
+     * @var Registry
+     */
+    private $registry;
+
+    /**
+     * @param Context $context
+     * @param Config $config
+     * @param Registry $registry
+     * @param array $data
+     */
+    public function __construct(Context $context, Config $config, Registry $registry, array $data = [])
+    {
+        parent::__construct($context, $data);
+        $this->config = $config;
+        $this->registry = $registry;
+    }
+
+    /**
+     * Whether any B2B display feature is switched on (and the module can call TackQuote).
+     *
+     * @return bool
+     */
+    public function isEnabled(): bool
+    {
+        return $this->config->getEnabledB2bFeatures() !== [];
+    }
+
+    /**
+     * The id of the product this page is about, or 0.
+     *
+     * @return int
+     */
+    public function getProductId(): int
+    {
+        $product = $this->registry->registry('current_product');
+
+        return $product instanceof Product ? (int) $product->getId() : 0;
+    }
+
+    /**
+     * The endpoint the script posts to.
+     *
+     * @return string
+     */
+    public function getEndpointUrl(): string
+    {
+        return $this->getUrl('tackquote/b2b/display');
+    }
+}

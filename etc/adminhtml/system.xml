@@ -102,6 +102,67 @@
                     </depends>
                 </field>
             </group>
+            <!--
+              B2B display (1.5.0): what TackQuote says about the SIGNED-IN customer, shown on
+              the product page. Mirrors the WooCommerce plugin's "B2B features". DISPLAY ONLY:
+              nothing here changes what the cart or checkout charges. Every switch defaults
+              to No (etc/config.xml).
+            -->
+            <group id="b2b" translate="label comment" type="text" sortOrder="25"
+                   showInDefault="1" showInWebsite="1" showInStore="0">
+                <label>B2B Display (signed-in customers)</label>
+                <comment><![CDATA[Shows a signed-in customer what TackQuote holds for their
+                    account, read live from TackQuote and never stored in the page cache.
+                    <strong>Display only:</strong> the cart and checkout still charge
+                    Magento's own prices. The customer's email address, the product SKU and
+                    the store currency are sent to TackQuote to look the account up.]]></comment>
+                <field id="enable_account_price" translate="label comment" type="select" sortOrder="10"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Show account price</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment><![CDATA["Your account price" under the product price, with the
+                        store price struck through when the account price is lower. Shown only
+                        for a price TackQuote holds for this customer's account, and not on
+                        configurable, bundle or grouped products.<br>
+                        <strong>The cart does not charge this price yet</strong>: checkout
+                        still uses Magento's own price. Turn this on only if you honour the
+                        account price another way (for example by quote).]]></comment>
+                </field>
+                <field id="enable_quantity_breaks" translate="label comment" type="select" sortOrder="20"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Show volume pricing table</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>The customer's quantity breaks (quantity and unit price). Like the
+                        account price, these are not charged in the Magento cart yet, and are not
+                        shown on configurable, bundle or grouped products.</comment>
+                </field>
+                <field id="enable_order_limits" translate="label comment" type="select" sortOrder="30"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Show order limits notice</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>"Order between X and Y units of this product." A notice only: the
+                        limit is not enforced in the Magento cart yet.</comment>
+                </field>
+                <field id="enable_buyer_group_badge" translate="label comment" type="select" sortOrder="40"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Show buyer group badge</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>The name of the customer's TackQuote buyer group.</comment>
+                </field>
+                <field id="customer_groups" translate="label comment" type="multiselect" sortOrder="50"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Only for these customer groups</label>
+                    <source_model>Magento\Customer\Model\Config\Source\Group\Multiselect</source_model>
+                    <can_be_empty>1</can_be_empty>
+                    <comment><![CDATA[Leave empty to show B2B data to every signed-in
+                        customer. TackQuote finds the account by the customer's email
+                        address, and Magento does not confirm an email address a customer
+                        types at sign-up or changes later unless account confirmation is
+                        on. Selecting the groups you place approved trade customers in
+                        keeps a new account that typed someone else's address from seeing
+                        that buyer's prices. NOT LOGGED IN is never shown B2B data.]]></comment>
+                </field>
+            </group>
             <group id="storefront" translate="label" type="text" sortOrder="20"
                    showInDefault="1" showInWebsite="1" showInStore="0">
                 <label>Request a Quote button</label>

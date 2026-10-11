@@ -84,6 +84,45 @@ class Dashboard extends Template
     }
 
     /**
+     * The four B2B display switches as the merchant set them, for the "B2B features" card.
+     *
+     * Raw switch state (Config::isB2bSwitchOn), like the WooCommerce Overview's card: the
+     * merchant sees what they turned on even while the module cannot act on it yet, and
+     * isB2bLive() says whether it can.
+     *
+     * @return array<int, array{label: string, on: bool}>
+     */
+    public function getB2bSwitches(): array
+    {
+        $labels = [
+            Config::B2B_ACCOUNT_PRICE => (string) __('Account price'),
+            Config::B2B_QUANTITY_BREAKS => (string) __('Volume pricing table'),
+            Config::B2B_ORDER_LIMITS => (string) __('Order limits notice'),
+            Config::B2B_BUYER_GROUP => (string) __('Buyer group badge'),
+        ];
+
+        $out = [];
+        foreach (Config::B2B_FEATURES as $feature) {
+            $out[] = [
+                'label' => $labels[$feature],
+                'on' => $this->config->isB2bSwitchOn($feature),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Whether switched-on B2B features can reach the storefront (enabled + API key).
+     *
+     * @return bool
+     */
+    public function isB2bLive(): bool
+    {
+        return $this->config->isConfigured();
+    }
+
+    /**
      * Admin AJAX URL behind the "Test connection" button.
      *
      * @return string

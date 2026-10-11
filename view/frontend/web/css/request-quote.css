@@ -587,3 +587,69 @@ body.tackquote-quote-only .tackquote-quote-only-notice__actions {
     gap: 0.75rem;
     margin-top: 1rem;
 }
+
+/* ---------------------------------------------------------------------------
+ * B2B display (product page): account price, buyer-group badge, order-limit notice and
+ * volume table, filled by b2b-display.js for a signed-in customer.
+ *
+ * Same stance as the form: inherit the theme. The table uses Magento's own `data table`
+ * classes; only spacing and the visually-hidden helper are defined here.
+ * ------------------------------------------------------------------------ */
+
+/* Hidden until there is something to show; themes must not be able to reveal it empty. */
+.tackquote-b2b[hidden] {
+  display: none !important;
+}
+
+.tackquote-b2b {
+  margin: 0 0 20px;
+}
+
+.tackquote-b2b > p {
+  margin: 0 0 8px;
+}
+
+.tackquote-b2b__account-price {
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.tackquote-b2b__store-price {
+  opacity: 0.7;
+}
+
+.tackquote-b2b__group-name {
+  display: inline-block;
+  padding: 2px 8px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  font-size: 0.9em;
+}
+
+.tackquote-b2b__breaks {
+  margin: 8px 0 0;
+}
+
+.tackquote-b2b__breaks-caption {
+  text-align: left;
+  font-weight: 600;
+  padding-bottom: 4px;
+}
+
+.tackquote-b2b__note {
+  font-size: 0.9em;
+  opacity: 0.8;
+}
+
+/* Visually hidden, still read by screen readers. */
+.tackquote-b2b__sr {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

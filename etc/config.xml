@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<!--
+  Default values for TackQuote settings that need an explicit default.
+
+  Only the B2B display switches are listed. Each is OFF until a merchant turns it on:
+  showing a customer's negotiated prices is a decision a merchant makes, not something a
+  module upgrade does to their storefront (the WooCommerce plugin ships the same switches
+  defaulting to "no").
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
+    <default>
+        <tackquote_quotes>
+            <b2b>
+                <enable_account_price>0</enable_account_price>
+                <enable_quantity_breaks>0</enable_quantity_breaks>
+                <enable_order_limits>0</enable_order_limits>
+                <enable_buyer_group_badge>0</enable_buyer_group_badge>
+                <customer_groups></customer_groups>
+            </b2b>
+        </tackquote_quotes>
+    </default>
+</config>

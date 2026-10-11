@@ -30,6 +30,28 @@ class Config
     private const XML_PATH_QUOTE_ONLY_SCOPE = 'tackquote_quotes/quote_only/applies_to';
     private const XML_PATH_QUOTE_ONLY_GROUPS = 'tackquote_quotes/quote_only/customer_groups';
 
+    // B2B display on the product page (account price, volume table, order-limit notice,
+    // buyer-group badge). Every switch defaults to 0 in etc/config.xml.
+    private const XML_PATH_B2B_PREFIX = 'tackquote_quotes/b2b/';
+    private const XML_PATH_B2B_GROUPS = 'tackquote_quotes/b2b/customer_groups';
+
+    /** "Your account price", with the store's own price struck through. */
+    public const B2B_ACCOUNT_PRICE = 'enable_account_price';
+    /** The quantity-break ("volume pricing") table. */
+    public const B2B_QUANTITY_BREAKS = 'enable_quantity_breaks';
+    /** "Order between X and Y units of this product." */
+    public const B2B_ORDER_LIMITS = 'enable_order_limits';
+    /** The buyer-group badge ("Tier 2"). */
+    public const B2B_BUYER_GROUP = 'enable_buyer_group_badge';
+
+    /** Every B2B display switch, in the order the admin screens list them. */
+    public const B2B_FEATURES = [
+        self::B2B_ACCOUNT_PRICE,
+        self::B2B_QUANTITY_BREAKS,
+        self::B2B_ORDER_LIMITS,
+        self::B2B_BUYER_GROUP,
+    ];
+
     private const DEFAULT_API_BASE_URL = 'https://api.tackquote.com/v1';
     private const DEFAULT_BUTTON_LABEL = 'Request a Quote';
     private const DEFAULT_ADD_TO_QUOTE_LABEL = 'Add to Quote';
@@ -220,12 +242,6 @@ class Config
     }
 
     /**
-     * Label for the button that submits the whole quote list.
-     *
-     * @param int|null $storeId
-     * @return string
-     */
-    /**
      * The merchant's quote-only switch, as stored.
      *
      * Raw on purpose: this is only half the question. Whether the mode applies to the
@@ -284,6 +300,89 @@ class Config
         );
     }
 
+    /**
+     * The merchant's B2B display switch for one feature, as stored.
+     *
+     * Raw on purpose, for the admin dashboard, which reports what the merchant switched
+     * on even while the module cannot act on it yet. Whether the storefront shows the
+     * feature is isB2bFeatureEnabled(), which also requires a working connection. An
+     * unknown feature name is OFF rather than an exception: a typo must not switch on a
+     * display nobody configured.
+     *
+     * @param string $feature One of the B2B_* constants.
+     * @param int|null $storeId
+     * @return bool
+     */
+    public function isB2bSwitchOn(string $feature, ?int $storeId = null): bool
+    {
+        if (!in_array($feature, self::B2B_FEATURES, true)) {
+            return false;
+        }
+
+        return (bool) $this->scopeConfig->isSetFlag(
+            self::XML_PATH_B2B_PREFIX . $feature,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
+    }
+
+    /**
+     * Whether the storefront shows a B2B display feature.
+     *
+     * Requires isConfigured() for the same reason as every other storefront control: with
+     * no API key nothing can be asked, so the display would only ever be empty.
+     *
+     * @param string $feature One of the B2B_* constants.
+     * @param int|null $storeId
+     * @return bool
+     */
+    public function isB2bFeatureEnabled(string $feature, ?int $storeId = null): bool
+    {
+        return $this->isConfigured($storeId) && $this->isB2bSwitchOn($feature, $storeId);
+    }
+
+    /**
+     * The B2B display features the storefront shows, in B2B_FEATURES order.
+     *
+     * @param int|null $storeId
+     * @return string[]
+     */
+    public function getEnabledB2bFeatures(?int $storeId = null): array
+    {
+        if (!$this->isConfigured($storeId)) {
+            return [];
+        }
+
+        return array_values(array_filter(
+            self::B2B_FEATURES,
+            function (string $feature) use ($storeId): bool {
+                return $this->isB2bSwitchOn($feature, $storeId);
+            }
+        ));
+    }
+
+    /**
+     * Customer groups allowed to see B2B data, raw ("1,3"); '' means every signed-in
+     * customer. Parsed by QuoteOnlyRules::normaliseGroups(), the module's one group parser.
+     *
+     * @param int|null $storeId
+     * @return string
+     */
+    public function getB2bCustomerGroups(?int $storeId = null): string
+    {
+        return (string) $this->scopeConfig->getValue(
+            self::XML_PATH_B2B_GROUPS,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
+    }
+
+    /**
+     * Label for the button that submits the whole quote list.
+     *
+     * @param int|null $storeId
+     * @return string
+     */
     public function getCheckoutButtonLabel(?int $storeId = null): string
     {
         $value = (string) $this->scopeConfig->getValue(

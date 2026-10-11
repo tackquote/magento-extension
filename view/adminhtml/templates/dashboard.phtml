@@ -97,6 +97,29 @@ foreach ($checklist as $item) {
                role="status"
                aria-live="polite"></p>
         </section>
+
+        <section class="tq-card">
+            <h2 class="tq-card__title"><?= $escaper->escapeHtml(__('B2B features')) ?></h2>
+            <dl class="tq-facts">
+                <?php foreach ($block->getB2bSwitches() as $switch): ?>
+                    <dt><?= $escaper->escapeHtml($switch['label']) ?></dt>
+                    <dd>
+                        <?php if ($switch['on']): ?>
+                            <span class="tq-pill tq-pill--ok"><?= $escaper->escapeHtml(__('On')) ?></span>
+                        <?php else: ?>
+                            <span class="tq-pill tq-pill--warn"><?= $escaper->escapeHtml(__('Off')) ?></span>
+                        <?php endif; ?>
+                    </dd>
+                <?php endforeach; ?>
+            </dl>
+            <p class="tq-card__note">
+                <?= $escaper->escapeHtml(
+                    $block->isB2bLive()
+                        ? __('Shown to signed-in customers on product pages. Display only: the cart and checkout still charge Magento prices.')
+                        : __('Needs TackQuote enabled and an API key before anything is shown.')
+                ) ?>
+            </p>
+        </section>
     </div>
 </div>
 
