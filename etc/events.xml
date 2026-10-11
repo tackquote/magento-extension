@@ -14,4 +14,24 @@
         <observer name="tackquote_account_price_order_comment"
                   instance="TackQuote\Quotes\Observer\AccountPriceOrderComment"/>
     </event>
+
+    <!--
+      ACCEPTED QUOTE CHECKOUT LINK (lane MG-QUOTE-CHECKOUT-LINK). Global, because an accepted
+      quote's cart is edited and ordered from the storefront AND the Web API areas; both are
+      inert for any cart that holds no quote marker.
+
+      `sales_model_service_quote_submit_success`: QuoteManagement::submitQuote() dispatches it
+      with `order` and `quote` right after the order is placed and saved; the observer reports
+      the order to TackQuote and never throws.
+      `sales_quote_remove_item`: Quote::removeItem() dispatches it with `quote_item`; removing one
+      line of an accepted quote removes the rest.
+    -->
+    <event name="sales_model_service_quote_submit_success">
+        <observer name="tackquote_quote_checkout_order_report"
+                  instance="TackQuote\Quotes\Observer\QuoteCheckoutOrderReport"/>
+    </event>
+    <event name="sales_quote_remove_item">
+        <observer name="tackquote_quote_checkout_line_removed"
+                  instance="TackQuote\Quotes\Observer\QuoteCheckoutLineRemoved"/>
+    </event>
 </config>

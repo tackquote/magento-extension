@@ -8,10 +8,13 @@ declare(strict_types=1);
 namespace TackQuote\Quotes\Test\Unit\Plugin\Quote;
 
 use Magento\Catalog\Model\Product;
+use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Quote\Model\Quote;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use TackQuote\Quotes\Model\QuoteCheckout\QuotedCart;
+use TackQuote\Quotes\Model\QuoteCheckout\QuotedLine;
 use TackQuote\Quotes\Model\QuoteOnlyMode;
 use TackQuote\Quotes\Plugin\Quote\QuoteOnlyCartGuard;
 
@@ -29,16 +32,42 @@ class QuoteOnlyCartGuardTest extends TestCase
     /** @var Product&MockObject */
     private $product;
 
+    /** @var QuotedCart */
+    private $quotedCart;
+
     protected function setUp(): void
     {
         $this->mode = $this->createMock(QuoteOnlyMode::class);
         $this->quote = $this->createMock(Quote::class);
         $this->product = $this->createMock(Product::class);
+        $this->quotedCart = new QuotedCart(new QuotedLine(new Json()));
     }
 
     private function guard(): QuoteOnlyCartGuard
     {
-        return new QuoteOnlyCartGuard($this->mode);
+        return new QuoteOnlyCartGuard($this->mode, $this->quotedCart);
+    }
+
+    public function testAnAcceptedQuoteBeingPutIntoTheCartIsTheOneExemption(): void
+    {
+        // Lane MG-QUOTE-CHECKOUT-LINK: Model\QuoteCheckout\CartBuilder sets the flag around its
+        // own adds; a quote-only store must still let the accepted quote in.
+        $this->mode->expects(self::never())->method('isActive');
+        $this->mode->expects(self::never())->method('isProductQuoteOnly');
+
+        $this->quotedCart->startBuilding();
+        $this->guard()->beforeAddProduct($this->quote, $this->product, 1);
+    }
+
+    public function testOnceTheQuoteIsInTheCartTheStoreIsQuoteOnlyAgain(): void
+    {
+        $this->mode->method('isActive')->willReturn(true);
+        $this->quotedCart->startBuilding();
+        $this->quotedCart->stopBuilding();
+
+        $this->expectException(LocalizedException::class);
+
+        $this->guard()->beforeAddProduct($this->quote, $this->product, 1);
     }
 
     public function testACraftedAddToCartIsREFUSEDWhenTheModeApplies(): void

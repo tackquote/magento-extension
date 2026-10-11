@@ -61,6 +61,9 @@ class Config
      */
     private const XML_PATH_PRICE_INCLUDES_TAX = 'tax/calculation/price_includes_tax';
 
+    /** Accepted quote checkout link (lane MG-QUOTE-CHECKOUT-LINK). */
+    private const XML_PATH_QUOTE_CHECKOUT_ENABLED = 'tackquote_quotes/quote_checkout/enabled';
+
     /** "Your account price", with the store's own price struck through. */
     public const B2B_ACCOUNT_PRICE = 'enable_account_price';
     /** The quantity-break ("volume pricing") table. */
@@ -668,5 +671,32 @@ class Config
             ScopeInterface::SCOPE_STORE,
             $storeId
         );
+    }
+
+    /**
+     * The merchant's "Open accepted quotes in the checkout" switch, as stored.
+     *
+     * @param int|null $storeId
+     * @return bool
+     */
+    public function isQuoteCheckoutEnabled(?int $storeId = null): bool
+    {
+        return (bool) $this->scopeConfig->isSetFlag(
+            self::XML_PATH_QUOTE_CHECKOUT_ENABLED,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
+    }
+
+    /**
+     * The quote-checkout switch AND a working connection: whether the landing route serves
+     * and whether the ping advertises it (Model\QuoteCheckout\LandingUrl).
+     *
+     * @param int|null $storeId
+     * @return bool
+     */
+    public function isQuoteCheckoutActive(?int $storeId = null): bool
+    {
+        return $this->isConfigured($storeId) && $this->isQuoteCheckoutEnabled($storeId);
     }
 }

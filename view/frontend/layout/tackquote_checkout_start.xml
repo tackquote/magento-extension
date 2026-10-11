@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<!--
+  The accepted-quote checkout link, /tackquote/checkout/start (Controller\Checkout\Start).
+  Handle name is {route id}_{controller}_{action}: route `tackquote` (etc/frontend/routes.xml).
+
+  Rendered only when the link cannot open the checkout (an expired or used link, a quote this
+  store cannot sell): the controller sets `message` and `portal_url` on the notice block. Every
+  answer here is about one visitor's link, so the block is NOT cacheable, which keeps the
+  whole page out of the full-page cache.
+-->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      layout="1column"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <referenceContainer name="content">
+            <block class="Magento\Framework\View\Element\Template"
+                   name="tackquote.quote.checkout.notice"
+                   template="TackQuote_Quotes::quote-checkout/notice.phtml"
+                   cacheable="false"/>
+        </referenceContainer>
+    </body>
+</page>

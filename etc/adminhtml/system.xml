@@ -238,6 +238,30 @@
                         reached, nothing is refused.]]></comment>
                 </field>
             </group>
+            <!--
+              Accepted quote checkout link (lane MG-QUOTE-CHECKOUT-LINK). A NEW group: the
+              storefront route tackquote/checkout/start and what the ping tells TackQuote
+              (Model\QuoteCheckout\LandingUrl).
+            -->
+            <group id="quote_checkout" translate="label comment" type="text" sortOrder="27"
+                   showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Accepted quote checkout</label>
+                <comment><![CDATA[When a buyer accepts a quote in TackQuote, the buyer portal can
+                    send them to this store with a checkout link. The store then fills the cart with
+                    the quoted products at the quoted prices, quantities locked, and the order is
+                    linked back to the quote.]]></comment>
+                <field id="enabled" translate="label comment" type="select" sortOrder="10"
+                       showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Open accepted quotes in the checkout</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment><![CDATA[Opening the link replaces the shopper's cart with the quote
+                        (a signed-in customer's own cart, or a guest's). Other products cannot be
+                        added beside it, and removing one quoted line removes the quote. The quote's
+                        currency must be the store's base and display currency, and catalog prices
+                        must be entered excluding tax. The store must use https. Works in quote-only
+                        mode: an accepted quote is the one checkout it allows.]]></comment>
+                </field>
+            </group>
             <group id="storefront" translate="label" type="text" sortOrder="20"
                    showInDefault="1" showInWebsite="1" showInStore="0">
                 <label>Request a Quote button</label>

@@ -231,6 +231,7 @@ view.
 | Buyer group rules | **Shipping discounts by buyer group** / **Shipping discount per group** | Off by default. `CODE: percent=15 \| carriers`, `free`, `free_only`. |
 | Buyer group rules | **Apply TackQuote tax exemptions** / **Customer tax class for tax-exempt buyers** | Off by default. |
 | Buyer group rules | **Set the customer group from the buyer group** / **Customer group per buyer group** | Off by default. `CODE: customer group ID` lines. |
+| Accepted quote checkout | **Open accepted quotes in the checkout** | On by default. The checkout link from TackQuote's buyer portal fills the cart with the accepted quote. See *Accepted quote checkout link*. |
 
 Every storefront control is additionally gated on the module being enabled *and* an API key
 being present — offering a control that cannot submit would only produce a dead end.
@@ -262,6 +263,8 @@ seller JWT:
 | `GET /v1/storefront/v1/wholesale-application` | none | The customer's own application state (none, pending, approved, declined). |
 | `POST /v1/storefront/v1/credit-application` | `buyers:write` | The net terms application. |
 | `GET /v1/storefront/v1/net-terms` | none | The customer's net terms standing, for the Net terms tab and "Pay on net terms". |
+| `GET /v1/integrations/magento/quote-checkout/<token>` | `quotes:write` | Accepted quote checkout link: exchange the single-use token for the quote's lines, once, server to server, `X-Api-Key` only (`Model/QuoteCheckout/CheckoutApiClient.php`). |
+| `POST /v1/integrations/magento/quote-checkout/complete` | `quotes:write` | Accepted quote checkout link: the order the quoted cart became (idempotent). |
 | `POST /v1/storefront-pricing/resolve` | none | B2B checkout: the account price of every cart line at its quantity, one request for up to 50 lines, `X-Api-Key` only (`apps/api/src/modules/pricing-rules/storefront-pricing.controller.ts`). |
 
 The five `/storefront/v1` reads are TackQuote's platform-neutral storefront API
@@ -275,7 +278,9 @@ opposite direction (Tack → the store: connect, sync, checkout). Quotes are tag
 forwarded rather than assumed.
 
 `ping` also answers `connectedVia` (`connect` or `api_key`), how the presented key was
-issued; the module records the same fact itself, so it does not depend on it.
+issued; the module records the same fact itself, so it does not depend on it. Every `ping`
+carries `X-TackQuote-Quote-Checkout-Url`: the store view's https landing route for accepted
+quotes, or `off` (`Model/QuoteCheckout/LandingUrl.php`, see *Accepted quote checkout link*).
 
 ## Connect with TackQuote
 
@@ -874,6 +879,63 @@ For a signed-in customer only, when a switched-on rule needs the group: the cust
 with this install's id (headers `X-TackQuote-Platform` and `X-TackQuote-Store-Id`). Nothing for
 guests. Nothing is written in TackQuote.
 
+## Accepted quote checkout link
+
+**Stores > Configuration > TackQuote > TackQuote Settings > Accepted quote checkout**, one
+switch, **on by default** (nothing changes until a buyer opens a link TackQuote made for an
+accepted quote). The WooCommerce plugin's quote checkout (`class-tack-quote-checkout.php`,
+plugin 1.11.0), for Magento.
+
+**The flow.**
+
+1. On every `ping` the module tells TackQuote where it takes checkout links:
+   `X-TackQuote-Quote-Checkout-Url: https://<store view base URL>tackquote/checkout/start`, or
+   `off` when the switch is off, the module is not configured, or the store is not https.
+   TackQuote accepts the URL only on the host the seller entered for the store connection.
+2. A buyer accepts a quote in the TackQuote buyer portal and presses "Checkout in the store".
+   TackQuote sends them to `/tackquote/checkout/start?token=<single-use token>`
+   (`Controller/Checkout/Start.php`).
+3. The module exchanges the token with TackQuote, server to server, once (TackQuote spends it
+   on the first exchange). A per-visitor limit of 10 links per 10 minutes applies first.
+4. The cart is emptied and filled with every quoted line, by SKU, at the quoted quantity, with
+   the quoted unit price as the line's custom price (`custom_price` and
+   `original_custom_price`, never super mode). All or nothing: an unknown SKU, a disabled or
+   out-of-stock product, a configurable or bundle parent, or a quantity Magento would change
+   leaves the cart empty and names the products (`Model/QuoteCheckout/CartBuilder.php`). A
+   guest's checkout starts with the quote's email filled in.
+5. The buyer lands on Magento's own checkout. Shipping, tax and payment are the store's.
+6. When the order is placed the module tells TackQuote which order it became
+   (`Observer/QuoteCheckoutOrderReport.php`); TackQuote links the order to the quote and, for a
+   paid order that is not on net terms, marks the quote paid. If that report is lost,
+   TackQuote's order sync reads the same reference from the order lines.
+
+**What the cart may not do while it holds the quote.** Other products cannot be added
+(`Plugin/Quote/QuoteCheckoutCartGuard.php`); the quoted quantities cannot be changed on the
+cart page or over the Web API (`QuoteCheckoutUpdateItemsLock.php`,
+`QuoteCheckoutCartItemRepositoryLock.php`); removing one quoted line removes the whole quote
+(`Observer/QuoteCheckoutLineRemoved.php`). A cart that holds a quoted line but is no longer
+exactly the quote (a line, quantity, price or currency changed) is never ordered
+(`QuoteCheckoutSubmitGuard.php`), and the checkout page takes such a quote out of the cart and
+says why (`QuoteCheckoutPageGuard.php`).
+
+**Quote-only mode and B2B checkout.** An intact accepted quote is the one checkout a
+quote-only store allows: the quote-only cart, checkout and submit guards let it through, and so
+do the order-limit guards (the seller accepted those quantities). Its lines carry the quote in
+the cart line's `additional_data` (`tackquote_quote_ref`, `tackquote_quoted_price`, ...,
+`Model/QuoteCheckout/QuotedLine.php`), and *Charge account prices in the cart* never reprices
+such a line.
+
+**Refused, with a message.**
+
+| Case | Why |
+|---|---|
+| The quote's currency is not the store's base and display currency | The custom price is read in the cart's currency; nothing is converted. |
+| Catalog prices are entered including tax | Quoted prices are net (the *Charge account prices* rule). |
+| An expired, used or unknown link | A page saying so, with a link back to the buyer portal when TackQuote names one. |
+
+**Not cached.** The landing page's notice block is `cacheable="false"`; a successful link is a
+redirect. The token is never put in a redirect target or a log line.
+
 ## Known limitations
 
 - **The cart-page button copies, it does not link.** "Request a quote for your cart" copies
@@ -987,6 +1049,17 @@ guests. Nothing is written in TackQuote.
   store) and only to a server that lists `customerIdentity`. UNVERIFIED on a store.
 - **The customer-group mirror takes effect on the next cart totals.** A cart priced before the
   group changed keeps its prices until Magento collects its totals again.
+- **Accepted quote checkout: one landing URL per TackQuote account.** The ping from the
+  default store view (the capability cron) sets it; a multi-store-view store receives every
+  link on that view's URL. UNVERIFIED on a store.
+- **Accepted quote checkout: GraphQL `updateCartItems`** changes a quoted quantity without the
+  cart-item repository, so it is not refused there; the cart is then no longer the quote and
+  the order is refused. UNVERIFIED on a store.
+- **Accepted quote checkout and multishipping.** "Check Out with Multiple Addresses" places its
+  orders without `QuoteManagement::submit()`, so the integrity check and the order report do
+  not run there; TackQuote's order sync still links those orders from their lines.
+- **Accepted quote checkout: a quote's PO number is not filled in** at checkout. It stays on
+  the quote in TackQuote; only the *Pay on net terms* method has a PO field here.
 - No Magento Marketplace listing or Packagist publication (see Installation).
 
 ## Requirements
@@ -1293,6 +1366,18 @@ magento-extension/                              (repository root)
 ├── Controller/Quote/Submit.php                 Storefront quote-request POST handler
 ├── Controller/Quote/Upload.php                 Attachment upload: validate, send to TackQuote
 ├── Controller/Quote/Index.php                  The full quote page (404 while switched off)
+├── Controller/Checkout/Start.php               Accepted quote checkout link: token in, cart built
+├── Model/QuoteCheckout/QuotedLine.php          The quote marker on a cart line (additional_data)
+├── Model/QuoteCheckout/QuotedCart.php          "Is this cart exactly the accepted quote?"
+├── Model/QuoteCheckout/PayloadReader.php       The exchange answer, read exactly or not at all
+├── Model/QuoteCheckout/CheckoutApiClient.php   Token exchange + completion, X-Api-Key only
+├── Model/QuoteCheckout/CartBuilder.php         All lines at quoted price and quantity, or none
+├── Model/QuoteCheckout/CompletionReporter.php  Tells TackQuote which order the quote became
+├── Model/QuoteCheckout/LandingUrl.php          The landing URL the ping advertises
+├── Plugin/Quote/QuoteCheckout*.php             Mixing, quantity locks, integrity at submit and checkout
+├── Observer/QuoteCheckoutOrderReport.php       sales_model_service_quote_submit_success -> report
+├── Observer/QuoteCheckoutLineRemoved.php       One quoted line removed -> the quote leaves whole
+├── view/frontend/layout/tackquote_checkout_start.xml  The link's notice page (not cacheable)
 ├── Controller/B2b/Display.php                  Signed-in customer's B2B data (POST, form key)
 ├── Controller/Adminhtml/Dashboard/Index.php    Admin dashboard page
 ├── Controller/Adminhtml/Connection/Test.php    Admin "Test connection" AJAX endpoint
@@ -1337,6 +1422,18 @@ magento-extension/                              (repository root)
 
 ### Unreleased
 
+- **Accepted quote checkout link** (on by default; new group *Accepted quote checkout*). A buyer
+  who accepts a quote in TackQuote's buyer portal can check it out in this store:
+  `/tackquote/checkout/start` exchanges TackQuote's single-use link, fills the cart with the
+  quoted products at the quoted prices with the quantities locked, and sends the buyer to the
+  checkout; the order is reported back to TackQuote and linked to the quote. Works in
+  quote-only mode (the accepted quote is the one checkout allowed) and beside B2B checkout
+  (quoted lines are never repriced). The ping now carries `X-TackQuote-Quote-Checkout-Url`.
+  Needs a TackQuote server that lists `quoteCheckout` in `ping`. New phrases are at the end of
+  `i18n/en_US.csv`. New unit tests under `Test/Unit/Model/QuoteCheckout/`,
+  `Test/Unit/Controller/Checkout/`, `Test/Unit/Plugin/Quote/QuoteCheckoutGuardsTest.php`,
+  `Test/Unit/Observer/QuoteCheckoutObserversTest.php` and
+  `Test/Unit/Layout/QuoteCheckoutDeclarationsTest.php`.
 - **Wholesale and net terms for signed-in customers** (all off by default; new groups
   *Wholesale and Net Terms Applications* and *Pay on Net Terms (checkout)*): a Wholesale
   account tab and CMS block with the seller's TackQuote form (file uploads included) and the

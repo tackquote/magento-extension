@@ -35,6 +35,11 @@
  * PER-PRODUCT. A cart holding a product whose own `tackquote_quote_only` flag is Yes is
  * refused too, with its own message, even when the store-wide mode is off.
  *
+ * AN ACCEPTED QUOTE'S CART goes to the checkout while it is INTACT
+ * (Model\QuoteCheckout\QuotedCart::isIntact()): the one legitimate checkout in a quote-only
+ * store. A broken one never reaches here: Plugin\Quote\QuoteCheckoutPageGuard (ordered first)
+ * takes the quote out and sends the shopper to the cart.
+ *
  * @package TackQuote_Quotes
  */
 
@@ -46,6 +51,7 @@ use Magento\Checkout\Controller\Index\Index as CheckoutIndex;
 use Magento\Checkout\Model\Session as CheckoutSession;
 use Magento\Framework\Controller\Result\RedirectFactory;
 use Magento\Framework\Message\ManagerInterface as MessageManager;
+use TackQuote\Quotes\Model\QuoteCheckout\QuotedCart;
 use TackQuote\Quotes\Model\QuoteOnlyMode;
 
 class QuoteOnlyCheckoutGuard
@@ -71,21 +77,29 @@ class QuoteOnlyCheckoutGuard
     private $checkoutSession;
 
     /**
+     * @var QuotedCart
+     */
+    private $quotedCart;
+
+    /**
      * @param QuoteOnlyMode $quoteOnlyMode
      * @param RedirectFactory $redirectFactory
      * @param MessageManager $messageManager
      * @param CheckoutSession $checkoutSession Injected as a Proxy (etc/frontend/di.xml).
+     * @param QuotedCart $quotedCart
      */
     public function __construct(
         QuoteOnlyMode $quoteOnlyMode,
         RedirectFactory $redirectFactory,
         MessageManager $messageManager,
-        CheckoutSession $checkoutSession
+        CheckoutSession $checkoutSession,
+        QuotedCart $quotedCart
     ) {
         $this->quoteOnlyMode = $quoteOnlyMode;
         $this->redirectFactory = $redirectFactory;
         $this->messageManager = $messageManager;
         $this->checkoutSession = $checkoutSession;
+        $this->quotedCart = $quotedCart;
     }
 
     /**
@@ -101,6 +115,15 @@ class QuoteOnlyCheckoutGuard
      */
     public function aroundExecute(CheckoutIndex $subject, callable $proceed)
     {
+        try {
+            $cart = $this->checkoutSession->getQuote();
+        } catch (\Exception $e) {
+            $cart = null;
+        }
+        if ($cart !== null && $this->quotedCart->isIntact($cart)) {
+            return $proceed();
+        }
+
         if ($this->quoteOnlyMode->isActive()) {
             $this->messageManager->addErrorMessage(
                 __('This store is quote-only. Request a quote for your items and we will send you a price.')
@@ -109,9 +132,7 @@ class QuoteOnlyCheckoutGuard
             return $this->redirectFactory->create()->setPath('checkout/cart');
         }
 
-        try {
-            $cart = $this->checkoutSession->getQuote();
-        } catch (\Exception $e) {
+        if ($cart === null) {
             // Core's own checkout cannot load this cart either and handles that itself.
             return $proceed();
         }
