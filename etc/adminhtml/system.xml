@@ -312,6 +312,85 @@
                         every 5 minutes.]]></comment>
                 </field>
             </group>
+            <!--
+              Wholesale account and Net terms tabs in My Account (lane MG-FORMS-TERMS).
+              Mirrors the WooCommerce plugin's "Wholesale account" and "Net terms" tabs.
+            -->
+            <group id="forms" translate="label comment" type="text" sortOrder="40"
+                   showInDefault="1" showInWebsite="1" showInStore="0">
+                <label>Wholesale and Net Terms Applications</label>
+                <comment><![CDATA[Adds tabs to My Account where a signed-in customer applies
+                    for a wholesale account or for net terms and sees where the application
+                    stands. Applications go to TackQuote for your review. The customer's email
+                    address and Magento customer ID are sent to TackQuote with each
+                    application.]]></comment>
+                <field id="enable_wholesale_tab" translate="label comment" type="select" sortOrder="10"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Show "Wholesale account" tab</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>The application form you built in TackQuote, including file uploads.
+                        After applying, the tab shows whether the application is being reviewed,
+                        approved or declined.</comment>
+                </field>
+                <field id="wholesale_form_slug" translate="label comment" type="text" sortOrder="20"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Wholesale form slug</label>
+                    <comment>Which TackQuote wholesale form to show. Leave empty for your default
+                        form.</comment>
+                </field>
+                <field id="enable_net_terms_tab" translate="label comment" type="select" sortOrder="30"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Show "Net terms" tab</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>A net terms application, and the customer's approved terms and credit
+                        limit once you approve them in TackQuote.</comment>
+                </field>
+            </group>
+            <!--
+              "Pay on net terms" (payment/tackquote_net_terms, lane MG-FORMS-TERMS). Kept here,
+              beside the rest of TackQuote, through config_path; the values are the payment
+              method's own.
+            -->
+            <group id="net_terms" translate="label comment" type="text" sortOrder="45"
+                   showInDefault="1" showInWebsite="1" showInStore="0">
+                <label>Pay on Net Terms (checkout)</label>
+                <comment><![CDATA[A checkout payment method shown only to a signed-in customer
+                    you approved for net terms in TackQuote, when their available credit covers
+                    the order in the order's currency. The order is placed as Pending; collect
+                    payment by invoice. Requires the "Net terms" approval to be linked to the
+                    customer's Magento account, which happens when you approve their
+                    application from this store.]]></comment>
+                <field id="active" translate="label" type="select" sortOrder="10"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Enabled</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <config_path>payment/tackquote_net_terms/active</config_path>
+                </field>
+                <field id="title" translate="label" type="text" sortOrder="20"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Title</label>
+                    <config_path>payment/tackquote_net_terms/title</config_path>
+                </field>
+                <field id="description" translate="label" type="textarea" sortOrder="30"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Description</label>
+                    <config_path>payment/tackquote_net_terms/description</config_path>
+                </field>
+                <field id="po_number" translate="label comment" type="select" sortOrder="40"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Ask for a purchase order number</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <config_path>payment/tackquote_net_terms/po_number</config_path>
+                    <comment>An optional field under this payment method. The number is saved on
+                        the order and sent to TackQuote with it.</comment>
+                </field>
+                <field id="sort_order" translate="label" type="text" sortOrder="50"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Sort order</label>
+                    <frontend_class>validate-number</frontend_class>
+                    <config_path>payment/tackquote_net_terms/sort_order</config_path>
+                </field>
+            </group>
         </section>
     </system>
 </config>

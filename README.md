@@ -250,6 +250,12 @@ seller JWT:
 | `GET /v1/storefront/v1/order-limits` | none | B2B display: quantity limits for one SKU. |
 | `GET /v1/storefront/v1/buyer-group` | none | B2B display: the customer's buyer group. |
 | `GET /v1/storefront/v1/price-access` | none | Quote-only *Everyone except approved wholesale accounts*: is this signed-in customer's wholesale application approved? |
+| `GET /v1/storefront/v1/wholesale-signup[/<slug>]` | none | Wholesale account tab / CMS block: the seller's application form (`Model/Forms/AccountApiClient.php`). |
+| `POST /v1/storefront/v1/wholesale-upload` | `buyers:write` | One application file's raw bytes. |
+| `POST /v1/storefront/v1/wholesale-signup[/<slug>]` | `buyers:write` | The wholesale application. |
+| `GET /v1/storefront/v1/wholesale-application` | none | The customer's own application state (none, pending, approved, declined). |
+| `POST /v1/storefront/v1/credit-application` | `buyers:write` | The net terms application. |
+| `GET /v1/storefront/v1/net-terms` | none | The customer's net terms standing, for the Net terms tab and "Pay on net terms". |
 
 The five `/storefront/v1` reads are TackQuote's platform-neutral storefront API
 (`apps/api/src/modules/storefront-api/storefront-v1.controller.ts`), called by
@@ -406,8 +412,9 @@ Every guard is declared in an **area** `di.xml` — `etc/frontend`, and for the 
 guards also `etc/webapi_rest`, `etc/webapi_soap` and `etc/graphql` — never in the global
 `etc/di.xml`. Admin order creation (Sales > Orders > Create New Order) drives the very same
 `Quote::addProduct()` and `QuoteManagement::submit()`; it keeps working because adminhtml
-never loads any of those files. (The global `etc/di.xml` holds only the fallback visitor,
-`Model/QuoteOnly/NoVisitorContext.php`, which is always exempt.) In the API areas, where the
+never loads any of those files. (The global `etc/di.xml` holds no quote-only guard: only the fallback visitor,
+`Model/QuoteOnly/NoVisitorContext.php`, which is always exempt, and the "Pay on net terms"
+payment wiring.) In the API areas, where the
 same methods also carry the merchant's integrations, the exemption is the caller's type —
 see the section above. Area-scoped `di.xml`
 is Magento's own mechanism for this — core scopes
@@ -643,6 +650,52 @@ address appears in it), to absorb reloads: TackQuote throttles each `/storefront
 at 60 requests a minute. A failed lookup is not retried for 30 seconds, an HTTP 429 pauses
 all lookups for the store for 60 seconds, and one customer can cause at most 30 uncached
 lookups a minute.
+
+## Wholesale and net terms (signed-in customers)
+
+Off by default. Three switches under *Wholesale and Net Terms Applications* and the payment
+method under *Pay on Net Terms (checkout)*:
+
+- **Wholesale account tab** (My Account). The application form you built in TackQuote,
+  every field type including file uploads (PDF, JPEG or PNG, 5 MB, narrowed by the field's
+  own settings; checked by this store, streamed to TackQuote, never saved in Magento).
+  Afterwards the tab shows whether the application is being reviewed, approved or declined.
+  The same form can sit on a CMS page:
+  `{{block class="TackQuote\Quotes\Block\Account\WholesaleForm" template="TackQuote_Quotes::account/wholesale.phtml"}}`
+  (optionally `slug="..."`). On a CMS page the block renders only the form, which is the same
+  for every visitor, so the page cache never holds anyone's state; submitting needs a signed-in
+  customer.
+- **Net terms tab** (My Account). The customer's approved terms, credit limit and available
+  credit, a "being reviewed" or "not approved" notice, or the application form (legal name,
+  phone, tax ID, billing address, requested limit and terms, three trade references, notes).
+- **Pay on net terms** (checkout). An offline payment method offered only to a signed-in
+  customer whose TackQuote net terms line is active, in the order's currency, with available
+  credit (or, when TackQuote does not report it, the limit) covering the order total. It is
+  checked again, live, when the order is placed. The order is placed as *Pending*, with the
+  terms ("Net 30") and the optional PO number on the payment, shown on the order page and
+  read by TackQuote when it pulls the order. Never offered in admin order creation.
+
+### How TackQuote knows which customer it is
+
+The customer's account email, and their Magento customer ID with this install's own ID
+(`X-TackQuote-Platform: magento`, `X-TackQuote-Store-Id`), on TackQuote's `/storefront/v1`
+API with the key in `X-Api-Key` only. The install ID is a UUID created once by
+`Setup/Patch/Data/CreateInstallId.php` at `bin/magento setup:upgrade`; it must not change, so
+keep `tackquote_quotes/identity/install_id` when copying a database. The customer ID is sent
+only to a TackQuote server whose `ping` lists `customerIdentity` (an older server would read it
+as another platform's id). Credit is only ever shown for a customer you linked in TackQuote,
+which approving their application from this store does; an email alone never spends a credit
+line. Every value comes from the customer record Magento holds, never from the form.
+
+### Failure and caching
+
+The form definition is cached 5 minutes (60 seconds after a failure). The net terms standing
+is cached 60 seconds per customer, read once per request for both the tab and checkout, and
+read fresh when an order is placed. Anything TackQuote cannot confirm hides the payment
+method and shows the application form, never a status. Applications are limited to 5 per
+10 minutes (wholesale) and 3 per 15 minutes (net terms) per visitor, below TackQuote's own
+limits. UNVERIFIED on a live store: the navigation links (`customer_account.xml`), the
+checkout renderer, and the order payment carrying `po_number` from the quote.
 
 ## Known limitations
 
@@ -922,7 +975,8 @@ magento-extension/                              (repository root)
 ├── etc/adminhtml/routes.xml                    Admin route tackquote/*
 ├── etc/adminhtml/system.xml                    Stores > Configuration > TackQuote fields
 ├── etc/frontend/routes.xml                     Storefront route tackquote/*
-├── etc/di.xml                                  Global: only the always-exempt fallback visitor
+├── etc/di.xml                                  Global: the always-exempt fallback visitor, and
+│                                               the "Pay on net terms" facade + checkout config
 ├── etc/frontend/di.xml                         QUOTE-ONLY GUARDS — frontend area only,
 │                                               which is what keeps the admin exempt
 ├── etc/webapi_rest/di.xml                      Quote-only cart + order guards for REST
@@ -949,6 +1003,24 @@ magento-extension/                              (repository root)
 ├── Model/SubmissionThrottle.php                Per-IP rate limit on the public endpoints
 ├── Model/QuoteRequestConfig.php                Quote page / cart button / target price / attachment settings
 ├── Model/ServerCapabilities.php                TackQuote ping `capabilities`, cached per store view
+├── Model/Forms/AccountIdentity.php            Email + Magento customer id + install id, as sent
+├── Model/Forms/IdentityResolver.php           Builds it from the session/quote customer
+├── Model/Forms/AccountApiClient.php           /storefront/v1 account routes (X-Api-Key only)
+├── Model/Forms/FormDefinition.php             Wholesale form: normalise, answers, showIf, files
+├── Model/Forms/FieldRenderer.php              One form field as escaped HTML (every type)
+├── Model/Forms/WholesaleFormSource.php        Cached form definition (5 min / 60 s)
+├── Model/Forms/ApplicationStatus.php          none/pending/approved/declined, fail closed
+├── Model/Forms/CreditApplicationBuilder.php   Net terms application body, server bounds
+├── Model/Forms/ApplicationSubmitter.php       Uploads + submits, shopper-facing outcome
+├── Model/Payment/NetTermsMethod.php           "Pay on net terms" (Adapter subclass, fail closed)
+├── Model/Payment/NetTermsEligibility.php      Standing -> eligible?, tab view (pure)
+├── Model/Payment/NetTermsStanding.php         Cached net-terms read shared by tab + checkout
+├── Model/Payment/NetTermsConfigProvider.php   checkoutConfig: PO switch + description
+├── Block/Account/WholesaleForm.php            Wholesale tab / CMS block
+├── Block/Account/NetTermsForm.php             Net terms tab
+├── Block/Payment/NetTermsInfo.php             Order page: terms + PO number
+├── Controller/Account/*.php                   Wholesale / NetTerms pages and their POSTs
+├── Setup/Patch/Data/CreateInstallId.php       This install's UUID, once
 ├── Model/QuotePayloadBuilder.php               Target prices and upload ids on the request
 ├── Model/AttachmentValidator.php               Count, size and real type of attached files
 ├── Model/IdempotencyGuard.php                  Collapses double-submits into one quote
@@ -1029,6 +1101,15 @@ magento-extension/                              (repository root)
 
 ### Unreleased
 
+- **Wholesale and net terms for signed-in customers** (all off by default; new groups
+  *Wholesale and Net Terms Applications* and *Pay on Net Terms (checkout)*): a Wholesale
+  account tab and CMS block with the seller's TackQuote form (file uploads included) and the
+  application's status; a Net terms tab with the customer's terms and credit or the
+  application form; and the "Pay on net terms" checkout method with an optional PO number.
+  Requires `bin/magento setup:upgrade` (a data patch creates this install's ID). Needs a
+  TackQuote server that lists `customerIdentity` in `ping`. New phrases are at the end of
+  `i18n/en_US.csv`. New unit tests under `Test/Unit/Model/Forms/`, `Test/Unit/Model/Payment/`
+  and `Test/Unit/Setup/`.
 - **Quote page, cart-page button, target prices and attachments** (all off by default; new
   group *Quote page, cart button and attachments*). A full quote page at `/tackquote/quote`
   with a link from the quote list; "Request a quote for your cart" on the cart page, which

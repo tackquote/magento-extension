@@ -24,6 +24,10 @@
             <!-- The storefront modal is built on Magento_Ui's modal widget so it
                  inherits the active theme rather than imposing its own chrome. -->
             <module name="Magento_Ui"/>
+            <!-- "Pay on net terms" is a Magento_Payment method facade (etc/di.xml) whose
+                 orders are Magento_Sales orders. -->
+            <module name="Magento_Payment"/>
+            <module name="Magento_Sales"/>
         </sequence>
     </module>
 </config>

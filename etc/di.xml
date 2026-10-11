@@ -13,4 +13,67 @@
         xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
     <preference for="TackQuote\Quotes\Model\QuoteOnly\VisitorContextInterface"
                 type="TackQuote\Quotes\Model\QuoteOnly\NoVisitorContext"/>
+
+    <!--
+      "Pay on net terms" (payment code tackquote_net_terms), lane MG-FORMS-TERMS.
+
+      A Magento\Payment facade (Adobe Commerce: Payment Provider Gateway, "Payment method facade"):
+      the real class TackQuote\Quotes\Model\Payment\NetTermsMethod extends
+      Magento\Payment\Model\Method\Adapter so that availability is decided from the quote and fails
+      CLOSED (see that class). Its values come from payment/tackquote_net_terms in etc/config.xml
+      through the standard Config + ConfigValueHandler + ValueHandlerPool chain. No command pool:
+      it is an offline method with no payment action.
+
+      Global (not etc/frontend/di.xml) on purpose: the method list is also built in the webapi_rest
+      area (the checkout's /V1/carts/mine/payment-information calls) and orders are placed there.
+    -->
+
+    <type name="TackQuote\Quotes\Model\Payment\NetTermsMethod">
+        <arguments>
+            <argument name="code" xsi:type="const">TackQuote\Quotes\Model\Payment\NetTermsMethod::CODE</argument>
+            <argument name="formBlockType" xsi:type="string">Magento\Payment\Block\Form</argument>
+            <argument name="infoBlockType" xsi:type="string">TackQuote\Quotes\Block\Payment\NetTermsInfo</argument>
+            <argument name="valueHandlerPool" xsi:type="object">TackQuoteNetTermsValueHandlerPool</argument>
+        </arguments>
+    </type>
+
+    <virtualType name="TackQuoteNetTermsConfig" type="Magento\Payment\Gateway\Config\Config">
+        <arguments>
+            <argument name="methodCode" xsi:type="const">TackQuote\Quotes\Model\Payment\NetTermsMethod::CODE</argument>
+        </arguments>
+    </virtualType>
+
+    <virtualType name="TackQuoteNetTermsConfigValueHandler" type="Magento\Payment\Gateway\Config\ConfigValueHandler">
+        <arguments>
+            <argument name="configInterface" xsi:type="object">TackQuoteNetTermsConfig</argument>
+        </arguments>
+    </virtualType>
+
+    <virtualType name="TackQuoteNetTermsValueHandlerPool" type="Magento\Payment\Gateway\Config\ValueHandlerPool">
+        <arguments>
+            <argument name="handlers" xsi:type="array">
+                <item name="default" xsi:type="string">TackQuoteNetTermsConfigValueHandler</item>
+            </argument>
+        </arguments>
+    </virtualType>
+
+    <!--
+      The wholesale form block can sit on a CMS page, which the full-page cache stores. It
+      reads the customer session only in the account tab (`show_status`); the Proxy keeps
+      merely constructing it on a CMS page from starting a session.
+    -->
+    <type name="TackQuote\Quotes\Block\Account\WholesaleForm">
+        <arguments>
+            <argument name="customerSession" xsi:type="object">Magento\Customer\Model\Session\Proxy</argument>
+        </arguments>
+    </type>
+
+    <!-- window.checkoutConfig.payment.tackquote_net_terms for the checkout renderer. -->
+    <type name="Magento\Checkout\Model\CompositeConfigProvider">
+        <arguments>
+            <argument name="configProviders" xsi:type="array">
+                <item name="tackquote_net_terms_config_provider" xsi:type="object">TackQuote\Quotes\Model\Payment\NetTermsConfigProvider</item>
+            </argument>
+        </arguments>
+    </type>
 </config>

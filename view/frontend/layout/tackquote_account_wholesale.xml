@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<!-- My Account > Wholesale account. Per-customer content: not cacheable. -->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <update handle="customer_account"/>
+    <body>
+        <referenceContainer name="content">
+            <block class="TackQuote\Quotes\Block\Account\WholesaleForm"
+                   name="tackquote.account.wholesale"
+                   template="TackQuote_Quotes::account/wholesale.phtml"
+                   cacheable="false">
+                <arguments>
+                    <argument name="show_status" xsi:type="boolean">true</argument>
+                </arguments>
+            </block>
+        </referenceContainer>
+    </body>
+</page>

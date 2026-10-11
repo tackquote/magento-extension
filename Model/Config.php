@@ -66,6 +66,15 @@ class Config
         self::B2B_BUYER_GROUP,
     ];
 
+    // Wholesale and net-terms account tabs (lane MG-FORMS-TERMS). Both default to 0.
+    private const XML_PATH_FORMS_WHOLESALE_TAB = 'tackquote_quotes/forms/enable_wholesale_tab';
+    private const XML_PATH_FORMS_WHOLESALE_SLUG = 'tackquote_quotes/forms/wholesale_form_slug';
+    private const XML_PATH_FORMS_NET_TERMS_TAB = 'tackquote_quotes/forms/enable_net_terms_tab';
+    /** The "Pay on net terms" method's own PO-number switch (Sales > Payment Methods path). */
+    private const XML_PATH_NET_TERMS_PO_NUMBER = 'payment/tackquote_net_terms/po_number';
+    /** This install's id, written ONCE by Setup\Patch\Data\CreateInstallId (default scope). */
+    public const XML_PATH_INSTALL_ID = 'tackquote_quotes/identity/install_id';
+
     private const DEFAULT_API_BASE_URL = 'https://api.tackquote.com/v1';
     private const DEFAULT_BUTTON_LABEL = 'Request a Quote';
     private const DEFAULT_ADD_TO_QUOTE_LABEL = 'Add to Quote';
@@ -492,5 +501,90 @@ class Config
         );
 
         return $value !== '' ? $value : self::DEFAULT_CHECKOUT_LABEL;
+    }
+
+    /**
+     * Whether the "Wholesale account" tab shows in My Account. Requires isConfigured():
+     * with no API key the form could not even be read.
+     *
+     * @param int|null $storeId
+     * @return bool
+     */
+    public function isWholesaleTabEnabled(?int $storeId = null): bool
+    {
+        return $this->isConfigured($storeId) && (bool) $this->scopeConfig->isSetFlag(
+            self::XML_PATH_FORMS_WHOLESALE_TAB,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
+    }
+
+    /**
+     * The TackQuote wholesale form slug, or '' for the seller's default form.
+     *
+     * Only the characters a TackQuote slug may hold survive, so the value is safe in a URL
+     * path segment.
+     *
+     * @param int|null $storeId
+     * @return string
+     */
+    public function getWholesaleFormSlug(?int $storeId = null): string
+    {
+        $value = strtolower(trim((string) $this->scopeConfig->getValue(
+            self::XML_PATH_FORMS_WHOLESALE_SLUG,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        )));
+
+        return preg_match('/^[a-z0-9][a-z0-9_-]{0,99}$/', $value) === 1 ? $value : '';
+    }
+
+    /**
+     * Whether the "Net terms" tab shows in My Account.
+     *
+     * @param int|null $storeId
+     * @return bool
+     */
+    public function isNetTermsTabEnabled(?int $storeId = null): bool
+    {
+        return $this->isConfigured($storeId) && (bool) $this->scopeConfig->isSetFlag(
+            self::XML_PATH_FORMS_NET_TERMS_TAB,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
+    }
+
+    /**
+     * Whether "Pay on net terms" asks for an optional PO number.
+     *
+     * @param int|null $storeId
+     * @return bool
+     */
+    public function isNetTermsPoNumberEnabled(?int $storeId = null): bool
+    {
+        return (bool) $this->scopeConfig->isSetFlag(
+            self::XML_PATH_NET_TERMS_PO_NUMBER,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
+    }
+
+    /**
+     * This Magento install's own id (a UUID), or '' when the setup patch has not run.
+     *
+     * TackQuote namespaces a Magento customer id by it (`magento_customer` +
+     * `<install id>:<customer id>`), so customer 7 here is never customer 7 of another
+     * install on the same TackQuote workspace. '' means no customer id is ever sent:
+     * account features then fail closed rather than guess.
+     *
+     * @return string
+     */
+    public function getInstallId(): string
+    {
+        $value = strtolower(trim((string) $this->scopeConfig->getValue(self::XML_PATH_INSTALL_ID)));
+
+        return preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/', $value) === 1
+            ? $value
+            : '';
     }
 }

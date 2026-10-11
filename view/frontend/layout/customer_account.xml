@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<!--
+  My Account navigation links for the Wholesale account and Net terms tabs (lane
+  MG-FORMS-TERMS). `ifconfig` hides a link while its tab is switched off; the controllers
+  answer 404 then as well, and also require a TackQuote API key.
+-->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <referenceBlock name="customer_account_navigation">
+            <block class="Magento\Customer\Block\Account\SortLinkInterface"
+                   name="tackquote-account-navigation-wholesale-link"
+                   ifconfig="tackquote_quotes/forms/enable_wholesale_tab">
+                <arguments>
+                    <argument name="path" xsi:type="string">tackquote/account/wholesale</argument>
+                    <argument name="label" xsi:type="string" translate="true">Wholesale account</argument>
+                    <argument name="sortOrder" xsi:type="number">215</argument>
+                </arguments>
+            </block>
+            <block class="Magento\Customer\Block\Account\SortLinkInterface"
+                   name="tackquote-account-navigation-net-terms-link"
+                   ifconfig="tackquote_quotes/forms/enable_net_terms_tab">
+                <arguments>
+                    <argument name="path" xsi:type="string">tackquote/account/netterms</argument>
+                    <argument name="label" xsi:type="string" translate="true">Net terms</argument>
+                    <argument name="sortOrder" xsi:type="number">214</argument>
+                </arguments>
+            </block>
+        </referenceBlock>
+    </body>
+</page>
