@@ -431,3 +431,5 @@
 "Quote buttons and quote page","Offerteknoppen en offertepagina"
 "Net %1 terms.","Betaaltermijn van %1 dagen."
 "%1 available.","%1 beschikbaar."
+"Last server check failed at %1: %2","Laatste servercontrole mislukt op %1: %2"
+"Magento cron has not run TackQuote's jobs yet. The storefront asks TackQuote itself when nothing is cached, but without cron your registration settings and the server's capabilities are not kept fresh.","Magento-cron heeft de taken van TackQuote nog niet uitgevoerd. De winkel vraagt TackQuote zelf als er niets in de cache staat, maar zonder cron worden uw registratie-instellingen en de mogelijkheden van de server niet actueel gehouden."

@@ -433,3 +433,5 @@
 "Quote buttons and quote page","Quote buttons and quote page"
 "Net %1 terms.","Net %1 terms."
 "%1 available.","%1 available."
+"Last server check failed at %1: %2","Last server check failed at %1: %2"
+"Magento cron has not run TackQuote's jobs yet. The storefront asks TackQuote itself when nothing is cached, but without cron your registration settings and the server's capabilities are not kept fresh.","Magento cron has not run TackQuote's jobs yet. The storefront asks TackQuote itself when nothing is cached, but without cron your registration settings and the server's capabilities are not kept fresh."

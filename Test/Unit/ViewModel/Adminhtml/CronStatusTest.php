@@ -14,6 +14,7 @@ use Magento\Cron\Model\ResourceModel\Schedule\Collection;
 use Magento\Cron\Model\ResourceModel\Schedule\CollectionFactory;
 use Magento\Framework\DataObject;
 use PHPUnit\Framework\TestCase;
+use TackQuote\Quotes\Model\ServerCapabilities;
 use TackQuote\Quotes\ViewModel\Adminhtml\CronStatus;
 
 /**
@@ -23,6 +24,9 @@ class CronStatusTest extends TestCase
 {
     /** @var array<int, array{0: string, 1: mixed}> */
     private $filters = [];
+
+    /** @var ServerCapabilities|null */
+    private $capabilities;
 
     /**
      * @param string|null $executedAt
@@ -51,7 +55,7 @@ class CronStatusTest extends TestCase
             ->getMock();
         $factory->expects(self::once())->method('create')->willReturn($collection);
 
-        return new CronStatus($factory);
+        return new CronStatus($factory, $this->capabilities ?? $this->createMock(ServerCapabilities::class));
     }
 
     public function testNoStartedRowMeansCronHasNotRun(): void
@@ -83,6 +87,20 @@ class CronStatusTest extends TestCase
             ],
             $this->filters
         );
+    }
+
+    public function testTheLastFailedServerCheckIsPassedThrough(): void
+    {
+        $failure = ['at' => '2026-10-11 14:05:00', 'storeId' => 1, 'reason' => 'HTTP 503: Service Unavailable'];
+        $this->capabilities = $this->createMock(ServerCapabilities::class);
+        $this->capabilities->expects(self::once())->method('lastFailure')->willReturn($failure);
+        $this->capabilities->expects(self::never())->method('get');
+        $this->capabilities->expects(self::never())->method('refresh');
+
+        $status = $this->cronStatus(null);
+        $status->hasRun();
+
+        self::assertSame($failure, $status->getLastPingFailure());
     }
 
     public function testTheJobCodesAreTheOnesDeclaredInCrontab(): void

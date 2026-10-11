@@ -32,13 +32,27 @@ foreach ($checklist as $item) {
     $allOk = $allOk && $item['ok'];
 }
 $cronRan = $cron->hasRun();
+// The cron job reports success even when TackQuote did not answer; say so on the same row.
+$pingFailure = $cron->getLastPingFailure();
+$pingNote = $pingFailure !== null
+    ? (string) __(
+        'Last server check failed at %1: %2',
+        $block->formatDate($pingFailure['at'], \IntlDateFormatter::MEDIUM, true),
+        $pingFailure['reason']
+    )
+    : '';
 $checklist[] = [
     'label' => (string) __('Magento cron has run'),
     'ok' => $cronRan,
-    'hint' => (string) __('Set up Magento cron (bin/magento cron:install), then check again in 5 minutes.'),
-    'note' => $cronRan
-        ? (string) __('Last run: %1', $block->formatDate($cron->getLastRunAt(), \IntlDateFormatter::MEDIUM, true))
-        : '',
+    'hint' => trim((string) __(
+        'Set up Magento cron (bin/magento cron:install), then check again in 5 minutes.'
+    ) . ' ' . $pingNote),
+    'note' => implode('. ', array_filter([
+        $cronRan
+            ? (string) __('Last run: %1', $block->formatDate($cron->getLastRunAt(), \IntlDateFormatter::MEDIUM, true))
+            : '',
+        $pingNote,
+    ])),
 ];
 $canConfigure = $overview->canConfigure();
 
@@ -137,9 +151,9 @@ $tabsInit = ['mage/backend/tabs' => ['active' => 'tq-tab-connection']];
             <div class="message message-warning warning">
                 <div>
                     <?= $escaper->escapeHtml(__(
-                        'Magento cron has not run TackQuote\'s jobs yet. Until it does, the quote form shows '
-                        . 'contact fields only: the company and custom fields from your TackQuote registration '
-                        . 'settings, and the attachment control, appear after the first cron run.'
+                        'Magento cron has not run TackQuote\'s jobs yet. The storefront asks TackQuote itself '
+                        . 'when nothing is cached, but without cron your registration settings and the server\'s '
+                        . 'capabilities are not kept fresh.'
                     )) ?>
                 </div>
             </div>

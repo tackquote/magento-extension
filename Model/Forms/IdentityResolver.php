@@ -4,8 +4,10 @@
  *
  * Callers pass the customer id and account email from the customer SESSION (account tabs)
  * or from the QUOTE / ORDER (checkout), never from posted input. Whether the Magento
- * customer id may be sent is the server's `customerIdentity` capability (read from the
- * cache only: a page must not wait on a ping) and this install's id.
+ * customer id may be sent is the server's `customerIdentity` capability and this install's id.
+ * The capability is read through Model\ServerCapabilities, which asks the server once when
+ * nothing is cached (after a cache flush or before the first cron run) instead of answering
+ * "no" until cron, which used to send wholesale applications without the Magento identity.
  *
  * @package TackQuote_Quotes
  */
@@ -53,7 +55,7 @@ class IdentityResolver
             (int) $customerId,
             (string) $email,
             $this->config->getInstallId(),
-            $this->capabilities->supports(AccountIdentity::CAPABILITY, $storeId)
+            $this->capabilities->supports(AccountIdentity::CAPABILITY, $storeId, true)
         );
     }
 }

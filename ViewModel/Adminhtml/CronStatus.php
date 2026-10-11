@@ -15,6 +15,10 @@
  * by default), so "no row" means "has not run recently", which is the condition that matters:
  * the cached entries the jobs write live for one hour.
  *
+ * Also the latest FAILED server check (Model\ServerCapabilities::lastFailure()): the cron job
+ * itself reports success when TackQuote did not answer, so the Overview's cron row says
+ * "Last server check failed at <time>: <reason>" instead of looking healthy.
+ *
  * @package TackQuote_Quotes
  */
 
@@ -24,6 +28,7 @@ namespace TackQuote\Quotes\ViewModel\Adminhtml;
 
 use Magento\Cron\Model\ResourceModel\Schedule\CollectionFactory;
 use Magento\Framework\View\Element\Block\ArgumentInterface;
+use TackQuote\Quotes\Model\ServerCapabilities;
 
 class CronStatus implements ArgumentInterface
 {
@@ -39,16 +44,33 @@ class CronStatus implements ArgumentInterface
     private $scheduleCollectionFactory;
 
     /**
+     * @var ServerCapabilities
+     */
+    private $capabilities;
+
+    /**
      * @var string|null|false False until read.
      */
     private $lastRun = false;
 
     /**
      * @param CollectionFactory $scheduleCollectionFactory
+     * @param ServerCapabilities $capabilities
      */
-    public function __construct(CollectionFactory $scheduleCollectionFactory)
+    public function __construct(CollectionFactory $scheduleCollectionFactory, ServerCapabilities $capabilities)
     {
         $this->scheduleCollectionFactory = $scheduleCollectionFactory;
+        $this->capabilities = $capabilities;
+    }
+
+    /**
+     * The latest failed server check of the last day, or null. Never calls TackQuote.
+     *
+     * @return array{at: string, storeId: int, reason: string}|null `at` is UTC, as stored.
+     */
+    public function getLastPingFailure(): ?array
+    {
+        return $this->capabilities->lastFailure();
     }
 
     /**

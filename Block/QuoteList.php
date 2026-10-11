@@ -106,9 +106,10 @@ class QuoteList extends Template
 
     /**
      * Whether the quote form offers file attachments: the merchant's switch AND the server's
-     * `attachments` capability, read from CACHE only. This block renders on every page, so it
-     * must never ping (Cron\WarmServerCapabilities does); a cold cache just hides the control
-     * until the next cron run, and the upload controller checks again for itself.
+     * `attachments` capability. Cron\WarmServerCapabilities keeps the list cached; when it is
+     * cold (a cache flush, before the first cron run) Model\ServerCapabilities asks once, with
+     * the API client's 3-second read timeout and a 60-second memory of a failure, instead of
+     * hiding the control for up to five minutes. The upload controller checks again for itself.
      *
      * @return bool
      */
@@ -117,7 +118,7 @@ class QuoteList extends Template
         $storeId = $this->storeId();
 
         return $this->quoteRequestConfig->isAttachmentsSwitchOn($storeId)
-            && $this->capabilities->supports(ServerCapabilities::ATTACHMENTS, $storeId, false);
+            && $this->capabilities->supports(ServerCapabilities::ATTACHMENTS, $storeId, true);
     }
 
     /**
@@ -243,13 +244,14 @@ class QuoteList extends Template
     {
         if (!$this->policyLoaded) {
             /*
-             * getCached(), NOT get(). This block renders in `before.body.end` on every
-             * storefront page, so a fetch here is a fetch inside a shopper's page render:
-             * on a cold cache that blocked the response on an outbound call to TackQuote.
-             * Cron\WarmRegistrationConfig owns the fetching now; a cache miss here just
-             * degrades the form to contact fields, exactly as a TackQuote outage does.
+             * get(): cached by Cron\WarmRegistrationConfig, and fetched once when the cache is
+             * cold (a cache flush, a settings save, before the first cron run) rather than
+             * leaving the form on contact fields for up to five minutes. The fetch is bounded
+             * by the API client's 3-second read timeout, and a failure is remembered for 60
+             * seconds (RegistrationConfigProvider::FAILURE_TTL), so an outage costs at most one
+             * timeout a minute and degrades the form to contact fields, as before.
              */
-            $this->policy = $this->registrationConfig->getCached(
+            $this->policy = $this->registrationConfig->get(
                 (int) $this->_storeManager->getStore()->getId()
             );
             $this->policyLoaded = true;

@@ -127,13 +127,18 @@ class Client
      * Model\ServerCapabilities, which caches it; nothing else should call this.
      *
      * @param int|null $storeId
-     * @return array{ok: bool, capabilities?: string[], message?: string}
+     * @return array{ok: bool, capabilities?: string[], status?: int, message?: string}
      */
     public function getCapabilities(?int $storeId = null): array
     {
         $result = $this->request('GET', self::PATH_PING, null, $storeId);
         if (!$result['ok']) {
-            return ['ok' => false, 'message' => $result['message'] ?? 'Could not reach TackQuote.'];
+            // The HTTP status (0: no answer) for Model\ServerCapabilities' failure log.
+            return [
+                'ok' => false,
+                'status' => (int) ($result['status'] ?? 0),
+                'message' => $result['message'] ?? 'Could not reach TackQuote.',
+            ];
         }
         $caps = $result['data']['capabilities'] ?? [];
 

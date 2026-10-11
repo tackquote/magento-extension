@@ -431,3 +431,5 @@
 "Quote buttons and quote page","Angebotsbuttons und Angebotsseite"
 "Net %1 terms.","Zahlungsziel %1 Tage netto."
 "%1 available.","%1 verfügbar."
+"Last server check failed at %1: %2","Letzte Serverprüfung am %1 fehlgeschlagen: %2"
+"Magento cron has not run TackQuote's jobs yet. The storefront asks TackQuote itself when nothing is cached, but without cron your registration settings and the server's capabilities are not kept fresh.","Magento-Cron hat die TackQuote-Aufgaben noch nicht ausgeführt. Der Shop fragt TackQuote selbst, wenn nichts im Cache liegt, aber ohne Cron werden Ihre Registrierungseinstellungen und die Funktionen des Servers nicht aktuell gehalten."
