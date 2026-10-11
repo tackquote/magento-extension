@@ -2,7 +2,8 @@
 <!--
   Default values for TackQuote settings that need an explicit default.
 
-  Only the B2B display switches are listed. Each is OFF until a merchant turns it on:
+  Only the B2B display switches and the quote page / cart button / target price /
+  attachment switches are listed. Each is OFF until a merchant turns it on:
   showing a customer's negotiated prices is a decision a merchant makes, not something a
   module upgrade does to their storefront (the WooCommerce plugin ships the same switches
   defaulting to "no").
@@ -18,6 +19,12 @@
                 <enable_buyer_group_badge>0</enable_buyer_group_badge>
                 <customer_groups></customer_groups>
             </b2b>
+            <quote_request>
+                <enable_quote_page>0</enable_quote_page>
+                <enable_target_price>0</enable_target_price>
+                <enable_cart_button>0</enable_cart_button>
+                <enable_attachments>0</enable_attachments>
+            </quote_request>
         </tackquote_quotes>
     </default>
 </config>

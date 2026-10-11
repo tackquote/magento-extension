@@ -27,7 +27,9 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use TackQuote\Quotes\Block\QuoteList;
 use TackQuote\Quotes\Model\Config;
+use TackQuote\Quotes\Model\QuoteRequestConfig;
 use TackQuote\Quotes\Model\RegistrationConfigProvider;
+use TackQuote\Quotes\Model\ServerCapabilities;
 
 /**
  * @covers \TackQuote\Quotes\Block\QuoteList
@@ -40,10 +42,18 @@ class QuoteListRenderPathTest extends TestCase
     /** @var Config&MockObject */
     private $config;
 
+    /** @var QuoteRequestConfig&MockObject */
+    private $quoteRequestConfig;
+
+    /** @var ServerCapabilities&MockObject */
+    private $capabilities;
+
     protected function setUp(): void
     {
         $this->provider = $this->createMock(RegistrationConfigProvider::class);
         $this->config = $this->createMock(Config::class);
+        $this->quoteRequestConfig = $this->createMock(QuoteRequestConfig::class);
+        $this->capabilities = $this->createMock(ServerCapabilities::class);
     }
 
     private function block(int $storeId = 7): QuoteList
@@ -57,7 +67,13 @@ class QuoteListRenderPathTest extends TestCase
         $context = $this->createMock(Context::class);
         $context->method('getStoreManager')->willReturn($storeManager);
 
-        return new QuoteList($context, $this->config, $this->provider);
+        return new QuoteList(
+            $context,
+            $this->config,
+            $this->provider,
+            $this->quoteRequestConfig,
+            $this->capabilities
+        );
     }
 
     public function testTheBlockNeverFetchesWhileAShopperIsWaiting(): void
@@ -105,5 +121,30 @@ class QuoteListRenderPathTest extends TestCase
         self::assertNull($block->getRegistrationConfig());
         self::assertNull($block->getRegistrationConfig());
         self::assertNull($block->getRegistrationConfig());
+    }
+
+    /**
+     * The same guarantee for the server's capability list: the attachment control is decided
+     * from cache only. A ping here would put a network call in every page render again.
+     */
+    public function testTheAttachmentControlIsDecidedFromCacheOnly(): void
+    {
+        $this->quoteRequestConfig->method('isAttachmentsSwitchOn')->willReturn(true);
+        $this->capabilities->expects(self::never())->method('get');
+        $this->capabilities->expects(self::never())->method('refresh');
+        $this->capabilities->expects(self::once())->method('supports')
+            ->with(ServerCapabilities::ATTACHMENTS, 7, false)
+            ->willReturn(true);
+
+        self::assertTrue($this->block()->isAttachmentsEnabled());
+    }
+
+    public function testNoAttachmentControlWhenTheMerchantSwitchIsOff(): void
+    {
+        $this->quoteRequestConfig->method('isAttachmentsSwitchOn')->willReturn(false);
+        $this->capabilities->method('supports')->willReturn(true);
+
+        self::assertFalse($this->block()->isAttachmentsEnabled());
+        self::assertNull($this->block()->getRequestExtrasConfig()['attachments']);
     }
 }

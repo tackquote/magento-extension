@@ -29,6 +29,9 @@ use TackQuote\Quotes\Model\Api\Client;
 use TackQuote\Quotes\Model\Config;
 use TackQuote\Quotes\Model\IdempotencyGuard;
 use TackQuote\Quotes\Model\ProductQuoteResolver;
+use TackQuote\Quotes\Model\QuotePayloadBuilder;
+use TackQuote\Quotes\Model\QuoteRequestConfig;
+use TackQuote\Quotes\Model\ServerCapabilities;
 use TackQuote\Quotes\Model\SubmissionThrottle;
 
 /**
@@ -80,6 +83,35 @@ class SubmitTest extends TestCase
      * @var RequestInterface&MockObject
      */
     private $request;
+
+    /**
+     * @var QuoteRequestConfig&MockObject
+     */
+    private $quoteRequestConfig;
+
+    /**
+     * Capabilities the mocked server lists.
+     *
+     * @var string[]
+     */
+    private $serverCaps = [];
+
+    /**
+     * Whether the target-price and attachment switches are on.
+     *
+     * @var bool
+     */
+    private $targetsOn = false;
+
+    /**
+     * @var bool
+     */
+    private $attachmentsOn = false;
+
+    /**
+     * @var bool
+     */
+    private $loggedIn = false;
 
     /**
      * Params the request mock will answer with.
@@ -138,7 +170,24 @@ class SubmitTest extends TestCase
             ->disableOriginalConstructor()
             ->onlyMethods(['isLoggedIn', 'getCustomer'])
             ->getMock();
-        $this->customerSession->method('isLoggedIn')->willReturn(false);
+        $this->customerSession->method('isLoggedIn')->willReturnCallback(function () {
+            return $this->loggedIn;
+        });
+        $this->serverCaps = [];
+        $this->targetsOn = false;
+        $this->attachmentsOn = false;
+        $this->loggedIn = false;
+
+        $this->quoteRequestConfig = $this->getMockBuilder(QuoteRequestConfig::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['isTargetPriceEnabled', 'isAttachmentsSwitchOn'])
+            ->getMock();
+        $this->quoteRequestConfig->method('isTargetPriceEnabled')->willReturnCallback(function () {
+            return $this->targetsOn;
+        });
+        $this->quoteRequestConfig->method('isAttachmentsSwitchOn')->willReturnCallback(function () {
+            return $this->attachmentsOn;
+        });
 
         $this->storeManager = $this->createMock(StoreManagerInterface::class);
 
@@ -196,8 +245,29 @@ class SubmitTest extends TestCase
             $this->customerSession,
             $this->storeManager,
             $this->createMock(LoggerInterface::class),
-            $this->formKey
+            $this->formKey,
+            $this->quoteRequestConfig,
+            $this->capabilities(),
+            new QuotePayloadBuilder()
         );
+    }
+
+    /**
+     * Capabilities answered from $this->serverCaps.
+     *
+     * @return ServerCapabilities&MockObject
+     */
+    private function capabilities(): ServerCapabilities
+    {
+        $caps = $this->getMockBuilder(ServerCapabilities::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['supports', 'forget'])
+            ->getMock();
+        $caps->method('supports')->willReturnCallback(function (string $capability) {
+            return in_array($capability, $this->serverCaps, true);
+        });
+
+        return $caps;
     }
 
     /**
@@ -510,6 +580,181 @@ class SubmitTest extends TestCase
             'json null' => ['null'],
             'integer' => [7],
         ];
+    }
+
+    /**
+     * A resolved list line, as ProductQuoteResolver answers it.
+     *
+     * @param string $sku
+     * @param int $qty
+     * @return array<string, mixed>
+     */
+    private static function line(string $sku, int $qty): array
+    {
+        return [
+            'sku' => $sku,
+            'name' => 'Product ' . $sku,
+            'quantity' => $qty,
+            'unitPrice' => 10.0,
+            'externalProductId' => '7',
+            'options' => '',
+        ];
+    }
+
+    /**
+     * A valid list submission of two rows; the first carries a target price.
+     *
+     * @param string $target
+     * @return array<string, mixed>
+     */
+    private function listParams(string $target = '8.25'): array
+    {
+        $this->productResolver->method('resolve')->willReturnCallback(function ($sku, $qty) {
+            return self::line((string) $sku, (int) $qty);
+        });
+        $store = $this->getMockBuilder(\Magento\Store\Model\Store::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['getId', 'getCurrentCurrencyCode'])
+            ->getMock();
+        $store->method('getId')->willReturn(1);
+        $store->method('getCurrentCurrencyCode')->willReturn('EUR');
+        $this->storeManager->method('getStore')->willReturn($store);
+
+        return [
+            'email' => 'ada@example.test',
+            'firstName' => 'Ada',
+            'items' => json_encode([
+                ['sku' => 'A-1', 'qty' => 2, 'targetPrice' => $target],
+                ['sku' => 'B-2', 'qty' => 1],
+            ]),
+        ];
+    }
+
+    /**
+     * The payload handed to the client, captured.
+     *
+     * @return array<string, mixed>
+     */
+    private function captureSentPayload(): array
+    {
+        $sent = [];
+        $this->client->method('createQuoteRequest')->willReturnCallback(
+            function (array $payload) use (&$sent) {
+                $sent = $payload;
+
+                return ['ok' => true, 'id' => 'q-1', 'quoteNumber' => 'TK-2026-000001'];
+            }
+        );
+        $this->controller()->execute();
+
+        return $sent;
+    }
+
+    public function testANegativeTargetPriceIsRejectedBeforeAnyQuoteIsCreated(): void
+    {
+        $this->targetsOn = true;
+        $this->params = $this->listParams('-1');
+        $this->client->expects($this->never())->method('createQuoteRequest');
+
+        $this->controller()->execute();
+
+        $this->assertSame(400, $this->responseCode);
+        $this->assertSame('targetPrice', $this->responseData['field']);
+    }
+
+    public function testTargetPricesTravelPerLineWhenTheServerTakesThem(): void
+    {
+        $this->targetsOn = true;
+        $this->serverCaps = [ServerCapabilities::TARGET_PRICE];
+        $this->params = $this->listParams('8.25');
+
+        $sent = $this->captureSentPayload();
+
+        $this->assertSame(8.25, $sent['lineItems'][0]['targetPrice']);
+        $this->assertArrayNotHasKey('targetPrice', $sent['lineItems'][1]);
+        // Never the line price: that is still the server-side resolver's.
+        $this->assertSame(10.0, $sent['lineItems'][0]['unitPrice']);
+        $this->assertStringNotContainsString('Target prices', (string) $sent['note']);
+    }
+
+    public function testTargetPricesGoIntoTheNoteForAnOlderServer(): void
+    {
+        $this->targetsOn = true;
+        $this->params = $this->listParams('8.25');
+
+        $sent = $this->captureSentPayload();
+
+        $this->assertArrayNotHasKey('targetPrice', $sent['lineItems'][0]);
+        $this->assertStringContainsString('Target prices:', (string) $sent['note']);
+        $this->assertStringContainsString('A-1', (string) $sent['note']);
+        $this->assertStringContainsString('8.25', (string) $sent['note']);
+    }
+
+    public function testATargetPriceIsIgnoredWhenTheMerchantNeverOfferedIt(): void
+    {
+        $this->serverCaps = [ServerCapabilities::TARGET_PRICE];
+        $this->params = $this->listParams('-5');
+
+        $sent = $this->captureSentPayload();
+
+        $this->assertArrayNotHasKey('targetPrice', $sent['lineItems'][0]);
+    }
+
+    public function testAGuestsUploadIdsAndTokenAreForwarded(): void
+    {
+        $this->attachmentsOn = true;
+        $this->serverCaps = [ServerCapabilities::ATTACHMENTS];
+        $this->params = $this->listParams('') + [
+            'uploadIds' => '3F2B8C1E-9D4A-4B7E-8C21-5A6D7E8F9A0B,3f2b8c1e-9d4a-4b7e-8c21-5a6d7e8f9a0b',
+            'uploadToken' => str_repeat('Ab1_-', 8) . 'xyz',
+        ];
+
+        $sent = $this->captureSentPayload();
+
+        $this->assertSame(['3f2b8c1e-9d4a-4b7e-8c21-5a6d7e8f9a0b'], $sent['uploadIds']);
+        $this->assertSame(str_repeat('Ab1_-', 8) . 'xyz', $sent['uploadToken']);
+    }
+
+    public function testFilesAreNeverSilentlyDroppedWhenTheServerCannotTakeThem(): void
+    {
+        $this->attachmentsOn = true;
+        $this->params = $this->listParams('') + [
+            'uploadIds' => '3f2b8c1e-9d4a-4b7e-8c21-5a6d7e8f9a0b',
+            'uploadToken' => str_repeat('Ab1_-', 8) . 'xyz',
+        ];
+        $this->client->expects($this->never())->method('createQuoteRequest');
+
+        $this->controller()->execute();
+
+        $this->assertSame(400, $this->responseCode);
+        $this->assertFalse($this->responseData['success']);
+    }
+
+    public function testAGuestsFilesWithoutTheirTokenAreRefused(): void
+    {
+        $this->attachmentsOn = true;
+        $this->serverCaps = [ServerCapabilities::ATTACHMENTS];
+        $this->params = $this->listParams('') + ['uploadIds' => '3f2b8c1e-9d4a-4b7e-8c21-5a6d7e8f9a0b'];
+        $this->client->expects($this->never())->method('createQuoteRequest');
+
+        $this->controller()->execute();
+
+        $this->assertSame(400, $this->responseCode);
+    }
+
+    public function testAMalformedUploadIdIsRefused(): void
+    {
+        $this->attachmentsOn = true;
+        $this->serverCaps = [ServerCapabilities::ATTACHMENTS];
+        $this->params = $this->listParams('') + [
+            'uploadIds' => '../../etc/passwd',
+            'uploadToken' => str_repeat('Ab1_-', 8) . 'xyz',
+        ];
+        $this->client->expects($this->never())->method('createQuoteRequest');
+
+        $this->controller()->execute();
+
+        $this->assertSame(400, $this->responseCode);
     }
 
     public function testValidateForCsrfAcceptsAMatchingFormKey(): void

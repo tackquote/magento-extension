@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<!--
+  The full quote page, /tackquote/quote (Controller\Quote\Index). Handle name is
+  {route id}_{controller}_{action}: route `tackquote` (etc/frontend/routes.xml).
+
+  Only the page shell is added here. The quote form it opens is the site-wide one from
+  default.xml (Block\QuoteList in before.body.end), so this page has no second form.
+-->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      layout="1column"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <referenceContainer name="content">
+            <block class="TackQuote\Quotes\Block\QuotePage"
+                   name="tackquote.quote.page"
+                   template="TackQuote_Quotes::quote-page.phtml"/>
+        </referenceContainer>
+    </body>
+</page>

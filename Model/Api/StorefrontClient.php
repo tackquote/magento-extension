@@ -67,6 +67,15 @@ class StorefrontClient
 
     private const PATH_PREFIX = '/storefront/v1/';
 
+    /** The upload route; a POST, so it is not one of ROUTES (the GET allow-list). */
+    private const PATH_QUOTE_UPLOAD = '/storefront/v1/quote-upload';
+
+    /**
+     * One file is at most 5 MB and a shopper is waiting: longer than a read, still bounded,
+     * because the call holds a PHP worker. The WooCommerce plugin uses 15 s too.
+     */
+    private const UPLOAD_TIMEOUT_SECONDS = 15;
+
     /**
      * A product page is waiting on this (through the browser's background request). Past
      * a couple of seconds the right answer is "show the store's own price", not "wait".
@@ -181,6 +190,107 @@ class StorefrontClient
             $this->logger->warning(sprintf('TackQuote storefront %s answered a body that is not JSON.', $route));
 
             return ['ok' => false, 'status' => $status];
+        }
+
+        return ['ok' => true, 'status' => $status, 'data' => $decoded];
+    }
+
+    /**
+     * Stream one quote-request file to TackQuote: `POST /storefront/v1/quote-upload`.
+     *
+     * WIRE CONTRACT — tack apps/api/src/modules/storefront-api/storefront-v1-uploads.controller.ts
+     * (`quoteUpload`, scope `quotes:write`) and storefront-core/storefront-upload-session.ts:
+     *
+     *   ?name=<file name>[&buyerEmail=<signed-in customer email>][&upload_token=<guest token>]
+     *   X-Api-Key only, Content-Type: application/octet-stream, the raw bytes as the body
+     *   -> 201 {uploadId, filename, size, mimeType[, uploadToken]}
+     *
+     * A signed-in customer is ASSERTED by the account email, the same address the quote
+     * request then sends (Controller\Quote\Submit takes it from the session); TackQuote binds
+     * the file to a hash of it. A guest sends no email: the first upload answers an
+     * `uploadToken`, which the request's later uploads send back as `upload_token` and the
+     * quote request sends as `uploadToken`. The same route the WooCommerce plugin calls
+     * (Tack_Api_Client::upload_quote_file()); nothing on the server is Magento-specific.
+     *
+     * Magento's Curl client sends a STRING body verbatim (`CURLOPT_POSTFIELDS`, no
+     * url-encoding: Magento\Framework\HTTP\Client\Curl::makeRequest()), which is what
+     * `application/octet-stream` needs.
+     *
+     * LOGGING — the HTTP status only. Never the file name, the bytes, the email or the token.
+     *
+     * @param string $bytes File contents (already validated by Model\AttachmentValidator).
+     * @param string $name Sanitised file name.
+     * @param string $buyerEmail Signed-in customer's email, or '' for a guest.
+     * @param string $uploadToken A guest's token from an earlier upload of this request, or ''.
+     * @param int|null $storeId
+     * @return array{ok: bool, status: int, data?: array, message?: string, retryAfter?: int}
+     */
+    public function uploadQuoteFile(
+        string $bytes,
+        string $name,
+        string $buyerEmail,
+        string $uploadToken,
+        ?int $storeId = null
+    ): array {
+        $apiKey = $this->config->getApiKey($storeId);
+        if ($apiKey === '' || $bytes === '') {
+            return ['ok' => false, 'status' => 0];
+        }
+
+        $query = ['name' => $name];
+        if ($buyerEmail !== '') {
+            $query['buyerEmail'] = $buyerEmail;
+        } elseif ($uploadToken !== '') {
+            $query['upload_token'] = $uploadToken;
+        }
+        $url = $this->config->getApiBaseUrl($storeId) . self::PATH_QUOTE_UPLOAD . '?'
+            . http_build_query($query, '', '&', PHP_QUERY_RFC3986);
+
+        $curl = $this->curlFactory->create();
+        $curl->setTimeout(self::UPLOAD_TIMEOUT_SECONDS);
+        // setHeaders() REPLACES the header set: exactly these, and no Authorization.
+        $curl->setHeaders([
+            'X-Api-Key' => $apiKey,
+            'Content-Type' => 'application/octet-stream',
+            'Accept' => 'application/json',
+            'User-Agent' => 'TackQuote-Magento2',
+        ]);
+
+        try {
+            $curl->post($url, $bytes);
+        } catch (\Exception $e) {
+            $this->logger->warning('TackQuote quote-upload request failed to complete.');
+
+            return ['ok' => false, 'status' => 0];
+        }
+
+        $status = (int) $curl->getStatus();
+        $decoded = null;
+        $body = (string) $curl->getBody();
+        if ($body !== '') {
+            try {
+                $decoded = $this->json->unserialize($body);
+            } catch (\Exception $e) {
+                $decoded = null;
+            }
+        }
+
+        if ($status < 200 || $status >= 300 || !is_array($decoded)) {
+            $this->logger->warning(sprintf('TackQuote quote-upload answered HTTP %d.', $status));
+            $out = ['ok' => false, 'status' => $status];
+            // TackQuote's own refusal text (a JSON error body with the same statusCode) is
+            // safe to show: it names the rule, never another shopper's data.
+            if (is_array($decoded) && (int) ($decoded['statusCode'] ?? 0) === $status
+                && isset($decoded['message']) && is_string($decoded['message'])) {
+                $out['message'] = mb_substr(trim(strip_tags($decoded['message'])), 0, 200);
+            }
+            $headers = $curl->getHeaders();
+            $retry = is_array($headers) ? ($headers['Retry-After'] ?? $headers['retry-after'] ?? null) : null;
+            if (is_numeric($retry)) {
+                $out['retryAfter'] = max(0, (int) $retry);
+            }
+
+            return $out;
         }
 
         return ['ok' => true, 'status' => $status, 'data' => $decoded];

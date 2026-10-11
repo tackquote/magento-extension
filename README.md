@@ -66,6 +66,54 @@ price would let anyone quote themselves any amount. For a configurable, the chos
 is resolved to the child SKU actually being quoted, and the selection is folded into the
 quote note as human-readable text ("Size: M, Color: Blue").
 
+### Storefront: quote page, cart button, target prices and attachments
+
+All four are off by default, under *Quote page, cart button and attachments*
+(`Model/QuoteRequestConfig.php`). They work with the same quote list and the same form as
+above; nothing here adds a second form or a second submit path.
+
+- **Quote page.** `GET /tackquote/quote` (`Controller/Quote/Index.php`,
+  `Block/QuotePage.php`, `view/frontend/templates/quote-page.phtml`) shows the quote list as
+  a table: quantities can be changed, rows removed, a target price entered per row (when that
+  switch is on) and a message added. Its button opens the shared form with the whole list and
+  the message as the note. No CMS page is needed; the quote list gets a link to the page
+  (label configurable). While the page is switched off the URL answers Magento's 404 page.
+  The page is the same for every visitor (the rows are drawn in the browser), so it is safe
+  for the full-page cache.
+- **Cart-page button.** "Request a quote for your cart" (`Block/CartQuoteButton.php`,
+  `view/frontend/layout/checkout_cart_index.xml`, under "Proceed to Checkout") copies the
+  SKUs and quantities of the cart into the quote list, in the browser, from the `cart`
+  customer-data section the minicart already uses (`view/frontend/web/js/cart-seed.js`), and
+  opens the list. The cart is not changed and the two stay separate afterwards. Bundle and
+  gift-card items, and items with custom options, are left out and named to the shopper:
+  their cart SKU is built from the chosen options, so no product carries it. Not shown while
+  quote-only mode applies to the visitor (that mode has its own panel on the cart page).
+- **Target price per line.** An optional "Target price" field per row in the form's last
+  step and on the quote page. It is sent as `lineItems[].targetPrice`, and TackQuote stores it
+  as the price the buyer asked for; it never sets the quoted price, which is still resolved
+  server-side from the catalog. A value that is not a non-negative number is refused with a
+  message rather than dropped. Sent per line only to a TackQuote server whose `ping` lists
+  `targetPrice`; an older server gets the target prices written into the note instead.
+- **Attachments.** Up to 3 files per request, PDF, JPEG or PNG, 5 MB each (TackQuote's own
+  limits). The browser posts them to `POST /tackquote/quote/upload`
+  (`Controller/Quote/Upload.php`, form key, its own per-IP limit of 20 per 10 minutes).
+  `Model/AttachmentValidator.php` checks every file before anything is sent: the count, the
+  size on disk, and the type from the file's leading bytes, which finfo and the file name's
+  extension must both agree with; the type the browser declares is ignored. Each file is then
+  sent to TackQuote (`POST /v1/storefront/v1/quote-upload`) and PHP's temporary copy is left
+  for PHP to delete at the end of the request: **nothing is saved in Magento**. TackQuote
+  answers an id per file; the quote request names those ids and TackQuote attaches all of
+  them or refuses the request. A signed-in customer's files are tied to the account email; a
+  guest's to a token TackQuote issues on the first upload. The control appears only when
+  TackQuote's `ping` lists `attachments` (checked by cron every 5 minutes,
+  `Cron/WarmServerCapabilities.php`, cached by `Model/ServerCapabilities.php`). Any failure is
+  shown to the shopper and no file is reported as attached that was not.
+
+**What is sent to TackQuote, in addition to the quote request above:** each attached file's
+name (made safe: base name only, unusual characters replaced, at most 200 characters) and its
+bytes; for a signed-in customer, the account email on each upload; for a guest, the upload
+token. Target prices travel on the quote request's lines (or in its note).
+
 ### Storefront — company registration
 
 - The form renders the **seller's own registration policy**, fetched from TackQuote rather
@@ -156,6 +204,12 @@ view.
 | Request a Quote button | **"Add to Quote" label** | |
 | Request a Quote button | **Show on category and search results** | Adds "Add to Quote" to listing tiles. |
 | Request a Quote button | **Quote list submit label** | Label on the drawer's submit button. |
+| Quote page, cart button and attachments | **Enable the quote page** | Off by default. `/tackquote/quote` plus a link from the quote list. Needs "Add to Quote". |
+| Quote page, cart button and attachments | **Quote page link label** | |
+| Quote page, cart button and attachments | **Ask for a target price per product** | Off by default. Optional target price per row in the form and on the quote page. |
+| Quote page, cart button and attachments | **Show a quote button on the cart page** | Off by default. Copies the cart into the quote list. Needs "Add to Quote". |
+| Quote page, cart button and attachments | **Cart button label** | |
+| Quote page, cart button and attachments | **Allow attachments on quote requests** | Off by default. Up to 3 files, PDF/JPEG/PNG, 5 MB each, sent to TackQuote. |
 | B2B Display | **Show account price** | Off by default. "Your account price" for a signed-in customer. Display only. |
 | B2B Display | **Show volume pricing table** | Off by default. The customer's quantity breaks. Display only. |
 | B2B Display | **Show order limits notice** | Off by default. "Order between X and Y units". Not enforced in the cart yet. |
@@ -174,9 +228,10 @@ seller JWT:
 
 | Route | Scope | Used for |
 | --- | --- | --- |
-| `GET /v1/integrations/magento/ping` | none | Connection test. Deliberately unscoped so a *wrong key* is distinguishable from a *wrong base URL*. |
+| `GET /v1/integrations/magento/ping` | none | Connection test. Deliberately unscoped so a *wrong key* is distinguishable from a *wrong base URL*. Its `capabilities` list is also read (cached) to decide whether target prices and attachments may be sent. |
 | `GET /v1/integrations/magento/registration-config` | none | The seller's registration policy, to render the form. Exposes form shape only. |
-| `POST /v1/integrations/magento/quote-requests` | `quotes:write` | Register the buyer/company and create the quote. |
+| `POST /v1/integrations/magento/quote-requests` | `quotes:write` | Register the buyer/company and create the quote. Carries `lineItems[].targetPrice` and `uploadIds` / `uploadToken` only when `ping` lists `targetPrice` / `attachments`. |
+| `POST /v1/storefront/v1/quote-upload` | `quotes:write` | Attachments: one file's raw bytes, server to server, `X-Api-Key` only (`Model/Api/StorefrontClient.php`). |
 | `GET /v1/storefront/v1/wholesale-price` | none | B2B display: the signed-in customer's account price for one SKU. |
 | `GET /v1/storefront/v1/quantity-breaks` | none | B2B display: the customer's quantity-break ladder for one SKU. |
 | `GET /v1/storefront/v1/order-limits` | none | B2B display: quantity limits for one SKU. |
@@ -405,9 +460,17 @@ lookups a minute.
 
 ## Known limitations
 
-- **No cart-page quote button in normal mode.** Quoting runs off the module's own
-  browser-side list, not Magento's cart, so there is no entry point on the cart page unless
-  quote-only mode is on (which adds one — see above).
+- **The cart-page button copies, it does not link.** "Request a quote for your cart" copies
+  the cart into the quote list once; later changes to the cart do not reach the list. Bundle
+  items and items with custom options are left out (and named). UNVERIFIED on a store: a
+  configurable item that also has custom options; TackQuote then cannot resolve its cart SKU
+  and that line is left out of the quote.
+- **The attachment control waits for cron.** It appears only after
+  `Cron/WarmServerCapabilities.php` has read TackQuote's `ping`, so on a new install, or after
+  a cache flush, it shows within 5 minutes of cron running, and never if cron does not run.
+- **Attachments and TackQuote's guest setting.** TackQuote applies its "who can request
+  quotes: guest visitors" setting to file uploads; when a seller has switched guest requests
+  off, a guest's files are refused even though the request itself is still accepted.
 - **Duplicate suppression is belt-and-braces.** `Model/Api/Client.php` sends an
   `Idempotency-Key` header AND `Model/IdempotencyGuard.php` collapses double-submits
   store-side. The two catch different things: the guard stops a double-click before it
@@ -491,6 +554,7 @@ without guessing versions, and `autoload-dev` is what makes `Test/` loadable:
 composer install                     # at the repository root
 vendor/bin/phpcs                     # picks up ./phpcs.xml -> the Magento2 standard
 vendor/bin/phpunit -c Test/Unit/phpunit.xml
+node Test/Js/cart-seed.test.js       # the cart-page mapper; plain Node, no dependencies
 ```
 
 `Test/` is deliberately absent from the PRODUCTION `autoload` block. That block used to map
@@ -666,7 +730,11 @@ magento-extension/                              (repository root)
 ├── Model/RegistrationConfigProvider.php        Fetches + caches the seller's policy
 ├── Model/ProductQuoteResolver.php              Server-side SKU -> priced line item
 ├── Model/ProductOptionRequirement.php          "Does this product need a selection first?"
-├── Model/SubmissionThrottle.php                Per-IP rate limit on the public endpoint
+├── Model/SubmissionThrottle.php                Per-IP rate limit on the public endpoints
+├── Model/QuoteRequestConfig.php                Quote page / cart button / target price / attachment settings
+├── Model/ServerCapabilities.php                TackQuote ping `capabilities`, cached per store view
+├── Model/QuotePayloadBuilder.php               Target prices and upload ids on the request
+├── Model/AttachmentValidator.php               Count, size and real type of attached files
 ├── Model/IdempotencyGuard.php                  Collapses double-submits into one quote
 ├── Model/QuoteOnlyRules.php                    Quote-only scoping rule, pure functions
 ├── Model/QuoteOnlyMode.php                     "Is this visitor quote-only right now?"
@@ -679,19 +747,26 @@ magento-extension/                              (repository root)
 ├── Block/RequestQuote.php                      Product-page trigger view model
 ├── Block/ListingButton.php                     Category/search tile "Add to Quote"
 ├── Block/QuoteList.php                         Quote-list widget + shared form view model
+├── Block/QuotePage.php                         The full quote page (/tackquote/quote)
+├── Block/CartQuoteButton.php                   Cart page: "Request a quote for your cart"
 ├── Block/B2bDisplay.php                        Product-page B2B placeholder (no customer data)
 ├── Block/Adminhtml/Dashboard.php               Dashboard status + setup checklist
 ├── Block/Adminhtml/System/Config/TestConnection.php   Inline config-screen test button
 ├── Controller/Quote/Submit.php                 Storefront quote-request POST handler
+├── Controller/Quote/Upload.php                 Attachment upload: validate, send to TackQuote
+├── Controller/Quote/Index.php                  The full quote page (404 while switched off)
 ├── Controller/B2b/Display.php                  Signed-in customer's B2B data (POST, form key)
 ├── Controller/Adminhtml/Dashboard/Index.php    Admin dashboard page
 ├── Controller/Adminhtml/Connection/Test.php    Admin "Test connection" AJAX endpoint
 ├── Cron/WarmRegistrationConfig.php             Keeps the policy out of the render path
+├── Cron/WarmServerCapabilities.php             Keeps the capability list out of the render path
 ├── Observer/FlushRegistrationConfig.php        Invalidates the policy on a settings save
 ├── view/frontend/
 │   ├── layout/catalog_product_view.xml         Product-page triggers
 │   ├── layout/catalog_category_view.xml        Listing-tile "Add to Quote"
 │   ├── layout/default.xml                      Site-wide quote list + shared form + CSS
+│   ├── layout/tackquote_quote_index.xml        The full quote page
+│   ├── layout/checkout_cart_index.xml          Cart-page quote button (normal mode)
 │   ├── layout/tackquote_quote_only.xml         Quote-only: body class (global)
 │   ├── layout/tackquote_quote_only_product.xml Quote-only: removes BOTH addtocart blocks
 │   ├── layout/tackquote_quote_only_cart.xml    Quote-only: cart-page notice
@@ -700,7 +775,11 @@ magento-extension/                              (repository root)
 │   ├── templates/button.phtml                  Product-page triggers
 │   ├── templates/listing-button.phtml          Listing-tile trigger
 │   ├── templates/quote-list.phtml              Drawer + multi-step form markup
-│   ├── web/js/quote-app.js                     RequireJS component: list, drawer, form
+│   ├── templates/quote-page.phtml              The full quote page
+│   ├── templates/cart-quote-button.phtml       Cart-page quote button
+│   ├── web/js/quote-app.js                     RequireJS component: list, drawer, form,
+│   │                                           quote page, cart copy, attachments
+│   ├── web/js/cart-seed.js                     Cart items -> quote-list rows (pure; Test/Js)
 │   ├── web/js/b2b-display.js                   Fills the B2B placeholder (text only)
 │   └── web/css/request-quote.css               Storefront styles
 └── view/adminhtml/
@@ -716,6 +795,18 @@ magento-extension/                              (repository root)
 
 ### Unreleased
 
+- **Quote page, cart-page button, target prices and attachments** (all off by default; new
+  group *Quote page, cart button and attachments*). A full quote page at `/tackquote/quote`
+  with a link from the quote list; "Request a quote for your cart" on the cart page, which
+  copies the cart into the quote list without changing the cart; an optional target price
+  per product, sent to TackQuote as the price the buyer asked for; and up to 3 attached
+  files (PDF, JPEG, PNG, 5 MB each), checked by this store and sent to TackQuote, never
+  saved in Magento. Target prices and files are sent only to a TackQuote server that lists
+  them in its `ping` answer; target prices otherwise go into the note. New phrases are at the
+  end of `i18n/en_US.csv`. New unit tests: `Test/Unit/Model/AttachmentValidatorTest.php`,
+  `QuotePayloadBuilderTest.php`, `ServerCapabilitiesTest.php`,
+  `Test/Unit/Controller/Quote/UploadTest.php`, and `Test/Js/cart-seed.test.js` (run with
+  `node`).
 - **B2B display for signed-in customers** (off by default; four switches under
   *B2B Display*): the customer's TackQuote account price with the store price struck
   through, their volume pricing table, the order-limits notice and the buyer-group badge

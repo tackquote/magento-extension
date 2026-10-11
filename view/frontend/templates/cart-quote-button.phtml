@@ -1,0 +1,19 @@
+<?php
+/**
+ * Cart page: "Request a quote for your cart". Copies the cart's products into the quote list
+ * in the browser (quote-app.js + cart-seed.js) and opens the list; the cart is not changed.
+ *
+ * @var \TackQuote\Quotes\Block\CartQuoteButton $block
+ * @var \Magento\Framework\Escaper $escaper
+ * @package TackQuote_Quotes
+ */
+
+if (!$block->isEnabled()) {
+    return;
+}
+?>
+<div class="tackquote-cart-quote" data-role="tackquote-cart-quote">
+    <button type="button" class="action secondary tackquote-cart-quote__button" data-role="tackquote-cart-seed">
+        <span><?= $escaper->escapeHtml($block->getLabel()) ?></span>
+    </button>
+</div>

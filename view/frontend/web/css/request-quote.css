@@ -653,3 +653,88 @@ body.tackquote-quote-only .tackquote-quote-only-notice__actions {
   white-space: nowrap;
   border: 0;
 }
+
+/* ---------------------------------------------------------------------------
+ * Target prices, attachments, the quote page and the cart-page button.
+ * Same stance as above: structure and spacing only, theme colours and controls.
+ * ------------------------------------------------------------------------ */
+
+.tackquote-page [hidden] {
+  display: none !important;
+}
+
+.tackquote-summary-list__item {
+  flex-wrap: wrap;
+}
+
+.tackquote-summary-list__target {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-basis: 100%;
+  margin-top: 6px;
+  font-size: 0.9em;
+}
+
+.tackquote-target {
+  max-width: 10em;
+}
+
+.tackquote-attachments__list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.tackquote-attachments__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+  word-break: break-all;
+}
+
+.tackquote-attachments__status {
+  margin: 8px 0 0;
+}
+
+.tackquote-drawer__page-link {
+  display: block;
+  margin: 0 16px 16px;
+  text-align: center;
+}
+
+.tackquote-page__table .tackquote-target,
+.tackquote-page__table .qty {
+  max-width: 8em;
+}
+
+.tackquote-page__message {
+  margin-top: 16px;
+}
+
+.tackquote-page__actions {
+  margin-top: 16px;
+}
+
+.tackquote-cart-quote {
+  margin-top: 12px;
+}
+
+.tackquote-cart-quote__button {
+  width: 100%;
+}
+
+/* Visually hidden, still read by screen readers. */
+.tackquote-visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
