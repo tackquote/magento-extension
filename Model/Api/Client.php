@@ -104,6 +104,29 @@ class Client
     }
 
     /**
+     * What the server supports beyond the 1.x contract (`ping` answers `capabilities`).
+     *
+     * An older server answers no list, which is "nothing new". Read through
+     * Model\ServerCapabilities, which caches it; nothing else should call this.
+     *
+     * @param int|null $storeId
+     * @return array{ok: bool, capabilities?: string[], message?: string}
+     */
+    public function getCapabilities(?int $storeId = null): array
+    {
+        $result = $this->request('GET', self::PATH_PING, null, $storeId);
+        if (!$result['ok']) {
+            return ['ok' => false, 'message' => $result['message'] ?? 'Could not reach TackQuote.'];
+        }
+        $caps = $result['data']['capabilities'] ?? [];
+
+        return [
+            'ok' => true,
+            'capabilities' => is_array($caps) ? array_values(array_filter($caps, 'is_string')) : [],
+        ];
+    }
+
+    /**
      * The seller's registration policy.
      *
      * Which of companies/individuals are allowed, which company details are required,
@@ -125,12 +148,14 @@ class Client
      *
      * @param array $payload {buyerEmail, firstName, lastName, phone, companyName,
      *                        company:{...}, customFields:{...}, note, source,
-     *                        lineItems:[{sku,name,quantity,unitPrice,externalProductId}]}
+     *                        lineItems:[{sku,name,quantity,unitPrice,externalProductId[,targetPrice]}]
+     *                        [, uploadIds:[...], uploadToken]}
      * @param int|null $storeId
      * @param string $idempotencyKey Guards against a double-click or a retry creating
      *                               two identical quotes.
      * @return array{ok: bool, id?: string, quoteNumber?: string, portalUrl?: string,
-     *               company?: array|null, awaitingApproval?: bool, message?: string}
+     *               company?: array|null, awaitingApproval?: bool, attachmentCount?: int|null,
+     *               status?: int, message?: string}
      */
     public function createQuoteRequest(
         array $payload,
@@ -145,7 +170,11 @@ class Client
             $idempotencyKey
         );
         if (!$result['ok']) {
-            return ['ok' => false, 'message' => $result['message'] ?? 'Could not create the quote. Please try again.'];
+            return [
+                'ok' => false,
+                'status' => (int) ($result['status'] ?? 0),
+                'message' => $result['message'] ?? 'Could not create the quote. Please try again.',
+            ];
         }
 
         $data = $result['data'] ?? [];
@@ -157,6 +186,9 @@ class Client
             'portalUrl' => isset($data['portalUrl']) ? (string) $data['portalUrl'] : null,
             'company' => isset($data['company']) && is_array($data['company']) ? $data['company'] : null,
             'awaitingApproval' => !empty($data['awaitingApproval']),
+            // Additive on servers with the `attachments` capability: how many files the
+            // quote carries. Null from an older server.
+            'attachmentCount' => isset($data['attachmentCount']) ? (int) $data['attachmentCount'] : null,
         ];
     }
 
@@ -168,7 +200,7 @@ class Client
      * @param array|null $body
      * @param int|null $storeId
      * @param string $idempotencyKey
-     * @return array{ok: bool, data?: array, message?: string}
+     * @return array{ok: bool, data?: array, status?: int, message?: string}
      */
     private function request(
         string $method,
@@ -252,7 +284,7 @@ class Client
              */
             $this->logger->warning(sprintf('TackQuote API error %d: %s', $status, $message));
 
-            return ['ok' => false, 'message' => $message];
+            return ['ok' => false, 'status' => $status, 'message' => $message];
         }
 
         return ['ok' => true, 'data' => is_array($decoded) ? $decoded : []];

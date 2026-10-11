@@ -51,6 +51,9 @@ class StorefrontClientTest extends TestCase
     /** @var string[] */
     private $urls = [];
 
+    /** @var array<int, mixed> Bodies handed to Curl::post(). */
+    private $posted = [];
+
     protected function setUp(): void
     {
         $this->config = $this->createMock(Config::class);
@@ -66,6 +69,10 @@ class StorefrontClientTest extends TestCase
         });
         $this->curl->method('get')->willReturnCallback(function ($url): void {
             $this->urls[] = $url;
+        });
+        $this->curl->method('post')->willReturnCallback(function ($url, $body): void {
+            $this->urls[] = $url;
+            $this->posted[] = $body;
         });
 
         $this->curlFactory = $this->getMockBuilder(CurlFactory::class)
@@ -238,5 +245,55 @@ class StorefrontClientTest extends TestCase
         $result = $this->client()->get(StorefrontClient::ROUTE_BUYER_GROUP, ['buyerEmail' => self::EMAIL]);
 
         self::assertSame(['ok' => true, 'status' => 200, 'data' => ['status' => 'grouped', 'name' => 'Tier 2', 'code' => 'T2']], $result);
+    }
+
+    /**
+     * The quote-upload call (lane MG-TARGET-ATTACH): raw bytes, X-Api-Key only, the signed-in
+     * customer's email OR the guest token in the query, never both.
+     *
+     * Mutations (applied, red, restored): send Authorization -> red; post the bytes as an
+     * array (url-encoded) -> red; send upload_token beside buyerEmail -> red.
+     */
+    public function testAQuoteFileIsPostedAsRawBytesWithTheKeyInXApiKeyOnly(): void
+    {
+        $this->respond(201, '{"uploadId":"3f2b8c1e-9d4a-4b7e-8c21-5a6d7e8f9a0b","size":5}');
+
+        $result = $this->client()->uploadQuoteFile('%PDF-', 'spec sheet.pdf', self::EMAIL, 'ignored-token', 1);
+
+        self::assertTrue($result['ok']);
+        self::assertSame(['%PDF-'], $this->posted);
+        self::assertSame(self::KEY, $this->headers['X-Api-Key'] ?? null);
+        self::assertSame('application/octet-stream', $this->headers['Content-Type'] ?? null);
+        foreach (array_keys($this->headers) as $name) {
+            self::assertNotSame('authorization', strtolower((string) $name));
+        }
+        self::assertStringStartsWith(self::API_BASE . '/storefront/v1/quote-upload?', $this->urls[0]);
+        parse_str((string) parse_url($this->urls[0], PHP_URL_QUERY), $query);
+        self::assertSame(['name' => 'spec sheet.pdf', 'buyerEmail' => self::EMAIL], $query);
+    }
+
+    public function testAGuestsLaterUploadSendsTheTokenAndNoEmail(): void
+    {
+        $this->respond(201, '{"uploadId":"3f2b8c1e-9d4a-4b7e-8c21-5a6d7e8f9a0b"}');
+
+        $this->client()->uploadQuoteFile('%PDF-', 'a.pdf', '', 'tok', 1);
+
+        parse_str((string) parse_url($this->urls[0], PHP_URL_QUERY), $query);
+        self::assertSame(['name' => 'a.pdf', 'upload_token' => 'tok'], $query);
+    }
+
+    public function testARefusedUploadIsNotOkAndLogsTheStatusOnly(): void
+    {
+        $this->respond(400, '{"statusCode":400,"message":"Files can be at most 5 MB"}');
+
+        $result = $this->client()->uploadQuoteFile('%PDF-', 'secret-name.pdf', self::EMAIL, '', 1);
+
+        self::assertFalse($result['ok']);
+        self::assertSame(400, $result['status']);
+        self::assertSame('Files can be at most 5 MB', $result['message']);
+        foreach ($this->logLines as $line) {
+            self::assertStringNotContainsString('secret-name', $line);
+            self::assertStringNotContainsString(self::EMAIL, $line);
+        }
     }
 }

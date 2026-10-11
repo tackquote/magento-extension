@@ -29,8 +29,11 @@ namespace TackQuote\Quotes\Block;
 
 use Magento\Framework\View\Element\Template;
 use Magento\Framework\View\Element\Template\Context;
+use TackQuote\Quotes\Model\AttachmentValidator;
 use TackQuote\Quotes\Model\Config;
+use TackQuote\Quotes\Model\QuoteRequestConfig;
 use TackQuote\Quotes\Model\RegistrationConfigProvider;
+use TackQuote\Quotes\Model\ServerCapabilities;
 
 class QuoteList extends Template
 {
@@ -59,20 +62,117 @@ class QuoteList extends Template
     private $policyLoaded = false;
 
     /**
+     * @var QuoteRequestConfig
+     */
+    private $quoteRequestConfig;
+
+    /**
+     * @var ServerCapabilities
+     */
+    private $capabilities;
+
+    /**
      * @param Context $context
      * @param Config $config
      * @param RegistrationConfigProvider $registrationConfig
+     * @param QuoteRequestConfig $quoteRequestConfig
+     * @param ServerCapabilities $capabilities
      * @param array $data
      */
     public function __construct(
         Context $context,
         Config $config,
         RegistrationConfigProvider $registrationConfig,
+        QuoteRequestConfig $quoteRequestConfig,
+        ServerCapabilities $capabilities,
         array $data = []
     ) {
         parent::__construct($context, $data);
         $this->config = $config;
         $this->registrationConfig = $registrationConfig;
+        $this->quoteRequestConfig = $quoteRequestConfig;
+        $this->capabilities = $capabilities;
+    }
+
+    /**
+     * Whether the quote form offers a target price per line.
+     *
+     * @return bool
+     */
+    public function isTargetPriceEnabled(): bool
+    {
+        return $this->quoteRequestConfig->isTargetPriceEnabled($this->storeId());
+    }
+
+    /**
+     * Whether the quote form offers file attachments: the merchant's switch AND the server's
+     * `attachments` capability, read from CACHE only. This block renders on every page, so it
+     * must never ping (Cron\WarmServerCapabilities does); a cold cache just hides the control
+     * until the next cron run, and the upload controller checks again for itself.
+     *
+     * @return bool
+     */
+    public function isAttachmentsEnabled(): bool
+    {
+        $storeId = $this->storeId();
+
+        return $this->quoteRequestConfig->isAttachmentsSwitchOn($storeId)
+            && $this->capabilities->supports(ServerCapabilities::ATTACHMENTS, $storeId, false);
+    }
+
+    /**
+     * URL of the attachment upload controller.
+     *
+     * @return string
+     */
+    public function getUploadUrl(): string
+    {
+        return $this->getUrl('tackquote/quote/upload');
+    }
+
+    /**
+     * The full quote page link in the quote list, or null when the page is off.
+     *
+     * @return array{url: string, label: string}|null
+     */
+    public function getQuotePageLink(): ?array
+    {
+        $storeId = $this->storeId();
+        if (!$this->quoteRequestConfig->isQuotePageEnabled($storeId)) {
+            return null;
+        }
+
+        return [
+            'url' => $this->getUrl('tackquote/quote'),
+            'label' => $this->quoteRequestConfig->getQuotePageLinkLabel($storeId),
+        ];
+    }
+
+    /**
+     * Settings the storefront script needs for the target-price and attachment controls.
+     *
+     * @return array<string, mixed>
+     */
+    public function getRequestExtrasConfig(): array
+    {
+        return [
+            'targetPrice' => $this->isTargetPriceEnabled(),
+            'attachments' => $this->isAttachmentsEnabled() ? [
+                'uploadUrl' => $this->getUploadUrl(),
+                'maxFiles' => AttachmentValidator::MAX_FILES,
+                'maxMb' => AttachmentValidator::MAX_MB,
+            ] : null,
+        ];
+    }
+
+    /**
+     * The current store view's id.
+     *
+     * @return int
+     */
+    private function storeId(): int
+    {
+        return (int) $this->_storeManager->getStore()->getId();
     }
 
     /**

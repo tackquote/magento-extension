@@ -15,6 +15,8 @@ $showCompany = $block->isCompanyStepEnabled();
 $companyRequired = $block->isCompanyRequired();
 $requiredCompanyFields = $block->getRequiredCompanyFields();
 $customFields = $block->getCustomFields();
+$quotePageLink = $block->getQuotePageLink();
+$attachmentsOn = $block->isAttachmentsEnabled();
 
 $companyFieldLabels = [
     'phone' => __('Company phone'),
@@ -61,6 +63,12 @@ $companyFieldsToRender = array_values(array_unique(array_merge(
             <button type="button" class="action primary tackquote-drawer__submit" data-role="tackquote-request-list">
                 <span><?= $escaper->escapeHtml($block->getSubmitLabel()) ?></span>
             </button>
+            <?php if ($quotePageLink !== null): ?>
+                <a class="action tackquote-drawer__page-link"
+                   href="<?= $escaper->escapeUrl($quotePageLink['url']) ?>">
+                    <?= $escaper->escapeHtml($quotePageLink['label']) ?>
+                </a>
+            <?php endif; ?>
         </div>
     <?php endif; ?>
 
@@ -228,7 +236,10 @@ $companyFieldsToRender = array_values(array_unique(array_merge(
             <fieldset class="fieldset tackquote-step" data-step="3" hidden>
                 <legend class="legend"><span><?= $escaper->escapeHtml(__('Your request')) ?></span></legend>
 
-                <?php /* Rendered client-side: one row per quoted product, single or list. */ ?>
+                <?php /*
+                 * Rendered client-side: one row per quoted product, single or list, with an
+                 * optional target price input per row when the merchant switched it on.
+                 */ ?>
                 <ul class="tackquote-summary-list" data-role="tackquote-review"></ul>
 
                 <div class="field tackquote-wide">
@@ -240,6 +251,31 @@ $companyFieldsToRender = array_values(array_unique(array_merge(
                                   ) ?>"></textarea>
                     </div>
                 </div>
+                <?php if ($attachmentsOn): ?>
+                    <?php /*
+                     * Files go to this store first (Controller\Quote\Upload), which checks them
+                     * and passes them on to TackQuote; the request then names them by id.
+                     */ ?>
+                    <div class="field tackquote-wide tackquote-attachments" data-role="tackquote-attachments">
+                        <label class="label" for="tq-files">
+                            <span><?= $escaper->escapeHtml(__('Attach files (optional)')) ?></span>
+                        </label>
+                        <div class="control">
+                            <input type="file" id="tq-files" class="tackquote-attachments__input"
+                                   accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                                   multiple data-role="tackquote-files">
+                            <?php $limits = __(
+                                'Up to %1 files, PDF, JPEG or PNG, at most %2 MB each.',
+                                \TackQuote\Quotes\Model\AttachmentValidator::MAX_FILES,
+                                \TackQuote\Quotes\Model\AttachmentValidator::MAX_MB
+                            ); ?>
+                            <p class="note"><?= $escaper->escapeHtml($limits) ?></p>
+                            <ul class="tackquote-attachments__list" data-role="tackquote-file-list"></ul>
+                            <p class="tackquote-attachments__status" role="status"
+                               data-role="tackquote-file-status" hidden></p>
+                        </div>
+                    </div>
+                <?php endif; ?>
             </fieldset>
 
             <div class="actions-toolbar tackquote-actions">
@@ -267,6 +303,10 @@ $companyFieldsToRender = array_values(array_unique(array_merge(
         "TackQuote_Quotes/js/quote-app": {
             "modalTitle": "<?= $escaper->escapeJs($block->getFormTitle()) ?>",
             "listEnabled": <?= $block->isListEnabled() ? 'true' : 'false' ?>,
+            "extras": <?= /* @noEscape */ json_encode(
+                $block->getRequestExtrasConfig(),
+                JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+            ) ?: '{}' ?>,
             "registrationConfig": <?= /* @noEscape */ $block->getRegistrationConfigJson() ?>
         }
     }

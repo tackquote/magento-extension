@@ -32,6 +32,9 @@ use TackQuote\Quotes\Model\Api\Client;
 use TackQuote\Quotes\Model\Config;
 use TackQuote\Quotes\Model\IdempotencyGuard;
 use TackQuote\Quotes\Model\ProductQuoteResolver;
+use TackQuote\Quotes\Model\QuotePayloadBuilder;
+use TackQuote\Quotes\Model\QuoteRequestConfig;
+use TackQuote\Quotes\Model\ServerCapabilities;
 use TackQuote\Quotes\Model\SubmissionThrottle;
 
 class Submit extends Action implements HttpPostActionInterface, CsrfAwareActionInterface
@@ -110,6 +113,29 @@ class Submit extends Action implements HttpPostActionInterface, CsrfAwareActionI
     private $unresolvedSkus = [];
 
     /**
+     * Set by resolveLineItems() when a target price the shopper typed is not a usable
+     * number, so the request is refused with that message rather than the quantity one.
+     *
+     * @var bool
+     */
+    private $invalidTarget = false;
+
+    /**
+     * @var QuoteRequestConfig
+     */
+    private $quoteRequestConfig;
+
+    /**
+     * @var ServerCapabilities
+     */
+    private $capabilities;
+
+    /**
+     * @var QuotePayloadBuilder
+     */
+    private $payloadBuilder;
+
+    /**
      * @param Context $context
      * @param Config $config
      * @param Client $client
@@ -120,6 +146,9 @@ class Submit extends Action implements HttpPostActionInterface, CsrfAwareActionI
      * @param StoreManagerInterface $storeManager
      * @param LoggerInterface $logger
      * @param FormKey $formKey
+     * @param QuoteRequestConfig $quoteRequestConfig
+     * @param ServerCapabilities $capabilities
+     * @param QuotePayloadBuilder $payloadBuilder
      */
     public function __construct(
         Context $context,
@@ -131,7 +160,10 @@ class Submit extends Action implements HttpPostActionInterface, CsrfAwareActionI
         CustomerSession $customerSession,
         StoreManagerInterface $storeManager,
         LoggerInterface $logger,
-        FormKey $formKey
+        FormKey $formKey,
+        QuoteRequestConfig $quoteRequestConfig,
+        ServerCapabilities $capabilities,
+        QuotePayloadBuilder $payloadBuilder
     ) {
         parent::__construct($context);
         $this->config = $config;
@@ -143,6 +175,9 @@ class Submit extends Action implements HttpPostActionInterface, CsrfAwareActionI
         $this->storeManager = $storeManager;
         $this->logger = $logger;
         $this->formKey = $formKey;
+        $this->quoteRequestConfig = $quoteRequestConfig;
+        $this->capabilities = $capabilities;
+        $this->payloadBuilder = $payloadBuilder;
     }
 
     /**
@@ -199,6 +234,15 @@ class Submit extends Action implements HttpPostActionInterface, CsrfAwareActionI
         // Two submission shapes: a multi-product quote list, or the single product whose
         // page the shopper is on. Mirrors the WooCommerce plugin, which offers both.
         $lineItems = $this->resolveLineItems($request, $sku, $qty);
+
+        if ($this->invalidTarget) {
+            return $this->fail(
+                $result,
+                400,
+                (string) __('Enter a target price of 0 or more, or leave it empty.'),
+                'targetPrice'
+            );
+        }
 
         if ($lineItems === null) {
             return $this->fail($result, 400, (string) __('Enter a quantity of at least 1.'), 'qty');
@@ -268,9 +312,53 @@ class Submit extends Action implements HttpPostActionInterface, CsrfAwareActionI
             $payload['customFields'] = $customFields;
         }
 
+        $storeId = $this->currentStoreId();
+
+        // Target prices travel per line only to a server that takes them; otherwise they are
+        // written into the note, so nothing the shopper typed is dropped.
+        $payload = $this->payloadBuilder->applyTargetPrices(
+            $payload,
+            $this->capabilities->supports(ServerCapabilities::TARGET_PRICE, $storeId, true),
+            (string) $payload['currency']
+        );
+
+        $attached = $this->payloadBuilder->attachmentFields(
+            $request->getParam('uploadIds', ''),
+            $request->getParam('uploadToken', '')
+        );
+        if (!$attached['ok']) {
+            return $this->fail($result, 400, (string) __('That file could not be attached. Please try again.'));
+        }
+        if ($attached['uploadIds'] !== []) {
+            // Never drop files the shopper attached: if this store can no longer send them,
+            // say so instead of creating a quote without them.
+            if (!$this->quoteRequestConfig->isAttachmentsSwitchOn($storeId)
+                || !$this->capabilities->supports(ServerCapabilities::ATTACHMENTS, $storeId, true)) {
+                return $this->fail(
+                    $result,
+                    400,
+                    (string) __('Files cannot be attached on this store. Remove them and send the request again.')
+                );
+            }
+            // A guest's files are claimed with the token their first upload answered. A
+            // signed-in customer's are claimed with the account email, which is the buyerEmail
+            // above (taken from the session), so no token is needed.
+            if (!isset($attached['uploadToken']) && !$this->customerSession->isLoggedIn()) {
+                return $this->fail(
+                    $result,
+                    400,
+                    (string) __('Your attached files have expired. Please attach them again.')
+                );
+            }
+            $payload['uploadIds'] = $attached['uploadIds'];
+            if (isset($attached['uploadToken'])) {
+                $payload['uploadToken'] = $attached['uploadToken'];
+            }
+        }
+
         // Collapse a double-click or a retry into the original quote instead of creating
         // a second one.
-        $idempotencyKey = $this->buildIdempotencyKey($email, $lineItems);
+        $idempotencyKey = $this->buildIdempotencyKey($email, $lineItems, $attached['uploadIds']);
         $replayed = $this->idempotency->get($idempotencyKey);
         if ($replayed !== null) {
             return $result->setData($replayed);
@@ -280,6 +368,13 @@ class Submit extends Action implements HttpPostActionInterface, CsrfAwareActionI
 
         if (!$response['ok']) {
             $this->logger->warning('TackQuote quote-request failed: ' . ($response['message'] ?? 'unknown error'));
+
+            // A 400 naming a field the cached capability list said the server takes means the
+            // store now talks to an older server: ask again next time.
+            if ((int) ($response['status'] ?? 0) === 400
+                && preg_match('/uploadIds|uploadToken|targetPrice/', (string) ($response['message'] ?? '')) === 1) {
+                $this->capabilities->forget($storeId);
+            }
 
             return $this->fail(
                 $result,
@@ -298,6 +393,19 @@ class Submit extends Action implements HttpPostActionInterface, CsrfAwareActionI
             // a human to approve it — the buyer would wait for access never granted.
             'awaitingApproval' => !empty($response['awaitingApproval']),
         ];
+
+        // TackQuote claims all of the files or refuses the request, so a different count
+        // means a server that does not behave as documented: worth an operator's attention.
+        $sentFiles = count($attached['uploadIds']);
+        if ($sentFiles > 0 && isset($response['attachmentCount'])
+            && (int) $response['attachmentCount'] !== $sentFiles) {
+            $this->logger->warning(sprintf(
+                'TackQuote quote %s carries %d of %d attached files.',
+                (string) ($response['quoteNumber'] ?? ''),
+                (int) $response['attachmentCount'],
+                $sentFiles
+            ));
+        }
 
         // Only successes are remembered; a failure must stay retryable.
         $this->idempotency->remember($idempotencyKey, $payloadOut);
@@ -352,6 +460,8 @@ class Submit extends Action implements HttpPostActionInterface, CsrfAwareActionI
     private function resolveLineItems(RequestInterface $request, string $sku, int $qty): ?array
     {
         $this->unresolvedSkus = [];
+        $this->invalidTarget = false;
+        $targetsOn = $this->quoteRequestConfig->isTargetPriceEnabled();
         $submitted = $this->parseItems($request->getParam('items'));
 
         // No list posted: quote just the product whose page this came from.
@@ -363,13 +473,21 @@ class Submit extends Action implements HttpPostActionInterface, CsrfAwareActionI
                 return null;
             }
             $superAttribute = $request->getParam('super_attribute', []);
+            $target = $this->targetFrom($request->getParam('targetPrice'), $targetsOn);
+            if ($this->invalidTarget) {
+                return [];
+            }
             $line = $this->productResolver->resolve(
                 $sku,
                 $qty,
                 is_array($superAttribute) ? $superAttribute : []
             );
+            if (!$this->collectLine($line, $sku)) {
+                return [];
+            }
+            $line['targetPrice'] = $target;
 
-            return $this->collectLine($line, $sku) ? [$line] : [];
+            return [$line];
         }
 
         $lines = [];
@@ -382,6 +500,10 @@ class Submit extends Action implements HttpPostActionInterface, CsrfAwareActionI
             }
             if ($rowQty < 1 || $rowQty > self::MAX_QTY) {
                 return null;
+            }
+            $rowTarget = $this->targetFrom($row['targetPrice'] ?? null, $targetsOn);
+            if ($this->invalidTarget) {
+                return [];
             }
 
             /*
@@ -398,11 +520,37 @@ class Submit extends Action implements HttpPostActionInterface, CsrfAwareActionI
             );
 
             if ($this->collectLine($line, $rowSku)) {
+                $line['targetPrice'] = $rowTarget;
                 $lines[] = $line;
             }
         }
 
         return $lines;
+    }
+
+    /**
+     * A row's target price, or null for none. Flags an unusable value.
+     *
+     * Read only when the merchant switched target prices on, so a crafted request on a
+     * store that never offered the field cannot add one.
+     *
+     * @param mixed $raw
+     * @param bool $enabled
+     * @return float|null
+     */
+    private function targetFrom($raw, bool $enabled): ?float
+    {
+        if (!$enabled) {
+            return null;
+        }
+        $parsed = $this->payloadBuilder->parseTargetPrice($raw);
+        if (!$parsed['ok']) {
+            $this->invalidTarget = true;
+
+            return null;
+        }
+
+        return $parsed['value'];
     }
 
     /**
@@ -462,27 +610,49 @@ class Submit extends Action implements HttpPostActionInterface, CsrfAwareActionI
      * Stable for the same buyer and the same set of lines within a short window, so a
      * double-click or a browser retry collapses into one quote rather than two.
      *
+     * The target prices and attached files are part of it: the same basket sent again a
+     * moment later with a different target or another file is a different request, and must
+     * not be answered with the first one's quote.
+     *
      * @param string $email
-     * @param array $lineItems Resolved line items, each with sku and quantity.
+     * @param array $lineItems Payload line items, each with sku, quantity and maybe targetPrice.
+     * @param string[] $uploadIds
      * @return string
      */
-    private function buildIdempotencyKey(string $email, array $lineItems): string
+    private function buildIdempotencyKey(string $email, array $lineItems, array $uploadIds = []): string
     {
         $signature = [];
         foreach ($lineItems as $line) {
-            $signature[] = ($line['sku'] ?? '') . ':' . ($line['quantity'] ?? 0);
+            $signature[] = ($line['sku'] ?? '') . ':' . ($line['quantity'] ?? 0)
+                . (isset($line['targetPrice']) ? '@' . (string) $line['targetPrice'] : '');
         }
         // Sorted so the same basket in a different order is still the same request.
         sort($signature);
+        sort($uploadIds);
 
         return hash('sha256', implode('|', [
             'magento',
             strtolower($email),
             implode(',', $signature),
+            implode(',', $uploadIds),
             // Bucket by minute: a deliberate second request later is a new quote, an
             // accidental resubmit seconds later is not.
             (string) floor(time() / 60),
         ]));
+    }
+
+    /**
+     * The current store view's id, or null when it cannot be read.
+     *
+     * @return int|null
+     */
+    private function currentStoreId(): ?int
+    {
+        try {
+            return (int) $this->storeManager->getStore()->getId();
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 
     /**

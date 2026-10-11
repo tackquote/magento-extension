@@ -219,6 +219,61 @@
                     <depends><field id="show_add_to_quote">1</field></depends>
                 </field>
             </group>
+            <!--
+              Quote page, cart-page button, target prices and attachments (parity with the
+              WooCommerce plugin 1.11.0). A group of its own; read by Model\QuoteRequestConfig.
+              Every switch defaults to No (etc/config.xml).
+            -->
+            <group id="quote_request" translate="label comment" type="text" sortOrder="22"
+                   showInDefault="1" showInWebsite="1" showInStore="0">
+                <label>Quote page, cart button and attachments</label>
+                <comment>The quote page and the cart button need "Show Add to Quote button" above.</comment>
+                <field id="enable_quote_page" translate="label comment" type="select" sortOrder="10"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Enable the quote page</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>Adds a full page at /tackquote/quote showing the shopper's quote list,
+                        where quantities can be changed and a message added before sending, and a
+                        link to it from the quote list. No CMS page is needed.</comment>
+                </field>
+                <field id="quote_page_link_label" translate="label" type="text" sortOrder="20"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Quote page link label</label>
+                    <depends><field id="enable_quote_page">1</field></depends>
+                </field>
+                <field id="enable_target_price" translate="label comment" type="select" sortOrder="30"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Ask for a target price per product</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>An optional "Target price" field per product in the quote form and on
+                        the quote page. It is sent to TackQuote as the price the buyer asked for;
+                        it never sets the quoted price.</comment>
+                </field>
+                <field id="enable_cart_button" translate="label comment" type="select" sortOrder="40"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Show a quote button on the cart page</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>Copies the products and quantities in the shopper's cart into their
+                        quote list. The cart itself is not changed. Bundle products and products
+                        with custom options are left out and named, because a quote needs them
+                        chosen on their product page.</comment>
+                </field>
+                <field id="cart_button_label" translate="label" type="text" sortOrder="50"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Cart button label</label>
+                    <depends><field id="enable_cart_button">1</field></depends>
+                </field>
+                <field id="enable_attachments" translate="label comment" type="select" sortOrder="60"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Allow attachments on quote requests</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment><![CDATA[Shoppers can attach up to 3 files (PDF, JPEG or PNG, 5 MB
+                        each) to a quote request. Each file is checked by this store, then sent
+                        to TackQuote with its file name; nothing is saved in Magento.<br>
+                        Shown once TackQuote confirms it accepts files, checked by Magento cron
+                        every 5 minutes.]]></comment>
+                </field>
+            </group>
         </section>
     </system>
 </config>

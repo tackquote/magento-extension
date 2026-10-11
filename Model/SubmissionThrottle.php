@@ -35,7 +35,7 @@ class SubmissionThrottle
     /** Window in seconds. */
     private const WINDOW = 60;
 
-    private const CACHE_PREFIX = 'tackquote_submit_';
+    private const CACHE_PREFIX = 'tackquote_';
     private const CACHE_TAG = 'TACKQUOTE_THROTTLE';
 
     /**
@@ -69,15 +69,33 @@ class SubmissionThrottle
      */
     public function isExceeded(): bool
     {
-        $key = $this->cacheKey();
+        return $this->isExceededFor('submit', self::MAX_SUBMISSIONS, self::WINDOW);
+    }
+
+    /**
+     * The same counter for another public endpoint, in its own bucket.
+     *
+     * The attachment upload (Controller\Quote\Upload) is limited separately: three files
+     * are one quote request, so sharing the submit counter would refuse the request the
+     * files belong to. The bucket name is part of the key, so 'submit' keeps the exact key
+     * this class has always written.
+     *
+     * @param string $bucket Lower-case letters only, e.g. 'submit', 'upload'.
+     * @param int $max Requests allowed per window.
+     * @param int $window Seconds.
+     * @return bool True when the request should be rejected.
+     */
+    public function isExceededFor(string $bucket, int $max, int $window): bool
+    {
+        $key = $this->cacheKey($bucket);
         $count = (int) $this->cache->load($key);
         $count++;
 
         // Re-saving on every hit refreshes the TTL, which is intentional: a client that
         // keeps trying stays limited rather than slipping through as the window ages out.
-        $this->cache->save((string) $count, $key, [self::CACHE_TAG], self::WINDOW);
+        $this->cache->save((string) $count, $key, [self::CACHE_TAG], $window);
 
-        return $count > self::MAX_SUBMISSIONS;
+        return $count > $max;
     }
 
     /**
@@ -96,12 +114,13 @@ class SubmissionThrottle
      * Keyed on the client IP. Not on session id: a bot simply discards cookies, so a
      * session-keyed counter would reset on every request and enforce nothing.
      *
+     * @param string $bucket
      * @return string
      */
-    private function cacheKey(): string
+    private function cacheKey(string $bucket): string
     {
         $ip = (string) $this->remoteAddress->getRemoteAddress();
 
-        return self::CACHE_PREFIX . hash('sha256', $ip !== '' ? $ip : 'unknown');
+        return self::CACHE_PREFIX . $bucket . '_' . hash('sha256', $ip !== '' ? $ip : 'unknown');
     }
 }

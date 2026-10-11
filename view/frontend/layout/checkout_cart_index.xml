@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<!--
+  "Request a quote for your cart" (Block\CartQuoteButton), off by default.
+
+  Placed in `checkout.cart.methods`, the container that holds "Proceed to Checkout" inside the
+  cart summary (Magento_Checkout view/frontend/layout/checkout_cart_index.xml: cart.summary >
+  checkout.cart.methods.bottom > checkout.cart.methods), after the checkout button. That
+  container renders only for a cart with items, which is the only cart there is anything to
+  copy from. The cart page is not full-page cached (`checkout.cart` is cacheable="false" in
+  core), and the button carries no cart data anyway: it reads the browser's `cart` section.
+-->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <referenceContainer name="checkout.cart.methods">
+            <block class="TackQuote\Quotes\Block\CartQuoteButton"
+                   name="tackquote.cart.quote.button"
+                   template="TackQuote_Quotes::cart-quote-button.phtml"
+                   after="checkout.cart.methods.onepage.bottom"/>
+        </referenceContainer>
+    </body>
+</page>

@@ -15,5 +15,14 @@
              method="execute">
             <schedule>*/5 * * * *</schedule>
         </job>
+        <!--
+          The server's capability list (Model\ServerCapabilities), on the same schedule and for
+          the same reason: Block\QuoteList reads it from cache while rendering every page.
+        -->
+        <job name="tackquote_warm_server_capabilities"
+             instance="TackQuote\Quotes\Cron\WarmServerCapabilities"
+             method="execute">
+            <schedule>*/5 * * * *</schedule>
+        </job>
     </group>
 </config>
