@@ -8,7 +8,7 @@
  *   B1  read the telephone from the first address, not the default billing one ->
  *       testTheTelephoneIsTheDefaultBillingAddresssOne
  *   B2  drop the guest check -> testAGuestGetsNothing
- *   B3  move the section registration to etc/di.xml -> testItIsRegisteredAsAStorefrontSection
+ *   B3  rename the frontend section registration -> testItIsRegisteredAsAStorefrontSection
  *
  * @package TackQuote_Quotes
  */

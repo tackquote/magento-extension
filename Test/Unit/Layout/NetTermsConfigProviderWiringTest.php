@@ -10,8 +10,8 @@
  * undefined window.checkoutConfig.payment.tackquote_net_terms (devstore Q/A finding #19).
  *
  * Mutations (applied, red, restored):
- *   C1  move the <type> block back to etc/di.xml -> both tests
- *   C2  rename the item's class -> testTheProviderIsRegisteredForTheStorefront
+ *   C1  rename the frontend item -> testTheProviderIsRegisteredForTheStorefront
+ *   C2  add a CompositeConfigProvider <type> to etc/di.xml -> testTheGlobalFileDoesNotTouchTheCompositeProvider
  *
  * @package TackQuote_Quotes
  */

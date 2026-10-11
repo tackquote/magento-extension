@@ -97,7 +97,10 @@ $title = function (string $id, string $title, ?array $rows = null) use ($overvie
  * @param string $labelledBy
  * @return string
  */
-$table = function (array $rows, string $labelledBy) use (
+$table = function (
+    array $rows,
+    string $labelledBy
+) use (
     $overview,
     $escaper,
     $state,

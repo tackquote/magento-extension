@@ -124,13 +124,12 @@ class NetTermsConfigProvider implements ConfigProviderInterface
     }
 
     /**
-     * "Net 30 terms. $5,000.00 available." for the checkout's buyer, or '' when there is
-     * nothing true to say.
+     * The checkout buyer's terms line, or '' when there is nothing true to say.
      *
-     * Only an ACTIVE line (NetTermsEligibility::view()) in the quote's own currency is
-     * described; the amount is formatted by Magento's price formatter in that currency with the
-     * store's locale rules. The available part is left out when the server did not send
-     * `available`.
+     * For example "Net 30 terms. $5,000.00 available.". Only an ACTIVE line
+     * (NetTermsEligibility::view()) in the quote's own currency is described; the amount is
+     * formatted by Magento's price formatter in that currency with the store's locale rules.
+     * The available part is left out when the server did not send `available`.
      *
      * @param int $storeId
      * @return string
