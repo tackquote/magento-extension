@@ -12,9 +12,12 @@ use Magento\Checkout\Model\Session as CheckoutSession;
 use Magento\Framework\Controller\Result\Redirect;
 use Magento\Framework\Controller\Result\RedirectFactory;
 use Magento\Framework\Message\ManagerInterface as MessageManager;
+use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Quote\Model\Quote;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use TackQuote\Quotes\Model\QuoteCheckout\QuotedCart;
+use TackQuote\Quotes\Model\QuoteCheckout\QuotedLine;
 use TackQuote\Quotes\Model\QuoteOnlyMode;
 use TackQuote\Quotes\Plugin\Checkout\QuoteOnlyCheckoutGuard;
 
@@ -68,7 +71,13 @@ class QuoteOnlyCheckoutGuardTest extends TestCase
 
     private function guard(): QuoteOnlyCheckoutGuard
     {
-        return new QuoteOnlyCheckoutGuard($this->mode, $this->redirectFactory, $this->messages, $this->session);
+        return new QuoteOnlyCheckoutGuard(
+            $this->mode,
+            $this->redirectFactory,
+            $this->messages,
+            $this->session,
+            new QuotedCart(new QuotedLine(new Json()))
+        );
     }
 
     public function testCheckoutIsRefusedAndTheShopperIsSentBackToTheirCart(): void
@@ -124,5 +133,21 @@ class QuoteOnlyCheckoutGuardTest extends TestCase
 
         self::assertFalse($proceedWasCalled);
         self::assertSame($this->redirect, $result);
+    }
+
+    public function testAnIntactAcceptedQuoteReachesCheckoutInAQuoteOnlyStore(): void
+    {
+        // Lane MG-QUOTE-CHECKOUT-LINK: the one legitimate checkout in a quote-only store.
+        $this->mode->method('isActive')->willReturn(true);
+        $this->messages->expects(self::never())->method('addErrorMessage');
+        $quotedCart = $this->createMock(QuotedCart::class);
+        $quotedCart->method('isIntact')->with($this->cart)->willReturn(true);
+
+        $guard = new QuoteOnlyCheckoutGuard($this->mode, $this->redirectFactory, $this->messages, $this->session, $quotedCart);
+        $result = $guard->aroundExecute($this->controller, static function () {
+            return 'the real checkout page';
+        });
+
+        self::assertSame('the real checkout page', $result);
     }
 }

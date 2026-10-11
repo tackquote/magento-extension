@@ -21,6 +21,10 @@
 
     <!-- Every new cart line: CartItemPersister / AddProductsToCart call Quote::addProduct(). -->
     <type name="Magento\Quote\Model\Quote">
+        <!-- Accepted quote checkout link (lane MG-QUOTE-CHECKOUT-LINK): FIRST (5) on this method, see the header of Plugin\Quote\QuoteCheckoutCartGuard. -->
+        <plugin name="tackquote_quote_checkout_cart_guard"
+                type="TackQuote\Quotes\Plugin\Quote\QuoteCheckoutCartGuard"
+                sortOrder="5"/>
         <plugin name="tackquote_quote_only_cart_guard"
                 type="TackQuote\Quotes\Plugin\Quote\QuoteOnlyCartGuard"
                 sortOrder="10"/>
@@ -38,6 +42,10 @@
 
     <!-- Quantity increases on an existing line, which never reach addProduct(). -->
     <type name="Magento\Quote\Api\CartItemRepositoryInterface">
+        <!-- Accepted quote checkout link (lane MG-QUOTE-CHECKOUT-LINK): FIRST (5) on this method, see the header of Plugin\Quote\QuoteCheckoutCartItemRepositoryLock. -->
+        <plugin name="tackquote_quote_checkout_cart_item_repository_lock"
+                type="TackQuote\Quotes\Plugin\Quote\QuoteCheckoutCartItemRepositoryLock"
+                sortOrder="5"/>
         <plugin name="tackquote_quote_only_cart_item_repository_guard"
                 type="TackQuote\Quotes\Plugin\Quote\QuoteOnlyCartItemRepositoryGuard"
                 sortOrder="10"/>
@@ -48,6 +56,10 @@
 
     <!-- Order placement: placeOrder / payment-information end in QuoteManagement::submit(). -->
     <type name="Magento\Quote\Model\QuoteManagement">
+        <!-- Accepted quote checkout link (lane MG-QUOTE-CHECKOUT-LINK): FIRST (5) on this method, see the header of Plugin\Quote\QuoteCheckoutSubmitGuard. -->
+        <plugin name="tackquote_quote_checkout_submit_guard"
+                type="TackQuote\Quotes\Plugin\Quote\QuoteCheckoutSubmitGuard"
+                sortOrder="5"/>
         <plugin name="tackquote_quote_only_submit_guard"
                 type="TackQuote\Quotes\Plugin\Quote\QuoteOnlySubmitGuard"
                 sortOrder="10"/>

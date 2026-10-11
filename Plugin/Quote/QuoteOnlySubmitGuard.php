@@ -30,6 +30,11 @@
  * merchant's admin and integration tokens — TackQuote's OAuth-signed quote conversion
  * included — are exempt through Model\QuoteOnly\ApiVisitorContext.
  *
+ * AN ACCEPTED QUOTE'S CART is exempt while it is INTACT (Model\QuoteCheckout\QuotedCart::isIntact():
+ * every line from the one quote, at its accepted quantity and price): it is the one legitimate
+ * checkout in a quote-only store. A cart that only CONTAINS a quoted line is not, and
+ * Plugin\Quote\QuoteCheckoutSubmitGuard (ordered first) refuses it outright.
+ *
  * @package TackQuote_Quotes
  */
 
@@ -40,6 +45,7 @@ namespace TackQuote\Quotes\Plugin\Quote;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Quote\Model\Quote;
 use Magento\Quote\Model\QuoteManagement;
+use TackQuote\Quotes\Model\QuoteCheckout\QuotedCart;
 use TackQuote\Quotes\Model\QuoteOnlyMode;
 
 class QuoteOnlySubmitGuard
@@ -50,11 +56,18 @@ class QuoteOnlySubmitGuard
     private $quoteOnlyMode;
 
     /**
-     * @param QuoteOnlyMode $quoteOnlyMode
+     * @var QuotedCart
      */
-    public function __construct(QuoteOnlyMode $quoteOnlyMode)
+    private $quotedCart;
+
+    /**
+     * @param QuoteOnlyMode $quoteOnlyMode
+     * @param QuotedCart $quotedCart
+     */
+    public function __construct(QuoteOnlyMode $quoteOnlyMode, QuotedCart $quotedCart)
     {
         $this->quoteOnlyMode = $quoteOnlyMode;
+        $this->quotedCart = $quotedCart;
     }
 
     /**
@@ -70,6 +83,10 @@ class QuoteOnlySubmitGuard
      */
     public function beforeSubmit(QuoteManagement $subject, Quote $quote, $orderData = []): void
     {
+        if ($this->quotedCart->isIntact($quote)) {
+            return;
+        }
+
         if ($this->quoteOnlyMode->isActive()) {
             throw new LocalizedException(
                 __('This store is quote-only. Request a quote for your items and we will send you a price.')

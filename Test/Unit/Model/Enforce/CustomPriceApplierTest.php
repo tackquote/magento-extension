@@ -312,4 +312,26 @@ class CustomPriceApplierTest extends TestCase
 
         self::assertNull($line->getData('custom_price'), 'a quantity break exists only at its quantity');
     }
+
+    public function testAnAcceptedQuoteLineIsNeverAskedAboutRepricedOrCleared(): void
+    {
+        // Lane MG-QUOTE-CHECKOUT-LINK: the quote marker is someone else's price, even where
+        // account prices would apply (and even where they would be cleared).
+        $quoted = json_encode([
+            'tackquote_quote_ref' => 'tqco_AAAAAAAAAAAAAAAAAAAAAA',
+            'tackquote_quoted_price' => 9.25,
+        ]);
+        $line = $this->item(['custom_price' => 9.25, 'original_custom_price' => 9.25, 'additional_data' => $quoted]);
+
+        self::assertFalse($this->applier()->apply($this->quote([$line])));
+        self::assertSame(9.25, $line->getData('custom_price'));
+        self::assertSame($quoted, $line->getData('additional_data'));
+        self::assertSame([], $this->resolveCalls, 'a quoted line is never priced by TackQuote');
+
+        $switch = $this->createMock(PriceEnforcementSwitch::class);
+        $switch->method('isOn')->willReturn(false);
+        (new CustomPriceApplier($this->eligibility, $switch, $this->quoteOnlyMode, $this->resolver, new Json()))
+            ->apply($this->quote([$line]));
+        self::assertSame(9.25, $line->getData('custom_price'), 'never cleared when prices are off');
+    }
 }

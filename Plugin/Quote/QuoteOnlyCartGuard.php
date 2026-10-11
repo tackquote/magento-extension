@@ -70,6 +70,12 @@
  * PER-PRODUCT. A product whose own `tackquote_quote_only` attribute is Yes is refused too,
  * whether or not the store-wide mode is on (QuoteOnlyMode::appliesToProduct()).
  *
+ * THE ONE EXEMPTION: an accepted TackQuote quote being put into the cart
+ * (Model\QuoteCheckout\CartBuilder sets QuotedCart::isBuilding() around its own adds). It is the
+ * one legitimate checkout in a quote-only store, the WooCommerce plugin's
+ * `Tack_Quote_Checkout::holds_product()`. Anything else added later to that cart is refused
+ * by Plugin\Quote\QuoteCheckoutCartGuard.
+ *
  * @package TackQuote_Quotes
  */
 
@@ -80,6 +86,7 @@ namespace TackQuote\Quotes\Plugin\Quote;
 use Magento\Catalog\Model\Product;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Quote\Model\Quote;
+use TackQuote\Quotes\Model\QuoteCheckout\QuotedCart;
 use TackQuote\Quotes\Model\QuoteOnlyMode;
 
 class QuoteOnlyCartGuard
@@ -90,11 +97,18 @@ class QuoteOnlyCartGuard
     private $quoteOnlyMode;
 
     /**
-     * @param QuoteOnlyMode $quoteOnlyMode
+     * @var QuotedCart
      */
-    public function __construct(QuoteOnlyMode $quoteOnlyMode)
+    private $quotedCart;
+
+    /**
+     * @param QuoteOnlyMode $quoteOnlyMode
+     * @param QuotedCart $quotedCart
+     */
+    public function __construct(QuoteOnlyMode $quoteOnlyMode, QuotedCart $quotedCart)
     {
         $this->quoteOnlyMode = $quoteOnlyMode;
+        $this->quotedCart = $quotedCart;
     }
 
     /**
@@ -118,6 +132,10 @@ class QuoteOnlyCartGuard
         $request = null,
         $processMode = null
     ): void {
+        if ($this->quotedCart->isBuilding()) {
+            return;
+        }
+
         if ($this->quoteOnlyMode->isActive()) {
             $this->refuseStore();
         }

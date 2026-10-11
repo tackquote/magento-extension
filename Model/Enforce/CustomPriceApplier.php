@@ -43,6 +43,11 @@
  * repriced; `additional_data` that is not a JSON object belongs to someone else and is never
  * overwritten, so that line keeps its own price too.
  *
+ * AN ACCEPTED QUOTE'S LINE is never ours (lane MG-QUOTE-CHECKOUT-LINK): a line whose
+ * `additional_data` carries the quote marker (Model\QuoteCheckout\QuotedLine, `tackquote_quote_ref`
+ * / `tackquote_quoted_price`) holds the price the seller and the buyer agreed on. It is not asked
+ * about, never set, never cleared, even where account prices are off or hidden.
+ *
  * @package TackQuote_Quotes
  */
 
@@ -53,6 +58,7 @@ namespace TackQuote\Quotes\Model\Enforce;
 use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Quote\Model\Quote;
 use Magento\Quote\Model\Quote\Item;
+use TackQuote\Quotes\Model\QuoteCheckout\QuotedLine;
 use TackQuote\Quotes\Model\QuoteOnlyMode;
 
 class CustomPriceApplier
@@ -184,6 +190,10 @@ class CustomPriceApplier
         ) {
             return null;
         }
+        if ($this->isQuoted($this->additionalData($item))) {
+            // An accepted quote's price, not an account price: see "AN ACCEPTED QUOTE'S LINE".
+            return null;
+        }
         $sku = trim((string) $item->getSku());
         $qty = (float) $item->getQty();
         if ($sku === '' || mb_strlen($sku) > 128 || $qty < 1 || floor($qty) !== $qty) {
@@ -207,6 +217,9 @@ class CustomPriceApplier
     private function settle(Item $item, ?float $desired): bool
     {
         $data = $this->additionalData($item);
+        if ($this->isQuoted($data)) {
+            return false;
+        }
         $current = $item->getCustomPrice();
         $marker = is_array($data) && isset($data[self::MARKER]) && is_numeric($data[self::MARKER])
             ? (float) $data[self::MARKER]
@@ -244,6 +257,18 @@ class CustomPriceApplier
         $item->setAdditionalData((string) $this->json->serialize($data));
 
         return true;
+    }
+
+    /**
+     * Whether decoded `additional_data` carries an accepted quote's marker.
+     *
+     * @param array|null $data
+     * @return bool
+     */
+    private function isQuoted(?array $data): bool
+    {
+        return is_array($data)
+            && (array_key_exists(QuotedLine::REF, $data) || array_key_exists(QuotedLine::PRICE, $data));
     }
 
     /**

@@ -20,6 +20,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use TackQuote\Quotes\Model\Api\Client;
 use TackQuote\Quotes\Model\Config;
+use TackQuote\Quotes\Model\QuoteCheckout\LandingUrl;
 
 /**
  * @covers \TackQuote\Quotes\Model\Api\Client
@@ -70,7 +71,18 @@ class ClientTest extends TestCase
     {
         // The real Json serializer: the point of several of these tests is what happens to
         // a body as it is parsed, and a mock would simply return whatever it was told.
-        return new Client($this->config, $this->curl, new Json(), $this->logger);
+        return new Client($this->config, $this->curl, new Json(), $this->logger, $this->landing());
+    }
+
+    /**
+     * @return LandingUrl&MockObject
+     */
+    private function landing(string $value = 'https://shop.example.test/tackquote/checkout/start'): LandingUrl
+    {
+        $landing = $this->createMock(LandingUrl::class);
+        $landing->method('headerValue')->willReturn($value);
+
+        return $landing;
     }
 
     private function respondWith(int $status, string $body): void
@@ -238,8 +250,31 @@ class ClientTest extends TestCase
         $this->curl->expects(self::never())->method('get');
         $this->curl->expects(self::never())->method('post');
 
-        $result = (new Client($config, $this->curl, new Json(), $this->logger))->testConnection();
+        $result = (new Client($config, $this->curl, new Json(), $this->logger, $this->landing()))->testConnection();
 
         self::assertFalse($result['ok']);
+    }
+
+    public function testThePingAdvertisesTheQuoteCheckoutLanding(): void
+    {
+        // Lane MG-QUOTE-CHECKOUT-LINK: TackQuote records where this store takes a checkout link
+        // from the ping (tack common/connectors/magento-quote-checkout-landing.ts).
+        $this->respondWith(200, '{"ok":true,"capabilities":["quoteCheckout"]}');
+
+        $this->client()->getCapabilities();
+
+        self::assertSame(
+            'https://shop.example.test/tackquote/checkout/start',
+            $this->headers['X-TackQuote-Quote-Checkout-Url'] ?? null
+        );
+    }
+
+    public function testOnlyThePingCarriesTheLandingHeader(): void
+    {
+        $this->respondWith(200, '{}');
+
+        $this->client()->getRegistrationConfig();
+
+        self::assertArrayNotHasKey('X-TackQuote-Quote-Checkout-Url', $this->headers);
     }
 }

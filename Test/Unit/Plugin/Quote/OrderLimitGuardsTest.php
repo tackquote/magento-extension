@@ -13,6 +13,7 @@ namespace TackQuote\Quotes\Test\Unit\Plugin\Quote;
 use Magento\Catalog\Model\Product;
 use Magento\Checkout\Model\Cart;
 use Magento\Framework\DataObject;
+use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Quote\Api\CartItemRepositoryInterface;
 use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Quote\Api\Data\CartItemInterface;
@@ -20,6 +21,8 @@ use Magento\Quote\Model\Quote;
 use Magento\Quote\Model\QuoteManagement;
 use PHPUnit\Framework\TestCase;
 use TackQuote\Quotes\Model\Enforce\OrderLimitChecker;
+use TackQuote\Quotes\Model\QuoteCheckout\QuotedCart;
+use TackQuote\Quotes\Model\QuoteCheckout\QuotedLine;
 use TackQuote\Quotes\Plugin\Checkout\OrderLimitUpdateItemsGuard;
 use TackQuote\Quotes\Plugin\Quote\OrderLimitCartGuard;
 use TackQuote\Quotes\Plugin\Quote\OrderLimitCartItemRepositoryGuard;
@@ -33,6 +36,22 @@ use TackQuote\Quotes\Plugin\Quote\OrderLimitSubmitGuard;
  */
 class OrderLimitGuardsTest extends TestCase
 {
+    private static function quotedCart(): QuotedCart
+    {
+        return new QuotedCart(new QuotedLine(new Json()));
+    }
+
+    public function testAnAcceptedQuoteBeingPutIntoTheCartIsNotLimitChecked(): void
+    {
+        $checker = $this->createMock(OrderLimitChecker::class);
+        $checker->expects(self::never())->method('assertAdd');
+        $quotedCart = self::quotedCart();
+        $quotedCart->startBuilding();
+
+        (new OrderLimitCartGuard($checker, $quotedCart))
+            ->beforeAddProduct($this->createMock(Quote::class), $this->product('simple'), 7);
+    }
+
     private function product(string $type): Product
     {
         $product = $this->createMock(Product::class);
@@ -74,7 +93,7 @@ class OrderLimitGuardsTest extends TestCase
         $checker = $this->createMock(OrderLimitChecker::class);
         $checker->expects(self::once())->method('assertAdd')->with($quote, 'A', 7.0, 'Widget');
 
-        (new OrderLimitCartGuard($checker))->beforeAddProduct($quote, $this->product('simple'), 7);
+        (new OrderLimitCartGuard($checker, self::quotedCart()))->beforeAddProduct($quote, $this->product('simple'), 7);
     }
 
     public function testAConfigurableAddIsLeftToTheLaterChecks(): void
@@ -82,7 +101,7 @@ class OrderLimitGuardsTest extends TestCase
         $checker = $this->createMock(OrderLimitChecker::class);
         $checker->expects(self::never())->method('assertAdd');
 
-        (new OrderLimitCartGuard($checker))->beforeAddProduct($this->createMock(Quote::class), $this->product('configurable'), 7);
+        (new OrderLimitCartGuard($checker, self::quotedCart()))->beforeAddProduct($this->createMock(Quote::class), $this->product('configurable'), 7);
     }
 
     public function testAnApiQuantityChangeOnAnExistingLineIsChecked(): void
@@ -141,6 +160,17 @@ class OrderLimitGuardsTest extends TestCase
         $checker = $this->createMock(OrderLimitChecker::class);
         $checker->expects(self::once())->method('assertCart')->with($quote);
 
-        (new OrderLimitSubmitGuard($checker))->beforeSubmit($this->createMock(QuoteManagement::class), $quote);
+        (new OrderLimitSubmitGuard($checker, self::quotedCart()))->beforeSubmit($this->createMock(QuoteManagement::class), $quote);
+    }
+
+    public function testAnIntactAcceptedQuoteIsNotLimitCheckedAtSubmit(): void
+    {
+        $quote = $this->createMock(Quote::class);
+        $checker = $this->createMock(OrderLimitChecker::class);
+        $checker->expects(self::never())->method('assertCart');
+        $quotedCart = $this->createMock(QuotedCart::class);
+        $quotedCart->method('isIntact')->with($quote)->willReturn(true);
+
+        (new OrderLimitSubmitGuard($checker, $quotedCart))->beforeSubmit($this->createMock(QuoteManagement::class), $quote);
     }
 }

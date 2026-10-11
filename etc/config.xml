@@ -31,6 +31,14 @@
                 <enable_cart_button>0</enable_cart_button>
                 <enable_attachments>0</enable_attachments>
             </quote_request>
+            <!--
+              Accepted quote checkout link (lane MG-QUOTE-CHECKOUT-LINK). ON, like the WooCommerce
+              plugin's (active whenever the store holds an API key): nothing changes until a buyer
+              opens a link TackQuote minted for an accepted quote.
+            -->
+            <quote_checkout>
+                <enabled>1</enabled>
+            </quote_checkout>
             <!-- Wholesale account and Net terms tabs in My Account (lane MG-FORMS-TERMS). -->
             <forms>
                 <enable_wholesale_tab>0</enable_wholesale_tab>

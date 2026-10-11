@@ -20,6 +20,7 @@ use Magento\Framework\HTTP\Client\Curl;
 use Magento\Framework\Serialize\Serializer\Json;
 use Psr\Log\LoggerInterface;
 use TackQuote\Quotes\Model\Config;
+use TackQuote\Quotes\Model\QuoteCheckout\LandingUrl;
 
 class Client
 {
@@ -70,21 +71,29 @@ class Client
     private $logger;
 
     /**
+     * @var LandingUrl
+     */
+    private $landingUrl;
+
+    /**
      * @param Config $config
      * @param Curl $curl
      * @param Json $json
      * @param LoggerInterface $logger
+     * @param LandingUrl $landingUrl The accepted-quote checkout landing, advertised on every ping.
      */
     public function __construct(
         Config $config,
         Curl $curl,
         Json $json,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        LandingUrl $landingUrl
     ) {
         $this->config = $config;
         $this->curl = $curl;
         $this->json = $json;
         $this->logger = $logger;
+        $this->landingUrl = $landingUrl;
     }
 
     /**
@@ -229,6 +238,11 @@ class Client
         $this->curl->addHeader('Content-Type', 'application/json');
         $this->curl->addHeader('Accept', 'application/json');
         $this->curl->addHeader('User-Agent', 'TackQuote-Magento2/1.0.0');
+        if ($path === self::PATH_PING) {
+            // Where this store takes an accepted-quote checkout link, or `off`
+            // (Model\QuoteCheckout\LandingUrl). An older server ignores the header.
+            $this->curl->addHeader(LandingUrl::HEADER, $this->landingUrl->headerValue($storeId));
+        }
 
         /*
          * Server-side duplicate suppression.

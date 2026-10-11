@@ -1,0 +1,38 @@
+<?php
+/**
+ * Why an accepted-quote checkout link did not open the checkout, and the way back.
+ *
+ * `message` is set by Controller\Checkout\Start (translated text, escaped here). `portal_url` is
+ * the buyer portal's public sign-in page when TackQuote named one for an expired or used link;
+ * it is accepted only as https (Model\QuoteCheckout\CheckoutApiClient) and escaped as a URL.
+ *
+ * @var \Magento\Framework\View\Element\Template $block
+ * @var \Magento\Framework\Escaper $escaper
+ * @package TackQuote_Quotes
+ */
+
+$message = (string) $block->getData('message');
+if ($message === '') {
+    $message = (string) __('This quote could not be opened in the store.');
+}
+$portalUrl = (string) $block->getData('portal_url');
+?>
+<div class="tackquote-quote-checkout-notice">
+    <div class="message notice" role="status">
+        <div><?= $escaper->escapeHtml($message) ?></div>
+    </div>
+    <div class="actions-toolbar">
+        <?php if ($portalUrl !== ''): ?>
+            <div class="primary">
+                <a class="action primary" href="<?= $escaper->escapeUrl($portalUrl) ?>" rel="noopener">
+                    <span><?= $escaper->escapeHtml(__('Back to your quotes')) ?></span>
+                </a>
+            </div>
+        <?php endif; ?>
+        <div class="secondary">
+            <a class="action continue" href="<?= $escaper->escapeUrl($block->getUrl('')) ?>">
+                <span><?= $escaper->escapeHtml(__('Continue shopping')) ?></span>
+            </a>
+        </div>
+    </div>
+</div>

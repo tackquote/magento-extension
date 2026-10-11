@@ -18,6 +18,9 @@
  * configurable or bundle the SKU that lands in the cart depends on the selection, so their lines
  * are checked by the cart-update guards and at order submit, where the line's SKU is known.
  *
+ * An accepted TackQuote quote being put into the cart is not checked (QuotedCart::isBuilding(),
+ * set by Model\QuoteCheckout\CartBuilder): the seller accepted those quantities on the quote.
+ *
  * @package TackQuote_Quotes
  */
 
@@ -31,6 +34,7 @@ use Magento\Framework\Exception\LocalizedException;
 use Magento\Quote\Model\Quote;
 use TackQuote\Quotes\Model\Enforce\CustomPriceApplier;
 use TackQuote\Quotes\Model\Enforce\OrderLimitChecker;
+use TackQuote\Quotes\Model\QuoteCheckout\QuotedCart;
 
 class OrderLimitCartGuard
 {
@@ -40,11 +44,18 @@ class OrderLimitCartGuard
     private $checker;
 
     /**
-     * @param OrderLimitChecker $checker
+     * @var QuotedCart
      */
-    public function __construct(OrderLimitChecker $checker)
+    private $quotedCart;
+
+    /**
+     * @param OrderLimitChecker $checker
+     * @param QuotedCart $quotedCart
+     */
+    public function __construct(OrderLimitChecker $checker, QuotedCart $quotedCart)
     {
         $this->checker = $checker;
+        $this->quotedCart = $quotedCart;
     }
 
     /**
@@ -64,7 +75,9 @@ class OrderLimitCartGuard
         $request = null,
         $processMode = null
     ): void {
-        if (!in_array((string) $product->getTypeId(), CustomPriceApplier::PRICED_TYPES, true)) {
+        if ($this->quotedCart->isBuilding()
+            || !in_array((string) $product->getTypeId(), CustomPriceApplier::PRICED_TYPES, true)
+        ) {
             return;
         }
 

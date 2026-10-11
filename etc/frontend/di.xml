@@ -43,6 +43,10 @@
       is itself just a caller (module-checkout/Model/Cart.php:392).
     -->
     <type name="Magento\Quote\Model\Quote">
+        <!-- Accepted quote checkout link (lane MG-QUOTE-CHECKOUT-LINK): FIRST (5) on this method, see the header of Plugin\Quote\QuoteCheckoutCartGuard. -->
+        <plugin name="tackquote_quote_checkout_cart_guard"
+                type="TackQuote\Quotes\Plugin\Quote\QuoteCheckoutCartGuard"
+                sortOrder="5"/>
         <plugin name="tackquote_quote_only_cart_guard"
                 type="TackQuote\Quotes\Plugin\Quote\QuoteOnlyCartGuard"
                 sortOrder="10"/>
@@ -60,6 +64,10 @@
 
     <!-- Mutations of a cart that already existed when the mode was switched on. -->
     <type name="Magento\Checkout\Model\Cart">
+        <!-- Accepted quote checkout link (lane MG-QUOTE-CHECKOUT-LINK): FIRST (5) on this method, see the header of Plugin\Quote\QuoteCheckoutUpdateItemsLock. -->
+        <plugin name="tackquote_quote_checkout_update_items_lock"
+                type="TackQuote\Quotes\Plugin\Quote\QuoteCheckoutUpdateItemsLock"
+                sortOrder="5"/>
         <plugin name="tackquote_quote_only_existing_cart_guard"
                 type="TackQuote\Quotes\Plugin\Checkout\QuoteOnlyExistingCartGuard"
                 sortOrder="10"/>
@@ -70,6 +78,10 @@
 
     <!-- The checkout route itself. -->
     <type name="Magento\Checkout\Controller\Index\Index">
+        <!-- Accepted quote checkout link (lane MG-QUOTE-CHECKOUT-LINK): FIRST (5) on this method, see the header of Plugin\Quote\QuoteCheckoutPageGuard. -->
+        <plugin name="tackquote_quote_checkout_page_guard"
+                type="TackQuote\Quotes\Plugin\Quote\QuoteCheckoutPageGuard"
+                sortOrder="5"/>
         <plugin name="tackquote_quote_only_checkout_guard"
                 type="TackQuote\Quotes\Plugin\Checkout\QuoteOnlyCheckoutGuard"
                 sortOrder="10"/>
@@ -91,6 +103,10 @@
       Web API and GraphQL areas, where Luma's checkout and GraphQL's placeOrder run.
     -->
     <type name="Magento\Quote\Model\QuoteManagement">
+        <!-- Accepted quote checkout link (lane MG-QUOTE-CHECKOUT-LINK): FIRST (5) on this method, see the header of Plugin\Quote\QuoteCheckoutSubmitGuard. -->
+        <plugin name="tackquote_quote_checkout_submit_guard"
+                type="TackQuote\Quotes\Plugin\Quote\QuoteCheckoutSubmitGuard"
+                sortOrder="5"/>
         <plugin name="tackquote_quote_only_submit_guard"
                 type="TackQuote\Quotes\Plugin\Quote\QuoteOnlySubmitGuard"
                 sortOrder="10"/>
@@ -205,5 +221,17 @@
         <plugin name="tackquote_layer_visibility"
                 type="TackQuote\Quotes\Plugin\Catalog\LayerVisibility"
                 sortOrder="10"/>
+    </type>
+
+    <!-- Accepted quote checkout link (lane MG-QUOTE-CHECKOUT-LINK): sessions as Proxies. -->
+    <type name="TackQuote\Quotes\Plugin\Quote\QuoteCheckoutPageGuard">
+        <arguments>
+            <argument name="checkoutSession" xsi:type="object">Magento\Checkout\Model\Session\Proxy</argument>
+        </arguments>
+    </type>
+    <type name="TackQuote\Quotes\Controller\Checkout\Start">
+        <arguments>
+            <argument name="checkoutSession" xsi:type="object">Magento\Checkout\Model\Session\Proxy</argument>
+        </arguments>
     </type>
 </config>
