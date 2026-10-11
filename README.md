@@ -225,6 +225,12 @@ view.
 | B2B Display | **Show order limits notice** | Off by default. "Order between X and Y units". Not enforced in the cart yet. |
 | B2B Display | **Show buyer group badge** | Off by default. The customer's TackQuote buyer group. |
 | B2B Display | **Only for these customer groups** | Empty = every signed-in customer. See *B2B display* below. |
+| Buyer group rules | **Only for these customer groups** | Empty = ask about every signed-in customer. Others count as `@GUESTS`. See *Buyer group rules*. |
+| Buyer group rules | **Hide categories by buyer group** / **Categories hidden from groups** / **Hide when the buyer group is unknown** | Off by default. `category ID: CODE, @GUESTS` lines. |
+| Buyer group rules | **Restrict payment and shipping methods by buyer group** / **Payment methods by group** / **Shipping methods by group** / **Restrict when the buyer group is unknown** | Off by default. `method: CODE, CODE` lines. |
+| Buyer group rules | **Shipping discounts by buyer group** / **Shipping discount per group** | Off by default. `CODE: percent=15 \| carriers`, `free`, `free_only`. |
+| Buyer group rules | **Apply TackQuote tax exemptions** / **Customer tax class for tax-exempt buyers** | Off by default. |
+| Buyer group rules | **Set the customer group from the buyer group** / **Customer group per buyer group** | Off by default. `CODE: customer group ID` lines. |
 
 Every storefront control is additionally gated on the module being enabled *and* an API key
 being present — offering a control that cannot submit would only produce a dead end.
@@ -765,6 +771,109 @@ are declared in `etc/frontend/di.xml` and the three Web API areas only).
 - **Failure refuses nothing**: if TackQuote cannot be reached, the cart is not limited
   (the WooCommerce plugin's rule). Answers are cached for 60 seconds per customer and SKU.
 
+## Buyer group rules (signed-in customers)
+
+**Stores > Configuration > TackQuote > TackQuote Settings > Buyer group rules (signed-in
+customers).** The WooCommerce plugin's buyer-group features (1.10.0 and 1.11.0), keyed on the
+customer's TackQuote buyer group **code**. Each has its own switch and **every switch is off
+by default** (`etc/config.xml`). Code: `Model/Groups/*`; settings: `Model/Groups/GroupRulesConfig.php`.
+
+### Where the group comes from
+
+`GET /storefront/v1/buyer-group?buyerEmail=<account email>` (the route the buyer-group badge
+reads), server to server with the store's API key, read when a rule needs it and kept for
+**60 seconds** per store, customer and email (`Model/Groups/BuyerGroupResolver.php`; the cache
+id is a hash). A failure is remembered for 30 seconds, and an HTTP 429 pauses every lookup for
+the store for 60 seconds. TackQuote throttles the route at 60 requests a minute per store.
+
+| TackQuote answers | the rules see |
+|---|---|
+| `grouped` with a code | that group (codes compared without regard to case) |
+| `none`, `unlinked`, `grouped` without a code, `anonymous`, a guest, a customer outside **Only for these customer groups** | `@GUESTS`: outside every group |
+| anything else, an error, no answer | **unknown** |
+
+**Never filtered:** the Magento admin, cron and CLI, and REST/SOAP/GraphQL calls made with an
+admin or integration token, which includes TackQuote converting an accepted quote into an
+order (`Model/Groups/Audience.php`, through the same per-area visitor quote-only mode uses).
+
+### Rules
+
+Rule fields take one rule per line, in the WooCommerce format; blank lines and lines starting
+with `#` are ignored, and **a line that cannot be read is refused when you save**
+(`Model/Groups/Config/RuleMapBackend.php`).
+
+- **Hidden categories.** `category ID: CODE, @GUESTS` hides that category, its children and
+  the products in them from those groups: removed from the top menu, from category listings
+  and quick-search results, the category and product pages answer "page not found", and the
+  products cannot be added to a cart. When the group is unknown, categories are shown unless
+  **Hide when the buyer group is unknown** is on (then every category hidden from anyone is
+  hidden). Guests never need a lookup.
+- **Payment methods.** `checkmo: TRADE, GOLD` makes Check / Money order available only to
+  those groups (`@GUESTS` may be listed too). A method with no line stays available to
+  everyone. A customer outside every group never gets a restricted method; when the group is
+  unknown, restricted methods stay available unless **Restrict when the buyer group is
+  unknown** is on. A method that is withheld is also refused if a request tries to set it
+  directly.
+- **Shipping methods.** The same rule for carriers (`freeshipping: GOLD`) or single rates
+  (`tablerate_bestway: TRADE`); a rate's own line wins over its carrier's.
+- **Never empty.** If the payment or shipping lines would leave a cart with no method at all,
+  every method stays available for that cart and the store log says so (WooCommerce's rule).
+- **Shipping discounts.** `GOLD: percent=15` (or `percent=15 | flatrate, tablerate`),
+  `TIER2: free`, `TIER3: free_only` (keep only the rates that already cost nothing, when
+  there is one). Only a customer TackQuote places in a group gets a discount. Applied after
+  the restrictions; shipping tax follows the discounted price.
+- **Tax-exempt buyers.** When TackQuote answers `taxExempt: true`, the cart and checkout are
+  taxed as the customer tax class you choose (create one that no tax rule uses). The
+  customer's group is not changed, and catalogue prices shown including tax are not changed.
+  Anything but an explicit `true` charges tax. **TackQuote sends `taxExempt` only for a
+  customer it has linked to this store's customer account**, which happens when it approves a
+  wholesale or credit application the customer made from this store; an email match alone is
+  never exempted. The module names the customer the way the account tabs do (the account
+  email, plus the Magento customer id with this install's id when TackQuote lists the
+  `customerIdentity` capability).
+- **Customer group from the buyer group.** `GOLD: 4` moves a customer TackQuote places in GOLD
+  into customer group 4, on sign-in and at most every 5 minutes after. Only customers in the
+  website's default group (or in a group this setting put them in) are moved; when TackQuote
+  stops placing them in a mapped group they go back to the group they came from, unless
+  someone changed their group by hand in between. What it did is recorded per customer in
+  Magento's `flag` table; every change is written to the store log with the customer id and
+  the group ids.
+
+### How it stays out of the wrong cache
+
+Hidden categories change public pages, so a page-cache vary value (`tackquote_buyer_group`,
+`Plugin/PageCache/BuyerGroupContext.php`) keeps each **set of hidden categories** apart: a hash
+of the hidden ids, empty (Magento's own cache key) when nothing is hidden. The top menu, which
+Magento caches for an hour per store, gets the same value in its block-cache key. The hidden set
+is decided before the page is built (`Plugin/PageCache/BuyerGroupWarmup.php`), because Magento
+clears the customer session from a cacheable page once its layout is generated. Payment,
+shipping and tax rules act on the cart only, which is never page-cached.
+
+### Where each rule hooks in
+
+| rule | interception point |
+|---|---|
+| menu | before-plugin on `Magento\Theme\Block\Html\Topmenu::getHtml()` after Magento_Catalog's own, plus `getCacheKeyInfo()` |
+| category page | around-plugin on `Magento\Catalog\Controller\Category\View::execute()`: `noroute` |
+| product page | after-plugin on `Magento\Catalog\Helper\Product::initProduct()`: `false`, so `noroute` |
+| listings, search | `etc/search_request.xml` adds a `not` clause on `category_ids` to `catalog_view_container` and `quick_search_container`; bound by an after-plugin on `Magento\Catalog\Model\Layer::prepareProductCollection()` |
+| Add to Cart | `catalog_product_is_salable_after` observer: not salable, so `Quote::addProduct()` refuses it |
+| payment | `payment_method_is_active` observer (listing and setting a method), plus an around-plugin on `Magento\Payment\Model\MethodList::getAvailableMethods()` for "never empty" |
+| shipping, discounts | after-plugin on `Magento\Shipping\Model\Shipping::collectRates()` |
+| tax exemption | after-plugin on `Magento\Quote\Model\Quote::getCustomerTaxClassId()` |
+| customer group | `customer_login` and `controller_action_predispatch` observers |
+
+Storefront plugins are in `etc/frontend/di.xml`; payment, shipping, tax and Add to Cart are
+also in `etc/webapi_rest`, `etc/webapi_soap` and `etc/graphql`. Nothing is declared in the
+global files the admin loads.
+
+### What is sent to TackQuote
+
+For a signed-in customer only, when a switched-on rule needs the group: the customer's
+**email address**, and, when TackQuote lists `customerIdentity`, the **Magento customer id**
+with this install's id (headers `X-TackQuote-Platform` and `X-TackQuote-Store-Id`). Nothing for
+guests. Nothing is written in TackQuote.
+
 ## Known limitations
 
 - **The cart-page button copies, it does not link.** "Request a quote for your cart" copies
@@ -860,6 +969,24 @@ are declared in `etc/frontend/di.xml` and the three Web API areas only).
   button again.
 - **Connect needs a TackQuote server with Magento Connect.** An older server answers 404,
   which the module reports as "does not support Connect with TackQuote for Magento".
+- **Buyer group rules and the customer's email.** TackQuote matches the buyer by email
+  address, which Magento confirms only with account confirmation on. Use *Only for these
+  customer groups*, especially with *Set the customer group from the buyer group*: a customer
+  group can carry its own prices and tax class.
+- **Buyer group rules: what hidden categories do not cover yet.** Related, up-sell and
+  cross-sell lists, widgets and product feeds can still name a hidden product (its page and
+  Add to Cart are refused). GraphQL and REST catalogue reads are not filtered. A hidden
+  product already in a cart before the rule applied is not removed (UNVERIFIED whether
+  Magento then refuses it at checkout). Layered navigation counts and pager totals follow the
+  search engine's answer, UNVERIFIED on a running store with OpenSearch.
+- **Buyer group rules and TackQuote's throttle.** The buyer-group route allows 60 requests a
+  minute per store; past that, rules see "unknown" for up to a minute (categories shown and
+  restricted methods available, unless the strict settings are on).
+- **Tax exemption needs a linked customer.** TackQuote sends `taxExempt` only for a customer it
+  has linked to this store's account (an approved wholesale or credit application from this
+  store) and only to a server that lists `customerIdentity`. UNVERIFIED on a store.
+- **The customer-group mirror takes effect on the next cart totals.** A cart priced before the
+  group changed keeps its prices until Magento collects its totals again.
 - No Magento Marketplace listing or Packagist publication (see Installation).
 
 ## Requirements
@@ -1134,6 +1261,22 @@ magento-extension/                              (repository root)
 ├── Plugin/Quote/OrderLimitSubmitGuard.php      … and at QuoteManagement::submit()
 ├── Observer/AccountPriceOrderComment.php       Order note when account prices were not confirmed
 ├── Plugin/PageCache/WholesaleApprovalContext.php  Page-cache vary value for approved buyers
+├── Plugin/PageCache/BuyerGroupContext.php      Page-cache vary value: the visitor's hidden categories
+├── Plugin/PageCache/BuyerGroupWarmup.php       Decides the hidden set before the page is built
+├── Plugin/Catalog/TopmenuVisibility.php        Hidden categories leave the menu (+ its cache key)
+├── Plugin/Catalog/CategoryViewVisibility.php   Hidden category page -> noroute
+├── Plugin/Catalog/ProductPageVisibility.php    Product in a hidden category -> noroute
+├── Plugin/Catalog/LayerVisibility.php          Binds the search exclusion for listings
+├── Plugin/Payment/MethodListRestriction.php    Payment rules never leave a cart with no method
+├── Plugin/Shipping/GroupShippingRates.php      Shipping methods and discounts by group
+├── Plugin/Tax/TaxExemptCustomerClass.php       Exempt buyers taxed as the chosen class
+├── Observer/PaymentMethodGroupRestriction.php  payment_method_is_active: methods by group
+├── Observer/HiddenProductNotSalable.php        Hidden products cannot be added to a cart
+├── Observer/GroupMirrorSync.php                Customer group from the buyer group
+├── Model/Groups/                               Buyer group rules: resolver, audience, rules,
+│                                               settings, catalog visibility, restrictions, mirror
+├── etc/search_request.xml                      `not` clause excluding hidden categories
+├── etc/{webapi_rest,webapi_soap,graphql}/events.xml  Buyer group rules: payment and Add to Cart in the APIs
 ├── Observer/QuoteOnlyMultishippingGuard.php    Refuses the multishipping route
 ├── Observer/QuoteOnlyLayoutHandle.php          Adds the quote-only layout handles
 ├── Block/QuoteOnlyNotice.php                   Cart-page "this store works by quote" panel
@@ -1216,6 +1359,20 @@ magento-extension/                              (repository root)
   Dashboard's *B2B features* card shows the two switches. New phrases are at the end of
   `i18n/en_US.csv`. New unit tests under `Test/Unit/Model/Enforce/`, `Test/Unit/Plugin/`,
   `Test/Unit/Observer/` and `Test/Unit/Layout/CheckoutEnforcementDeclarationsTest.php`.
+
+- **Buyer group rules** (WooCommerce 1.10.0/1.11.0 parity; new group *Buyer group rules*, every
+  switch off by default): categories hidden by TackQuote buyer group (menu, listings, search,
+  category and product pages, Add to Cart), payment and shipping methods by group, shipping
+  discounts per group, tax-exempt buyers (a customer tax class you choose; only for customers TackQuote has
+  linked to this store), and an optional customer group set from
+  the buyer group. Read from `GET /storefront/v1/buyer-group`, cached 60 seconds per customer.
+  A new page-cache vary value keeps each set of hidden categories apart. The admin refuses a
+  rule line it cannot read. The Dashboard's *B2B features* card shows the five switches. New
+  phrases are at the end of `i18n/en_US.csv`. `composer.json` and `etc/module.xml` add
+  Magento_Payment, Magento_Shipping, Magento_Tax, Magento_Theme and Magento_CatalogSearch.
+  New unit tests under `Test/Unit/Model/Groups/`, `Test/Unit/Plugin/{Catalog,Payment,Shipping,Tax}/`,
+  `Test/Unit/Plugin/PageCache/BuyerGroupContextTest.php` and
+  `Test/Unit/Layout/BuyerGroupWiringTest.php`.
 - **Quote page, cart-page button, target prices and attachments** (all off by default; new
   group *Quote page, cart button and attachments*). A full quote page at `/tackquote/quote`
   with a link from the quote list; "Request a quote for your cart" on the cart page, which

@@ -153,14 +153,22 @@ class StorefrontClient
     }
 
     /**
+     * Identity headers a caller may add to a read: the Magento customer namespace
+     * (Model\Forms\AccountIdentity::headers(), tack api-key-storefront-identity.resolver.ts
+     * STOREFRONT_PLATFORM_HEADER / STOREFRONT_STORE_ID_HEADER). Nothing else is passed through.
+     */
+    private const IDENTITY_HEADERS = ['X-TackQuote-Platform', 'X-TackQuote-Store-Id'];
+
+    /**
      * One `/storefront/v1/{route}` read.
      *
      * @param string $route One of the ROUTE_* constants.
      * @param array<string, string> $query Query parameters (sku, quantity, buyerEmail, currency).
      * @param int|null $storeId
+     * @param array<string, string> $identityHeaders Only the IDENTITY_HEADERS; others are dropped.
      * @return array{ok: bool, status: int, data?: array}
      */
-    public function get(string $route, array $query, ?int $storeId = null): array
+    public function get(string $route, array $query, ?int $storeId = null, array $identityHeaders = []): array
     {
         if (!in_array($route, self::ROUTES, true)) {
             return ['ok' => false, 'status' => 0];
@@ -186,7 +194,14 @@ class StorefrontClient
         $curl->setTimeout(self::TIMEOUT_SECONDS);
         // setHeaders() REPLACES the header set, so exactly these go out. Authorization is
         // absent on purpose: see the class docblock.
-        $curl->setHeaders([
+        $headers = [];
+        foreach (self::IDENTITY_HEADERS as $name) {
+            $value = $identityHeaders[$name] ?? null;
+            if (is_string($value) && $value !== '' && preg_match('/^[A-Za-z0-9-]{1,64}$/', $value) === 1) {
+                $headers[$name] = $value;
+            }
+        }
+        $curl->setHeaders($headers + [
             'X-Api-Key' => $apiKey,
             'Accept' => 'application/json',
             'User-Agent' => 'TackQuote-Magento2',

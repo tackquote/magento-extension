@@ -113,6 +113,16 @@ foreach ($checklist as $item) {
                         <?php endif; ?>
                     </dd>
                 <?php endforeach; ?>
+                <?php foreach ($block->getGroupRuleRows() as $row): ?>
+                    <dt><?= $escaper->escapeHtml($row['label']) ?></dt>
+                    <dd>
+                        <?php if ($row['on']): ?>
+                            <span class="tq-pill tq-pill--ok"><?= $escaper->escapeHtml(__('On')) ?></span>
+                        <?php else: ?>
+                            <span class="tq-pill tq-pill--warn"><?= $escaper->escapeHtml(__('Off')) ?></span>
+                        <?php endif; ?>
+                    </dd>
+                <?php endforeach; ?>
                 <?php foreach ($block->getQuoteOnlyRows() as $row): ?>
                     <dt><?= $escaper->escapeHtml($row['label']) ?></dt>
                     <dd>

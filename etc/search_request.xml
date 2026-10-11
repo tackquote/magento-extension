@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<!--
+  Buyer-group catalog visibility: keep products in categories hidden from the visitor out of
+  category listings and quick-search results.
+
+  Merged into Magento_CatalogSearch's own requests of the same names (requests, queries and
+  filters are merged by `query` / `name`: Framework/Search/Request/Config/FilesystemReader.php).
+  Each request gains ONE `not` clause on a term filter over `category_ids` whose value is the
+  placeholder $tackquote_hidden_category_ids$.
+
+  The placeholder is bound only by Plugin\Catalog\LayerVisibility, and only for a visitor who
+  has hidden categories. Unbound, Magento's request Cleaner removes the filter, the filtered
+  query and the clause (Framework/Search/Request/Cleaner.php), so every other request is
+  exactly Magento's own.
+-->
+<requests xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:noNamespaceSchemaLocation="urn:magento:framework:Search/etc/search_request.xsd">
+    <request query="quick_search_container" index="catalogsearch_fulltext">
+        <queries>
+            <query xsi:type="boolQuery" name="quick_search_container" boost="1">
+                <queryReference clause="not" ref="tackquote_hidden_categories"/>
+            </query>
+            <query xsi:type="filteredQuery" name="tackquote_hidden_categories">
+                <filterReference clause="must" ref="tackquote_hidden_categories_filter"/>
+            </query>
+        </queries>
+        <filters>
+            <filter xsi:type="termFilter" name="tackquote_hidden_categories_filter" field="category_ids"
+                    value="$tackquote_hidden_category_ids$"/>
+        </filters>
+    </request>
+    <request query="catalog_view_container" index="catalogsearch_fulltext">
+        <queries>
+            <query xsi:type="boolQuery" name="catalog_view_container" boost="1">
+                <queryReference clause="not" ref="tackquote_hidden_categories"/>
+            </query>
+            <query xsi:type="filteredQuery" name="tackquote_hidden_categories">
+                <filterReference clause="must" ref="tackquote_hidden_categories_filter"/>
+            </query>
+        </queries>
+        <filters>
+            <filter xsi:type="termFilter" name="tackquote_hidden_categories_filter" field="category_ids"
+                    value="$tackquote_hidden_category_ids$"/>
+        </filters>
+    </request>
+</requests>

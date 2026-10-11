@@ -29,4 +29,30 @@
         <observer name="tackquote_quote_only_multishipping_guard"
                   instance="TackQuote\Quotes\Observer\QuoteOnlyMultishippingGuard"/>
     </event>
+    <!--
+      Buyer-group rules (Model\Groups\*). Payment methods by buyer group: refused at listing
+      AND at "set payment method" time, since both ask isAvailable(), which dispatches this
+      event (Observer\PaymentMethodGroupRestriction).
+    -->
+    <event name="payment_method_is_active">
+        <observer name="tackquote_payment_method_group_restriction"
+                  instance="TackQuote\Quotes\Observer\PaymentMethodGroupRestriction"/>
+    </event>
+    <!-- Hidden categories: their products cannot be added to a cart (Quote::addProduct checks salability). -->
+    <event name="catalog_product_is_salable_after">
+        <observer name="tackquote_hidden_product_not_salable"
+                  instance="TackQuote\Quotes\Observer\HiddenProductNotSalable"/>
+    </event>
+    <!--
+      Customer-group mirror (off by default): at once on sign-in, then at most every 5 minutes
+      (Observer\GroupMirrorSync, throttled in Model\Groups\CustomerGroupMirror).
+    -->
+    <event name="customer_login">
+        <observer name="tackquote_group_mirror_login"
+                  instance="TackQuote\Quotes\Observer\GroupMirrorSync"/>
+    </event>
+    <event name="controller_action_predispatch">
+        <observer name="tackquote_group_mirror_refresh"
+                  instance="TackQuote\Quotes\Observer\GroupMirrorSync"/>
+    </event>
 </config>
