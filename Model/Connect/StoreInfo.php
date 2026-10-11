@@ -99,10 +99,29 @@ class StoreInfo
         $default = ScopeConfigInterface::SCOPE_TYPE_DEFAULT;
         $module = $this->moduleList->getOne('TackQuote_Quotes');
 
+        /*
+         * ORDER MATTERS, and the secret-key switch is reset on both sides. The backend URL model
+         * is shared, and Magento\Backend\Model\Url::_setRouteParams() updates its `noSecret`
+         * flag ONLY when a params array is passed (isset($data['_nosecret']) turns it on, any
+         * other array turns it off; read in Magento 2.4.8-p5). A `_nosecret` call followed by a
+         * params-less getUrl() therefore built the callback WITHOUT `key/<secret>/`, and with
+         * "Add Secret Key to URLs" on (Magento's default) AbstractAction::_processUrlKeys()
+         * bounced TackQuote's return to the dashboard: the one-time code was lost and Connect
+         * could never finish (devstore Q/A finding #25).
+         *
+         * So: the callback first, with the key switched on explicitly; the key-less dashboard
+         * URL second; the key switched back on so nothing later in this request inherits it.
+         * NOT ['_nosecret' => false]: the vendor test is isset(), so that would turn the key OFF.
+         */
+        $this->backendUrl->turnOnSecretKey();
+        $redirectUri = $this->backendUrl->getUrl(self::CALLBACK_ROUTE);
+        $adminUrl = $this->backendUrl->getUrl('tackquote/dashboard/index', ['_nosecret' => true]);
+        $this->backendUrl->turnOnSecretKey();
+
         return [
             'siteUrl' => $this->siteUrl(),
-            'adminUrl' => $this->backendUrl->getUrl('tackquote/dashboard/index', ['_nosecret' => true]),
-            'redirectUri' => $this->backendUrl->getUrl(self::CALLBACK_ROUTE),
+            'adminUrl' => $adminUrl,
+            'redirectUri' => $redirectUri,
             'siteName' => (string) $this->scopeConfig->getValue('general/store_information/name', $default),
             'pluginVersion' => is_array($module) ? (string) ($module['setup_version'] ?? '') : '',
             'platformVersion' => (string) $this->productMetadata->getVersion(),

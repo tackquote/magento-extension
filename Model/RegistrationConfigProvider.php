@@ -12,14 +12,13 @@
  * HTML, unlike the form key, which is per-session and must never be baked into a cached
  * page (see the FPC defect fixed in button.phtml).
  *
- * NOT IN THE RENDER PATH — read getCached() from anything a shopper is waiting on.
- * Block\QuoteList renders in `before.body.end` on EVERY storefront page, so when it used
- * get() a cold cache put an outbound HTTP call inside a shopper's page render: steady
- * state was fine, but every deploy, cache flush and newly added store view made the next
- * shopper wait for TackQuote to answer. Cron\WarmRegistrationConfig now does the fetching
- * on a schedule, and the block only ever reads what is already there. The window in which
- * a flushed cache has not yet been re-warmed is bounded by the cron interval; during it
- * the form degrades exactly as it does during an outage (see below).
+ * READ PATH — Block\QuoteList renders the form on every storefront page and reads get():
+ * Cron\WarmRegistrationConfig keeps the policy cached, and when the cache is cold (a cache
+ * flush, a settings save, before the first cron run) the block asks TackQuote once instead of
+ * rendering contact fields only for up to five minutes (devstore Q/A findings #2, #12). The
+ * cost is bounded: the API client's 3-second read timeout, and a failure remembered for
+ * FAILURE_TTL so an outage costs at most one timeout a minute per store view. getCached() is
+ * still here for callers that must never ask.
  *
  * FAILURE MODE — a TackQuote outage must not take the quote button down with it. With no
  * policy the form degrades to contact fields only, which still produces a usable quote
@@ -110,8 +109,8 @@ class RegistrationConfigProvider
     /**
      * The seller's registration policy, from cache where possible, fetching on a miss.
      *
-     * For callers that may block: cron, CLI and admin screens. Storefront rendering must
-     * use getCached() instead.
+     * Fetches only on a miss; a failed fetch is remembered for FAILURE_TTL (see the class
+     * comment for why the storefront form uses this).
      *
      * @param int|null $storeId
      * @return array<string, mixed>|null Null when TackQuote is unconfigured or unreachable.
@@ -133,7 +132,7 @@ class RegistrationConfigProvider
     /**
      * The cached policy, or null. NEVER calls TackQuote.
      *
-     * This is the only accessor safe to call while a shopper is waiting for HTML.
+     * For callers that must never wait on TackQuote.
      *
      * @param int|null $storeId
      * @return array<string, mixed>|null

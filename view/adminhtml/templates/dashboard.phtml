@@ -32,15 +32,32 @@ foreach ($checklist as $item) {
     $allOk = $allOk && $item['ok'];
 }
 $cronRan = $cron->hasRun();
+// The cron job reports success even when TackQuote did not answer; say so on the same row.
+$pingFailure = $cron->getLastPingFailure();
+$pingNote = $pingFailure !== null
+    ? (string) __(
+        'Last server check failed at %1: %2',
+        $block->formatDate($pingFailure['at'], \IntlDateFormatter::MEDIUM, true),
+        $pingFailure['reason']
+    )
+    : '';
 $checklist[] = [
     'label' => (string) __('Magento cron has run'),
     'ok' => $cronRan,
-    'hint' => (string) __('Set up Magento cron (bin/magento cron:install), then check again in 5 minutes.'),
-    'note' => $cronRan
-        ? (string) __('Last run: %1', $block->formatDate($cron->getLastRunAt(), \IntlDateFormatter::MEDIUM, true))
-        : '',
+    'hint' => trim((string) __(
+        'Set up Magento cron (bin/magento cron:install), then check again in 5 minutes.'
+    ) . ' ' . $pingNote),
+    'note' => implode('. ', array_filter([
+        $cronRan
+            ? (string) __('Last run: %1', $block->formatDate($cron->getLastRunAt(), \IntlDateFormatter::MEDIUM, true))
+            : '',
+        $pingNote,
+    ])),
 ];
 $canConfigure = $overview->canConfigure();
+// Beside a switched-on feature that needs the server's capability list while it is unknown
+// or failing ("Waiting for the first server check."), instead of the feature silently missing.
+$serverNote = $cron->getServerCheckNote();
 
 /**
  * A state badge that never wraps: the admin's grid-severity badges, or a neutral one for Off.
@@ -80,7 +97,16 @@ $title = function (string $id, string $title, ?array $rows = null) use ($overvie
  * @param string $labelledBy
  * @return string
  */
-$table = function (array $rows, string $labelledBy) use ($overview, $escaper, $state, $canConfigure): string {
+$table = function (
+    array $rows,
+    string $labelledBy
+) use (
+    $overview,
+    $escaper,
+    $state,
+    $canConfigure,
+    $serverNote
+): string {
     $html = '<table class="admin__table-secondary tq-overview-table" aria-labelledby="'
         . $escaper->escapeHtmlAttr($labelledBy) . '"><thead><tr>'
         . '<th scope="col" class="tq-overview-col-setting">' . $escaper->escapeHtml(__('Setting')) . '</th>'
@@ -88,7 +114,11 @@ $table = function (array $rows, string $labelledBy) use ($overview, $escaper, $s
         . '<th scope="col" class="tq-overview-col-action"><span class="tq-overview-sr">'
         . $escaper->escapeHtml(__('Settings')) . '</span></th></tr></thead><tbody>';
     foreach ($rows as $row) {
-        $html .= '<tr><th scope="row">' . $escaper->escapeHtml($row['label']) . '</th>';
+        $html .= '<tr><th scope="row">' . $escaper->escapeHtml($row['label']);
+        if (!empty($row['server']) && $row['on'] === true && $serverNote !== '') {
+            $html .= '<span class="tq-overview-row-note">' . $escaper->escapeHtml($serverNote) . '</span>';
+        }
+        $html .= '</th>';
         if ($row['on'] === null) {
             $swatch = '';
             if (($row['swatch'] ?? '') !== '' && $overview->isSwatch($row['swatch'])) {
@@ -137,9 +167,9 @@ $tabsInit = ['mage/backend/tabs' => ['active' => 'tq-tab-connection']];
             <div class="message message-warning warning">
                 <div>
                     <?= $escaper->escapeHtml(__(
-                        'Magento cron has not run TackQuote\'s jobs yet. Until it does, the quote form shows '
-                        . 'contact fields only: the company and custom fields from your TackQuote registration '
-                        . 'settings, and the attachment control, appear after the first cron run.'
+                        'Magento cron has not run TackQuote\'s jobs yet. The storefront asks TackQuote itself '
+                        . 'when nothing is cached, but without cron your registration settings and the server\'s '
+                        . 'capabilities are not kept fresh.'
                     )) ?>
                 </div>
             </div>

@@ -241,8 +241,8 @@ class Overview implements ArgumentInterface
             $this->row(__('"Add to Quote" on category and search pages'), self::PATH_SHOW_ON_LISTING, 'storefront'),
             $this->row(__('Quote page'), self::PATH_QUOTE_PAGE, 'quote_request'),
             $this->row(__('Quote button on the cart page'), self::PATH_CART_BUTTON, 'quote_request'),
-            $this->row(__('Target price per product'), self::PATH_TARGET_PRICE, 'quote_request'),
-            $this->row(__('Attachments'), self::PATH_ATTACHMENTS, 'quote_request'),
+            $this->row(__('Target price per product'), self::PATH_TARGET_PRICE, 'quote_request', true),
+            $this->row(__('Attachments'), self::PATH_ATTACHMENTS, 'quote_request', true),
         ];
     }
 
@@ -415,9 +415,9 @@ class Overview implements ArgumentInterface
     public function getFormsRows(): array
     {
         return [
-            $this->row(__('"Wholesale account" tab'), self::PATH_WHOLESALE_TAB, 'forms'),
-            $this->row(__('"Net terms" tab'), self::PATH_NET_TERMS_TAB, 'forms'),
-            $this->row(__('Pay on net terms at checkout'), self::PATH_NET_TERMS_ACTIVE, 'net_terms'),
+            $this->row(__('"Wholesale account" tab'), self::PATH_WHOLESALE_TAB, 'forms', true),
+            $this->row(__('"Net terms" tab'), self::PATH_NET_TERMS_TAB, 'forms', true),
+            $this->row(__('Pay on net terms at checkout'), self::PATH_NET_TERMS_ACTIVE, 'net_terms', true),
         ];
     }
 
@@ -550,14 +550,17 @@ class Overview implements ArgumentInterface
      * @param \Magento\Framework\Phrase|string $label
      * @param string $path
      * @param string $group
-     * @return array{label: string, on: bool, group: string}
+     * @param bool $needsServer Whether it depends on the server's capability list (`server`
+     *                          rows get the CronStatus server-check note while it is unknown).
+     * @return array{label: string, on: bool, group: string, server: bool}
      */
-    private function row($label, string $path, string $group): array
+    private function row($label, string $path, string $group, bool $needsServer = false): array
     {
         return [
             'label' => (string) $label,
             'on' => $this->scopeConfig->isSetFlag($path, ScopeInterface::SCOPE_STORE),
             'group' => $group,
+            'server' => $needsServer,
         ];
     }
 }

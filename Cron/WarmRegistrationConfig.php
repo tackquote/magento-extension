@@ -2,16 +2,16 @@
 /**
  * Keeps the seller's registration policy in cache so no shopper ever waits for it.
  *
- * This job exists to take one outbound HTTP call out of the storefront render path.
- * Block\QuoteList renders on every page and needs the policy to decide which company and
- * custom fields to draw; it now reads cache only
- * (RegistrationConfigProvider::getCached()), and this job is what puts something there.
+ * This job keeps one outbound HTTP call out of the storefront render path in a running
+ * store. Block\QuoteList renders on every page and needs the policy to decide which company
+ * and custom fields to draw; it reads RegistrationConfigProvider::get(), which answers from
+ * the cache this job keeps warm and asks TackQuote itself only when that cache is cold.
  *
  * SCHEDULING — the cache TTL (1 hour) is deliberately much longer than the schedule in
  * etc/crontab.xml (every 5 minutes), so in a running store the entry is rewritten long
  * before it can expire and the storefront never sees a gap. The schedule, not the TTL, is
- * therefore what bounds how stale a policy can be, and it is also what bounds the window
- * after a cache flush during which the form degrades to contact fields only.
+ * therefore what bounds how stale a policy can be. After a cache flush the storefront asks
+ * on its own (RegistrationConfigProvider::get()), so the form no longer waits for this job.
  *
  * Unconfigured and inactive store views are skipped, so the real request volume is one
  * small GET per store view that actually has TackQuote switched on.

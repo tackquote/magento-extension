@@ -186,8 +186,52 @@ class OrderLimitCheckerTest extends TestCase
             $this->checker()->assertAdd($this->quote([$this->line(1, 'A', 40)]), 'A', 20, 'Widget');
         });
 
-        self::assertSame('Widget: Order between 5 and 50 units of this product. You have 60 in your cart.', $message);
+        // The add was refused, so the cart still holds 40: it never says "You have 60".
+        self::assertSame(
+            'Widget: Order between 5 and 50 units of this product. You have 40 in your cart and tried to add 20.',
+            $message
+        );
         self::assertStringNotContainsString("\u{2014}", (string) $message);
+    }
+
+    /**
+     * Devstore Q/A finding #9. Mutations (applied, red, restored):
+     *   M1  the add sentence says "You have <total> in your cart" -> this test
+     *   M2  the update sentence says "You have" -> testARefusedChangeSaysWhatWasAskedFor
+     *   M3  the submit sentence says "You tried to add" -> testTheOrderSubmitSaysWhatIsInTheCart
+     */
+    public function testARefusedAddToAnEmptyCartSaysWhatWasAttempted(): void
+    {
+        $this->answers['A'] = self::limited(2, 10);
+
+        $message = $this->refusal(function (): void {
+            $this->checker()->assertAdd($this->quote([]), 'A', 1, 'Widget');
+        });
+
+        self::assertSame('Widget: Order between 2 and 10 units of this product. You tried to add 1.', $message);
+    }
+
+    public function testARefusedChangeSaysWhatWasAskedFor(): void
+    {
+        $this->answers['A'] = self::limited(5, 50);
+        $quote = $this->quote([$this->line(1, 'A', 10)]);
+
+        $message = $this->refusal(function () use ($quote): void {
+            $this->checker()->assertItemQuantities($quote, [1 => 51]);
+        });
+
+        self::assertSame('Widget: Order between 5 and 50 units of this product. You asked for 51.', $message);
+    }
+
+    public function testTheOrderSubmitSaysWhatIsInTheCart(): void
+    {
+        $this->answers['A'] = self::limited(5, 50);
+
+        $message = $this->refusal(function (): void {
+            $this->checker()->assertCart($this->quote([$this->line(1, 'A', 60)]));
+        });
+
+        self::assertSame('Widget: Order between 5 and 50 units of this product. You have 60 in your cart.', $message);
     }
 
     public function testQuantitiesAreSummedPerSkuAcrossLines(): void

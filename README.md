@@ -55,6 +55,14 @@ WooCommerce, which needs the plugin to push.
   to their product page instead of being added.
 - The list is capped at 50 items in the browser and again at 50 server-side, matching the
   API's own `MAX_ITEMS`.
+- **Signed-in customers find "Your details" filled in**: first and last name, the account
+  email (read-only, as the submit controller uses the account email anyway) and the default
+  billing address's telephone. They come from Magento's own customer record through a
+  customer-data section, `tackquote-buyer` (`Model/CustomerData/BuyerDetails.php`), loaded
+  with Magento's own sections, never from the full-page-cached form HTML (which Magento shares
+  between customers of a group) and never from TackQuote. A shopper who was already signed in
+  when the module was installed has never loaded that section, so the form asks for it once
+  per page (`view/frontend/web/js/buyer-prefill.js`) instead of waiting for the next login.
 
 **Prices are always re-resolved server-side.** The browser stores and sends only a SKU, a
 display name and a quantity — never a price. `Controller/Quote/Submit.php` looks every SKU
@@ -105,8 +113,9 @@ above; nothing here adds a second form or a second submit path.
   answers an id per file; the quote request names those ids and TackQuote attaches all of
   them or refuses the request. A signed-in customer's files are tied to the account email; a
   guest's to a token TackQuote issues on the first upload. The control appears only when
-  TackQuote's `ping` lists `attachments` (checked by cron every 5 minutes,
-  `Cron/WarmServerCapabilities.php`, cached by `Model/ServerCapabilities.php`). Any failure is
+  TackQuote's `ping` lists `attachments` (kept warm by cron every 5 minutes,
+  `Cron/WarmServerCapabilities.php`, cached by `Model/ServerCapabilities.php`, and asked once
+  by the storefront itself when the cache is cold). Any failure is
   shown to the shopper and no file is reported as attached that was not.
 
 **What is sent to TackQuote, in addition to the quote request above:** each attached file's
@@ -123,11 +132,12 @@ token. Target prices travel on the quote request's lines (or in its note).
   their type, required flag, select options and help text). Cached by
   `Model/RegistrationConfigProvider.php`; the response is visitor-independent, so it is
   safe to render into full-page-cached HTML.
-- **The policy is never fetched while a shopper waits.** `Block/QuoteList.php` renders on
-  every storefront page and reads cache only (`getCached()`), so a cold cache costs nothing;
-  `Cron/WarmRegistrationConfig.php` does the fetching every 5 minutes
-  (`etc/crontab.xml`). **Magento cron must be running** or the policy is never warmed and
-  the form permanently degrades to contact fields only — see Known limitations.
+- **Cron keeps the policy warm; a cold cache is fetched once.** `Cron/WarmRegistrationConfig.php`
+  refreshes it every 5 minutes (`etc/crontab.xml`), so a running store answers from cache.
+  After a `cache:flush`, a settings save or before the first cron run, `Block/QuoteList.php`
+  asks TackQuote once (`RegistrationConfigProvider::get()`, the API client's 3-second read
+  timeout, a failure remembered for 60 seconds) instead of showing contact fields only until
+  cron catches up. Pages served from the full-page cache do not run it at all.
 - Submitting registers a real buyer and, where the policy allows, a real company plus
   membership — TackQuote runs the identical sequence as its own buyer-portal registration
   route (`PluginRegistrationService.register` → `BuyersService::registerWithCompany`).
@@ -172,9 +182,18 @@ is built from the Magento admin's own components, following the Admin Design Pat
   TackQuote**; **Test connection** is a secondary action and shows its answer as an admin
   message under the page title.
 - **Status messages** (`message-success` / `message-warning`): whether the quote button is
-  live, and a warning while Magento cron has not yet run TackQuote's jobs. Until it has, the
-  quote form shows contact fields only: the company and custom fields from the TackQuote
-  registration settings, and the attachment control, appear after the first cron run.
+  live, and a warning while Magento cron has not yet run TackQuote's jobs (the storefront
+  asks TackQuote itself when nothing is cached, but cron is what keeps it fresh).
+- **Last failed server check.** A capability check that TackQuote did not answer is logged at
+  WARNING in `var/log/system.log` with the HTTP status and reason, and the Setup step "Magento
+  cron has run" says *Last server check failed at <time>: <reason>* for a day, or until the
+  next successful check of that store view (`Model/ServerCapabilities.php` `lastFailure()`).
+  The cron job itself still reports success, so this line is where a failing ping shows.
+- **Features waiting for the server.** Target prices, attachments, the Wholesale and Net terms
+  tabs and Pay on net terms depend on TackQuote's capability list. While it is unknown for the
+  default store view, each of those rows that is switched on says *Waiting for the first
+  server check.*, or *Last server check failed: <reason>* after a failure, instead of the
+  feature silently missing from the storefront (`CronStatus::getServerCheckNote()`).
 - **Tabs**, one per settings area in the WooCommerce plugin's order, using the admin's
   horizontal tabs (`mage/backend/tabs` on `ul.tabs-horiz`, as on the core Dashboard). Only
   one area shows at a time; the widget provides the tab roles and keyboard handling.
@@ -487,6 +506,15 @@ Pasting a key keeps working exactly as before.
    TackQuote when Connect issued it, then removes it from this store. A pasted key is only
    removed from this store; revoke it in TackQuote yourself.
 
+**The return route keeps its secret key.** With *Add Secret Key to URLs* on (Magento's
+default), the return route must carry `key/<secret>/` or Magento sends the browser to the
+Dashboard and the one-time code is lost. Magento's backend URL model is shared and keeps its
+"no secret key" switch from one `getUrl()` call to the next unless the call passes route
+parameters, so `Model/Connect/StoreInfo.php` builds the return route FIRST with the key
+switched on (`turnOnSecretKey()`), then the key-less Admin address, then switches the key back
+on. Passing `['_nosecret' => false]` does not help: Magento tests that parameter with
+`isset()`, so it turns the key off. `Test/Unit/Model/Connect/StoreInfoTest.php` pins it.
+
 **What is sent to TackQuote:** this store's base URL, its Admin address, the store name, the
 module and Magento versions, the store locale, the random state and the code challenge. No
 customer, order or product data.
@@ -707,6 +735,14 @@ It is declared for the storefront only. The cart, mini-cart and checkout totals,
 and the quote request sent to TackQuote (which still carries Magento's price) are unchanged.
 It changes what is displayed, not what is published: see *Known limitations*.
 
+**The cart keeps showing prices, deliberately.** With "Price on request" on, a line that is
+already in a cart (added before the switch, or by a shopper the quote-only scope does not
+cover) still shows its price and the cart its totals. That is a decision, not a gap: whatever
+can be checked out is charged what the cart says, so the cart must say it, and the WooCommerce
+plugin makes the same choice (it hides product prices only). The account price is not charged
+while prices are hidden (see *B2B checkout*). The field's own comment in Stores > Configuration
+says the same.
+
 ### Existing carts and the checkout route
 
 Turning the mode on **does not empty anybody's cart**. Magento persists carts server-side in
@@ -872,6 +908,12 @@ as another platform's id). Credit is only ever shown for a customer you linked i
 which approving their application from this store does; an email alone never spends a credit
 line. Every value comes from the customer record Magento holds, never from the form.
 
+A wholesale or net terms application is sent only with the Magento identity. Without it
+(a server that does not list `customerIdentity`, or an install without its ID) the store
+refuses the submission with "Your account is still being linked to our quoting system. Please
+try again in a few minutes." rather than filing it under the email alone, where the account
+tab could never find it again.
+
 ### Failure and caching
 
 The form definition is cached 5 minutes (60 seconds after a failure). The net terms standing
@@ -944,8 +986,12 @@ are declared in `etc/frontend/di.xml` and the three Web API areas only).
   cart's quantity change (`Cart::updateItems()`), the Web API's quantity change
   (`CartItemRepositoryInterface::save()`), and order placement (`QuoteManagement::submit()`,
   which catches every other path). Quantities are summed per SKU across the cart's lines.
-- **Wording.** "<Product>: <the notice's own sentence> You have <n> in your cart.", for
-  example "Widget: Order between 5 and 50 units of this product. You have 60 in your cart."
+- **Wording.** "<Product>: <the notice's own sentence>" and then only what is true of the
+  cart. A refused add or quantity change leaves the cart as it was, so it says what was
+  attempted: "Widget: Order between 2 and 10 units of this product. You tried to add 1." (or
+  "You have 4 in your cart and tried to add 20.", or "You asked for 60." for a quantity
+  change). Only the order submit, where the cart really holds it, says "You have 60 in your
+  cart."
 - **Failure refuses nothing**: if TackQuote cannot be reached, the cart is not limited
   (the WooCommerce plugin's rule). Answers are cached for 60 seconds per customer and SKU.
 
@@ -1116,9 +1162,11 @@ redirect. The token is never put in a redirect target or a log line.
   items and items with custom options are left out (and named). UNVERIFIED on a store: a
   configurable item that also has custom options; TackQuote then cannot resolve its cart SKU
   and that line is left out of the quote.
-- **The attachment control waits for cron.** It appears only after
-  `Cron/WarmServerCapabilities.php` has read TackQuote's `ping`, so on a new install, or after
-  a cache flush, it shows within 5 minutes of cron running, and never if cron does not run.
+- **A cold capability cache costs one request.** After a `cache:flush` or a change of API key
+  or URL, the first storefront render that needs the list asks TackQuote's `ping` (up to 3
+  seconds); a failure is remembered for 60 seconds, so an outage costs at most one timeout a
+  minute per store view. Saving other TackQuote settings no longer drops the list: its cache
+  entry carries a hash of the API URL and key instead of the settings cache tag.
 - **Attachments and TackQuote's guest setting.** TackQuote applies its "who can request
   quotes: guest visitors" setting to file uploads; when a seller has switched guest requests
   off, a guest's files are refused even though the request itself is still accepted.
@@ -1151,11 +1199,11 @@ redirect. The token is never put in a redirect target or a log line.
   the storefront.
 - **The registration policy can be up to 5 minutes stale**, bounded by the cron schedule in
   `etc/crontab.xml` rather than by the 1-hour cache TTL. A policy change in TackQuote takes
-  that long to reach the storefront. **If Magento cron is not running the policy is never
-  warmed at all** and the form shows contact fields only, forever — the same degraded state
-  as an outage, but permanent, so check `bin/magento cron:run` on a new install.
-- **The form degrades rather than breaks with no policy** — a TackQuote outage, or a cache
-  flush that cron has not yet caught up with, drops the company step and the seller's custom
+  that long to reach the storefront. **If Magento cron is not running** the storefront still
+  fetches the policy when its cache is cold, but nothing refreshes it within the hour, so
+  check `bin/magento cron:run` on a new install.
+- **The form degrades rather than breaks with no policy** — a TackQuote outage drops the
+  company step and the seller's custom
   questions and leaves contact fields only. That still produces a usable quote request, and
   TackQuote re-checks its own policy server-side on submit, so a required company detail is
   refused there rather than silently accepted.
@@ -1276,6 +1324,7 @@ vendor/bin/phpcs                     # picks up ./phpcs.xml -> the Magento2 stan
 scripts/check-standards.sh           # the same, failing on ANY error or warning (severity 1)
 vendor/bin/phpunit -c Test/Unit/phpunit.xml
 node Test/Js/cart-seed.test.js       # the cart-page mapper; plain Node, no dependencies
+node Test/Js/buyer-prefill.test.js   # the signed-in prefill's one-time section reload
 ```
 
 The module is held to the Magento coding standard with **zero errors and zero warnings**;
@@ -1606,6 +1655,7 @@ magento-extension/                              (repository root)
 │   ├── web/js/quote-app.js                     RequireJS component: list, drawer, form,
 │   │                                           quote page, cart copy, attachments
 │   ├── web/js/cart-seed.js                     Cart items -> quote-list rows (pure; Test/Js)
+│   ├── web/js/buyer-prefill.js                 When to reload the prefill section (Test/Js)
 │   ├── web/js/b2b-display.js                   Fills the B2B placeholder (text only)
 │   └── web/css/source/_module.less             Storefront styles (LESS, theme variables)
 └── view/adminhtml/

@@ -1,10 +1,11 @@
 <?php
 /**
- * The cron job is the only thing that puts the server's capability list in cache for the
- * page render (Block\QuoteList reads it from cache only).
+ * The cron job keeps the server's capability list warm for every active, configured store view
+ * (attachments, target prices and the `customerIdentity` the wholesale and net-terms requests
+ * need), so the storefront rarely has to ask on its own.
  *
  * Mutations (applied, red, restored):
- *   W1  drop the attachment-switch check -> testOnlyActiveStoresWithAttachmentsOnAreWarmed
+ *   W1  drop the configured check -> testOnlyActiveConfiguredStoresAreWarmed
  *   W2  drop the try/catch -> testOneFailingStoreDoesNotStopTheOthersAndIsLogged
  *
  * @package TackQuote_Quotes
@@ -20,7 +21,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use TackQuote\Quotes\Cron\WarmServerCapabilities;
-use TackQuote\Quotes\Model\QuoteRequestConfig;
+use TackQuote\Quotes\Model\Config;
 use TackQuote\Quotes\Model\ServerCapabilities;
 
 /**
@@ -31,7 +32,7 @@ class WarmServerCapabilitiesTest extends TestCase
     /** @var StoreManagerInterface&MockObject */
     private $storeManager;
 
-    /** @var QuoteRequestConfig&MockObject */
+    /** @var Config&MockObject */
     private $config;
 
     /** @var ServerCapabilities&MockObject */
@@ -43,7 +44,7 @@ class WarmServerCapabilitiesTest extends TestCase
     protected function setUp(): void
     {
         $this->storeManager = $this->createMock(StoreManagerInterface::class);
-        $this->config = $this->createMock(QuoteRequestConfig::class);
+        $this->config = $this->createMock(Config::class);
         $this->capabilities = $this->createMock(ServerCapabilities::class);
         $this->logger = $this->createMock(LoggerInterface::class);
     }
@@ -68,10 +69,10 @@ class WarmServerCapabilitiesTest extends TestCase
         return new WarmServerCapabilities($this->storeManager, $this->config, $this->capabilities, $this->logger);
     }
 
-    public function testOnlyActiveStoresWithAttachmentsOnAreWarmed(): void
+    public function testOnlyActiveConfiguredStoresAreWarmed(): void
     {
         $this->stores([1 => true, 2 => false, 3 => true]);
-        $this->config->method('isAttachmentsSwitchOn')->willReturnCallback(static function ($storeId) {
+        $this->config->method('isConfigured')->willReturnCallback(static function ($storeId) {
             return $storeId !== 3;
         });
         $warmed = [];
@@ -89,7 +90,7 @@ class WarmServerCapabilitiesTest extends TestCase
     public function testOneFailingStoreDoesNotStopTheOthersAndIsLogged(): void
     {
         $this->stores([1 => true, 2 => true]);
-        $this->config->method('isAttachmentsSwitchOn')->willReturn(true);
+        $this->config->method('isConfigured')->willReturn(true);
         $warmed = [];
         $this->capabilities->method('refresh')->willReturnCallback(static function ($storeId) use (&$warmed) {
             if ($storeId === 1) {

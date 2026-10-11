@@ -1,12 +1,14 @@
 <?php
 /**
- * Keeps the TackQuote server's capability list in cache so no page render has to ping.
+ * Keeps the TackQuote server's capability list in cache so a page render does not have to ping.
  *
- * Block\QuoteList decides whether to render the attachment control from
- * Model\ServerCapabilities::getCached(); this job is what puts the list there. Same schedule
- * and same per-store-view loop as Cron\WarmRegistrationConfig, and only for store views that
- * have the attachment switch on: a store that never offers files never pings for them (target
- * prices are checked by the submit controller itself, where the shopper already waits).
+ * The list decides the attachment control (Block\QuoteList), whether target prices travel
+ * (Controller\Quote\Submit) and whether the Magento customer id is sent with wholesale and
+ * net-terms requests (Model\Forms\IdentityResolver, `customerIdentity`). So every active store
+ * view with TackQuote configured is warmed, not only those with attachments on: a store without
+ * files still needs the identity. Model\ServerCapabilities asks on its own when the cache is
+ * cold; this job keeps it from going cold and is what turns a failed ping into a WARNING in
+ * system.log and the "last check failed" line on the Overview (ServerCapabilities::refresh()).
  *
  * @package TackQuote_Quotes
  */
@@ -17,7 +19,7 @@ namespace TackQuote\Quotes\Cron;
 
 use Magento\Store\Model\StoreManagerInterface;
 use Psr\Log\LoggerInterface;
-use TackQuote\Quotes\Model\QuoteRequestConfig;
+use TackQuote\Quotes\Model\Config;
 use TackQuote\Quotes\Model\ServerCapabilities;
 
 class WarmServerCapabilities
@@ -28,9 +30,9 @@ class WarmServerCapabilities
     private $storeManager;
 
     /**
-     * @var QuoteRequestConfig
+     * @var Config
      */
-    private $quoteRequestConfig;
+    private $config;
 
     /**
      * @var ServerCapabilities
@@ -44,24 +46,24 @@ class WarmServerCapabilities
 
     /**
      * @param StoreManagerInterface $storeManager
-     * @param QuoteRequestConfig $quoteRequestConfig
+     * @param Config $config
      * @param ServerCapabilities $capabilities
      * @param LoggerInterface $logger
      */
     public function __construct(
         StoreManagerInterface $storeManager,
-        QuoteRequestConfig $quoteRequestConfig,
+        Config $config,
         ServerCapabilities $capabilities,
         LoggerInterface $logger
     ) {
         $this->storeManager = $storeManager;
-        $this->quoteRequestConfig = $quoteRequestConfig;
+        $this->config = $config;
         $this->capabilities = $capabilities;
         $this->logger = $logger;
     }
 
     /**
-     * Refresh the list for every active store view with attachments switched on.
+     * Refresh the list for every active store view with TackQuote configured.
      *
      * @return void
      */
@@ -69,7 +71,7 @@ class WarmServerCapabilities
     {
         foreach ($this->storeManager->getStores() as $store) {
             $storeId = (int) $store->getId();
-            if (!$store->getIsActive() || !$this->quoteRequestConfig->isAttachmentsSwitchOn($storeId)) {
+            if (!$store->getIsActive() || !$this->config->isConfigured($storeId)) {
                 continue;
             }
 

@@ -29,7 +29,8 @@ scripts/check-standards.sh [path/to/phpcs]     # the ratchet: fails on ANY findi
 vendor/bin/phpcs --severity=1                  # the same scan, report only
 php -l <file>                                  # syntax, on the lowest supported PHP (8.1/8.2)
 vendor/bin/phpunit -c Test/Unit/phpunit.xml    # unit suite (needs Magento's test bootstrap)
-node Test/Js/cart-seed.test.js                 # the one browser-side unit test
+node Test/Js/cart-seed.test.js                 # browser-side unit tests (plain Node)
+node Test/Js/buyer-prefill.test.js
 ```
 
 `scripts/check-standards.sh` runs phpcs through `phpcs.xml` with `--severity=1` (warnings of

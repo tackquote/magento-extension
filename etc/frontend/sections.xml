@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<!--
+  Private customer data for the storefront (Magento customer-data sections).
+
+  `tackquote-buyer` (Model\CustomerData\BuyerDetails) prefills the quote form's "Your details"
+  with the signed-in customer's name, email and default billing telephone. Magento_Customer's
+  own sections.xml already drops every section (`*`) on login, logout, account create and
+  account edit; an address save or delete changes the telephone, so those drop it too.
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Customer:etc/sections.xsd">
+    <action name="customer/address/formPost">
+        <section name="tackquote-buyer"/>
+    </action>
+    <action name="customer/address/delete">
+        <section name="tackquote-buyer"/>
+    </action>
+</config>

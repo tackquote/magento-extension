@@ -116,6 +116,37 @@ class OverviewTest extends TestCase
         self::assertSame(['quote_checkout'], array_column($overview->getOrdersRows(), 'group'));
     }
 
+    /**
+     * The rows that depend on the server's capability list carry `server` (the template then
+     * shows the server-check note beside them; devstore Q/A finding #2). Mutation (applied, red,
+     * restored): drop the flag from the Attachments row -> this test.
+     */
+    public function testTheRowsThatNeedTheServerSayWhichTheyAre(): void
+    {
+        $overview = $this->overview([]);
+        $flags = static function (array $rows): array {
+            $out = [];
+            foreach ($rows as $row) {
+                $out[$row['label']] = $row['server'] ?? false;
+            }
+
+            return $out;
+        };
+
+        $storefront = $flags($overview->getStorefrontRows());
+        self::assertSame(['Target price per product', 'Attachments'], array_keys(array_filter($storefront)));
+        self::assertSame(
+            ['"Wholesale account" tab', '"Net terms" tab', 'Pay on net terms at checkout'],
+            array_keys(array_filter($flags($overview->getFormsRows())))
+        );
+
+        $template = (string) file_get_contents(dirname(__DIR__, 4) . '/view/adminhtml/templates/dashboard.phtml');
+        self::assertStringContainsString(
+            "!empty(\$row['server']) && \$row['on'] === true && \$serverNote !== ''",
+            $template
+        );
+    }
+
     public function testAGroupLinkOpensThatGroupExpanded(): void
     {
         $urls = [];

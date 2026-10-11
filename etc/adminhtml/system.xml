@@ -139,7 +139,10 @@
                         TackQuote keep Magento's prices. This changes what is displayed; it
                         does not remove prices from the product data feeds, REST or GraphQL.
                         Products that are quote-only on their own (the product's "Quote only
-                        (TackQuote)" setting) keep their price and show "Available on quote".</comment>
+                        (TackQuote)" setting) keep their price and show "Available on quote".
+                        The cart, mini-cart and checkout always show prices and totals, on
+                        purpose and as in the WooCommerce plugin: a line already in a cart is
+                        charged what the cart says, so the cart must say it.</comment>
                     <depends>
                         <field id="enabled">1</field>
                     </depends>

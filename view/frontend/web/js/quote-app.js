@@ -28,8 +28,9 @@ define([
     'Magento_Ui/js/modal/modal',
     'Magento_Customer/js/customer-data',
     'mage/translate',
-    'TackQuote_Quotes/js/cart-seed'
-], function ($, _, modal, customerData, $t, cartSeed) {
+    'TackQuote_Quotes/js/cart-seed',
+    'TackQuote_Quotes/js/buyer-prefill'
+], function ($, _, modal, customerData, $t, cartSeed, buyerPrefill) {
     'use strict';
 
     var STORAGE_KEY = 'tack_quote_list',
@@ -566,21 +567,51 @@ define([
             return valid;
         }
 
-        function prefillFromCustomer() {
-            var customer = customerData.get('customer')();
+        /**
+         * Fill an empty field, never overwriting what the shopper typed.
+         *
+         * @param {String} name
+         * @param {*} value
+         */
+        function fillIfEmpty(name, value) {
+            var $field = $form.find('[name="' + name + '"]');
 
-            if (!customer || !customer.firstname) {
-                return;
-            }
-
-            if (!$form.find('[name="firstName"]').val()) {
-                $form.find('[name="firstName"]').val(customer.firstname);
-            }
-
-            if (customer.lastname && !$form.find('[name="lastName"]').val()) {
-                $form.find('[name="lastName"]').val(customer.lastname);
+            if (typeof value === 'string' && value !== '' && !$field.val()) {
+                $field.val(value);
             }
         }
+
+        /**
+         * "Your details" for a signed-in customer: name, account email and default billing
+         * telephone from the `tackquote-buyer` customer-data section (Model\CustomerData\
+         * BuyerDetails), never from the full-page-cached HTML and never from TackQuote. The
+         * email is the account's and is read-only, as in the WooCommerce plugin: the submit
+         * controller uses the account email for a signed-in customer whatever is posted.
+         * A guest's section is empty, so the fields stay as they are and the email editable.
+         *
+         * Applied through buyer-prefill.js, which also asks for the section once per page when
+         * a shopper who was signed in before the section existed has never loaded it.
+         *
+         * @param {Object} buyer The `tackquote-buyer` section.
+         * @param {Object} customer Magento's own `customer` section.
+         */
+        function applyBuyerDetails(buyer, customer) {
+            var $email = $form.find('[name="email"]'),
+                signedIn = typeof buyer.email === 'string' && buyer.email !== '';
+
+            fillIfEmpty('firstName', buyer.firstname || customer.firstname);
+            fillIfEmpty('lastName', buyer.lastname);
+            fillIfEmpty('phone', buyer.telephone);
+
+            if (signedIn) {
+                $email.val(buyer.email).prop('readOnly', true).attr('aria-readonly', 'true');
+            } else if ($email.prop('readOnly')) {
+                $email.prop('readOnly', false).removeAttr('aria-readonly').val('');
+            }
+        }
+
+        /** One runner per page, so the one-time section reload happens at most once. */
+        var prefillFromCustomer = buyerPrefill(customerData, applyBuyerDetails);
 
         /**
          * Render the review step from whatever is being quoted, so the shopper confirms the
