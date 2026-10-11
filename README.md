@@ -309,7 +309,7 @@ before it.
 | Product (Catalog > Products) | **Quote only (TackQuote)** | Yes/No product attribute, default No. One product quote-only for everyone. |
 | B2B pricing: what signed-in customers see | **Show account price** | Off by default. "Your account price" for a signed-in customer. Display only. |
 | B2B pricing: what signed-in customers see | **Show volume pricing table** | Off by default. The customer's quantity breaks. Display only. |
-| B2B pricing: what signed-in customers see | **Show order limits notice** | Off by default. "Order between X and Y units". Not enforced in the cart yet. |
+| B2B pricing: what signed-in customers see | **Show order limits notice** | Off by default. "Order between X and Y units". The limits are also enforced on add to cart, cart save and order submit when **Enforce order limits** (B2B checkout) is on. |
 | B2B pricing: what signed-in customers see | **Show buyer group badge** | Off by default. The customer's TackQuote buyer group. |
 | B2B pricing: what signed-in customers see | **Only for these customer groups** | Empty = every signed-in customer. See *B2B display* below. |
 | Buyer groups: rules for signed-in customers | **Only for these customer groups** | Empty = ask about every signed-in customer. Others count as `@GUESTS`. See *Buyer group rules*. |
@@ -1444,8 +1444,9 @@ GitHub release.
    sign in to TackQuote and approve: the key is saved for you. Or paste a TackQuote
    **API Key**, generated in TackQuote under Settings → Developer → API
    Keys (or the "Inbound API key" section of Settings → Integrations → Magento in the
-   seller portal). The key needs the `quotes:write` scope — that is the only scope this
-   module's endpoints enforce, so do not grant it more.
+   seller portal). The key needs the `quotes:write` scope for quote requests and the
+   `buyers:write` scope for the Wholesale account and Net terms applications; Connect with
+   TackQuote mints a key with exactly those two. Grant nothing more.
 5. Click **Test connection** on that same screen (or on TackQuote → Overview) to confirm
    the key and base URL.
 6. Under **Storefront: quote buttons**, enable **Show quote button on product pages** and/or
