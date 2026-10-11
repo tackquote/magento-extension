@@ -49,6 +49,18 @@ class Config
     private const XML_PATH_B2B_PREFIX = 'tackquote_quotes/b2b/';
     private const XML_PATH_B2B_GROUPS = 'tackquote_quotes/b2b/customer_groups';
 
+    // B2B checkout enforcement (cart and checkout charge the account price; order limits are
+    // refused). Both default to 0 in etc/config.xml.
+    private const XML_PATH_ENFORCE_PRICES = 'tackquote_quotes/b2b_checkout/enforce_prices';
+    private const XML_PATH_ENFORCE_ORDER_LIMITS = 'tackquote_quotes/b2b_checkout/enforce_order_limits';
+
+    /**
+     * Magento's own "Catalog Prices: Including Tax" setting. The same path as
+     * Magento\Tax\Model\Config::CONFIG_XML_PATH_PRICE_INCLUDES_TAX (Tax/Model/Config.php:37),
+     * read here so the module does not take a dependency on Magento_Tax for one flag.
+     */
+    private const XML_PATH_PRICE_INCLUDES_TAX = 'tax/calculation/price_includes_tax';
+
     /** "Your account price", with the store's own price struck through. */
     public const B2B_ACCOUNT_PRICE = 'enable_account_price';
     /** The quantity-break ("volume pricing") table. */
@@ -586,5 +598,75 @@ class Config
         return preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/', $value) === 1
             ? $value
             : '';
+    }
+
+    /**
+     * The merchant's "Charge account prices in the cart" switch, as stored (raw, for the
+     * admin dashboard). Whether the cart actually charges them is
+     * Model\Enforce\PriceEnforcementSwitch::isOn(), which also requires a working
+     * connection and a net-price catalog.
+     *
+     * @param int|null $storeId
+     * @return bool
+     */
+    public function isEnforcePricesSwitchOn(?int $storeId = null): bool
+    {
+        return (bool) $this->scopeConfig->isSetFlag(
+            self::XML_PATH_ENFORCE_PRICES,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
+    }
+
+    /**
+     * The price-enforcement switch AND a working connection.
+     *
+     * @param int|null $storeId
+     * @return bool
+     */
+    public function isEnforcePricesEnabled(?int $storeId = null): bool
+    {
+        return $this->isConfigured($storeId) && $this->isEnforcePricesSwitchOn($storeId);
+    }
+
+    /**
+     * The merchant's "Enforce order limits" switch, as stored (raw, for the admin dashboard).
+     *
+     * @param int|null $storeId
+     * @return bool
+     */
+    public function isEnforceOrderLimitsSwitchOn(?int $storeId = null): bool
+    {
+        return (bool) $this->scopeConfig->isSetFlag(
+            self::XML_PATH_ENFORCE_ORDER_LIMITS,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
+    }
+
+    /**
+     * The order-limit switch AND a working connection.
+     *
+     * @param int|null $storeId
+     * @return bool
+     */
+    public function isEnforceOrderLimitsEnabled(?int $storeId = null): bool
+    {
+        return $this->isConfigured($storeId) && $this->isEnforceOrderLimitsSwitchOn($storeId);
+    }
+
+    /**
+     * Whether catalog prices are entered INCLUDING tax (Magento's tax setting, not ours).
+     *
+     * @param int|null $storeId
+     * @return bool
+     */
+    public function catalogPricesIncludeTax(?int $storeId = null): bool
+    {
+        return (bool) $this->scopeConfig->isSetFlag(
+            self::XML_PATH_PRICE_INCLUDES_TAX,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
     }
 }

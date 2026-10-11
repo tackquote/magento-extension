@@ -245,9 +245,9 @@ seller JWT:
 | `POST /v1/storefront-connect/magento/requests` | no key | Connect with TackQuote: open a connect request (server to server). |
 | `POST /v1/storefront-connect/magento/exchange` | no key | Connect with TackQuote: redeem the one-time code with the PKCE verifier for the API key. |
 | `POST /v1/integrations/magento/plugin-key/revoke` | none | Disconnect: revokes the key the request presents, and only that key. |
-| `GET /v1/storefront/v1/wholesale-price` | none | B2B display: the signed-in customer's account price for one SKU. |
+| `GET /v1/storefront/v1/wholesale-price` | none | B2B display: the signed-in customer's account price for one SKU. B2B checkout: confirms the account's currency is the cart's (one read, cached 10 minutes). |
 | `GET /v1/storefront/v1/quantity-breaks` | none | B2B display: the customer's quantity-break ladder for one SKU. |
-| `GET /v1/storefront/v1/order-limits` | none | B2B display: quantity limits for one SKU. |
+| `GET /v1/storefront/v1/order-limits` | none | B2B display: quantity limits for one SKU. B2B checkout: the limits it enforces. |
 | `GET /v1/storefront/v1/buyer-group` | none | B2B display: the customer's buyer group. |
 | `GET /v1/storefront/v1/price-access` | none | Quote-only *Everyone except approved wholesale accounts*: is this signed-in customer's wholesale application approved? |
 | `GET /v1/storefront/v1/wholesale-signup[/<slug>]` | none | Wholesale account tab / CMS block: the seller's application form (`Model/Forms/AccountApiClient.php`). |
@@ -256,6 +256,7 @@ seller JWT:
 | `GET /v1/storefront/v1/wholesale-application` | none | The customer's own application state (none, pending, approved, declined). |
 | `POST /v1/storefront/v1/credit-application` | `buyers:write` | The net terms application. |
 | `GET /v1/storefront/v1/net-terms` | none | The customer's net terms standing, for the Net terms tab and "Pay on net terms". |
+| `POST /v1/storefront-pricing/resolve` | none | B2B checkout: the account price of every cart line at its quantity, one request for up to 50 lines, `X-Api-Key` only (`apps/api/src/modules/pricing-rules/storefront-pricing.controller.ts`). |
 
 The five `/storefront/v1` reads are TackQuote's platform-neutral storefront API
 (`apps/api/src/modules/storefront-api/storefront-v1.controller.ts`), called by
@@ -591,12 +592,12 @@ is off by default** (`etc/config.xml`):
 | Show order limits notice | "Order between X and Y units of this product." (or the minimum or maximum alone) | `order-limits` |
 | Show buyer group badge | The name of the customer's TackQuote buyer group | `buyer-group` |
 
-**Display only.** Nothing here changes what the Magento cart or checkout charges: the cart
-still uses Magento's own prices and does not enforce the order limit. Cart enforcement is a
-separate, later change. Turn the price switches on only if you honour the account price
-another way (for example by quote). Wherever an account price or volume table is shown, the
-shopper also sees: "Your account prices are shown here; the cart and checkout use the
-store's prices for now."
+**Display only.** Nothing in this group changes what the Magento cart or checkout charges.
+The cart charges account prices and enforces order limits only when the separate *B2B
+Checkout* switches are on (see *B2B checkout* below). While *Charge account prices in the
+cart* is off, wherever an account price or volume table is shown the shopper also sees:
+"Your account prices are shown here; the cart and checkout use the store's prices for now."
+That line disappears once the cart charges account prices.
 
 ### How it stays out of the page cache
 
@@ -697,6 +698,73 @@ method and shows the application form, never a status. Applications are limited 
 limits. UNVERIFIED on a live store: the navigation links (`customer_account.xml`), the
 checkout renderer, and the order payment carrying `po_number` from the quote.
 
+## B2B checkout (signed-in customers)
+
+**Stores > Configuration > TackQuote > TackQuote Settings > B2B Checkout (signed-in
+customers).** Makes the cart and checkout follow TackQuote, as the WooCommerce plugin does
+(`class-tack-wholesale-pricing.php` `apply_cart_prices`, `class-tack-b2b-notices.php`). Two
+switches, **both off by default**:
+
+| switch | does | TackQuote route |
+|---|---|---|
+| Charge account prices in the cart | Each cart line is charged the customer's account price at that line's quantity | `POST /storefront-pricing/resolve`, plus one `wholesale-price` read for the currency |
+| Enforce order limits | Refuses adding, changing a quantity or placing an order that breaks a product's minimum or maximum quantity; order total limits at order placement | `order-limits` |
+
+**Who.** A signed-in customer who owns the cart, inside the *Only for these customer groups*
+filter of *B2B Display*. Guests, the admin order editor and API integration tokens (TackQuote's
+own quote conversion included) are never affected (`Model/Enforce/Eligibility.php`; the plugins
+are declared in `etc/frontend/di.xml` and the three Web API areas only).
+
+### Account prices
+
+- **What is charged.** Only a price from the customer's price book, for a buyer TackQuote
+  matched by email (`source: price_book` and `buyerMatched: true`), in the cart's currency.
+  A catalogue list price, a pricing-rule price, an unpriced SKU or a price in another currency
+  keeps Magento's price. The resolve answer names no currency, so the account's currency is
+  confirmed once with the `wholesale-price` read the product page uses, asked in the cart's
+  currency. Nothing is ever converted.
+- **How.** The quote item's custom price (`custom_price` and `original_custom_price`), set
+  before every totals collection (a `before` plugin on `Quote::collectTotals()`), so it holds
+  on the cart page, the mini cart, REST and GraphQL cart totals, the checkout's
+  `payment-information` call and a reorder. Not `setIsSuperMode(true)`: on the quote that
+  switches stock validation off. A line this module priced carries
+  `{"tackquote_account_price": <price>}` in the quote item's `additional_data`, which is
+  copied to the order line; only such a line is ever re-priced or reset.
+- **At order placement** TackQuote is asked again, bypassing every cache
+  (`Plugin/Quote/AccountPriceSubmitPlugin.php`, a `before` plugin on
+  `QuoteManagement::submit()`), and the totals are recollected if any price changed, so a
+  cached price is never charged. If TackQuote cannot be reached or its answer cannot be used,
+  every line goes back to the store's price, the order is placed, and the order carries the
+  note "TackQuote account price could not be confirmed; store price charged."
+- **Which lines.** Simple, virtual and downloadable products (a grouped product's lines are
+  its simple products). Not configurable or bundle lines, whose product page shows no account
+  price either, not a fractional quantity, and not a product that is quote-only by its own
+  flag. Where *Price on request* hides prices from the customer, nothing is charged.
+- **Tax.** TackQuote prices are net. With *Catalog Prices: Including Tax*, the cart keeps
+  Magento's prices and the product page keeps its "for now" line.
+- **Caching.** One request per cart change: the answer is cached for 60 seconds per store,
+  customer, email, currency and every line's SKU and quantity (a hash, so no email address in
+  a cache id). The currency verdict is cached for 10 minutes per store view and currency and
+  cleared when the settings are saved. A failure is retried after 30 seconds; an HTTP 429
+  pauses the store for 60 seconds.
+- **Carts over 50 lines.** The first 50 lines are priced; the rest keep the store's price and
+  the order carries the note.
+
+### Order limits
+
+- **Which.** The quantity bound the product page's notice states (the first `product_qty` or
+  `per_product_qty` rule with a minimum or maximum) and, when the order is placed, every
+  `order_total` rule in the cart's currency or with no currency, compared with the order's
+  grand total. TackQuote sends no quantity step, so none is enforced.
+- **When.** Adding to the cart (`Quote::addProduct()`), the cart page's update and the mini
+  cart's quantity change (`Cart::updateItems()`), the Web API's quantity change
+  (`CartItemRepositoryInterface::save()`), and order placement (`QuoteManagement::submit()`,
+  which catches every other path). Quantities are summed per SKU across the cart's lines.
+- **Wording.** "<Product>: <the notice's own sentence> You have <n> in your cart.", for
+  example "Widget: Order between 5 and 50 units of this product. You have 60 in your cart."
+- **Failure refuses nothing**: if TackQuote cannot be reached, the cart is not limited
+  (the WooCommerce plugin's rule). Answers are cached for 60 seconds per customer and SKU.
+
 ## Known limitations
 
 - **The cart-page button copies, it does not link.** "Request a quote for your cart" copies
@@ -759,9 +827,19 @@ checkout renderer, and the order payment carrying `po_number` from the quote.
   inline blocks on a Luma product page, including the RequireJS base-URL config, which takes
   the whole storefront's JavaScript down. That is a core limitation, not this module's, but
   it means a merchant cannot yet run the storefront with inline scripts fully disabled.
-- **B2B display is display only.** The account price and volume table are not charged in
-  the Magento cart, and the order-limit notice is not enforced there. Cart and checkout
-  enforcement is a later change.
+- **B2B checkout charges price-book prices only.** TackQuote's batched resolve route does not
+  say whether a pricing-rule price is the account's own, so such a price is shown on the
+  product page but the cart keeps Magento's price. Needs `accountSpecific` and `currency` on
+  that route (a TackQuote change).
+- **B2B checkout and multishipping.** "Check Out with Multiple Addresses" places its orders
+  without `QuoteManagement::submit()`, so they are charged the cart's prices (at most 60
+  seconds old) without the fresh re-check, and order limits are not checked there.
+- **B2B checkout: a changed price at placement is charged without a second review.** If
+  TackQuote's answer changes between the cart and placement, the new price is charged. For
+  payment flows that approve an amount before placement (PayPal Express review) the placed
+  total can then differ from the approved one. UNVERIFIED on a store.
+- **B2B checkout: GraphQL `updateCartItems`** changes a quantity without the cart-item
+  repository, so an order-limit breach there is refused only when the order is placed.
 - **B2B display is product-page only.** Category and search listings show Magento's prices.
 - **B2B display and the customer's email.** TackQuote matches the buyer by email address,
   which Magento does not verify on its own. Use *Only for these customer groups* (see
@@ -967,7 +1045,7 @@ magento-extension/                              (repository root)
 ├── i18n/en_US.csv                              Translation source strings
 │                                               (regenerate with i18n:collect-phrases)
 ├── etc/module.xml                              Module declaration + sequence
-├── etc/config.xml                              Defaults: B2B display + price-on-request off
+├── etc/config.xml                              Defaults: B2B display, B2B checkout, price-on-request off
 ├── etc/acl.xml                                 Admin ACL: dashboard tree, connect, config resource
 ├── etc/crontab.xml                             Warms the registration policy every 5 min
 ├── etc/adminhtml/events.xml                    Flush the policy when settings are saved
@@ -977,6 +1055,7 @@ magento-extension/                              (repository root)
 ├── etc/frontend/routes.xml                     Storefront route tackquote/*
 ├── etc/di.xml                                  Global: the always-exempt fallback visitor, and
 │                                               the "Pay on net terms" facade + checkout config
+├── etc/events.xml                              Global: the B2B checkout order note
 ├── etc/frontend/di.xml                         QUOTE-ONLY GUARDS — frontend area only,
 │                                               which is what keeps the admin exempt
 ├── etc/webapi_rest/di.xml                      Quote-only cart + order guards for REST
@@ -997,6 +1076,13 @@ magento-extension/                              (repository root)
 ├── Model/Connect/KeyStore.php                  Saves the key encrypted at the default scope, clears it
 ├── Model/Connect/Pkce.php                      RFC 7636 verifier, state, S256 challenge
 ├── Model/Connect/StoreInfo.php                 What the start request says about this store
+├── Model/Enforce/Eligibility.php               B2B checkout: whose cart, as which buyer
+├── Model/Enforce/PriceEnforcementSwitch.php    "Does the cart charge account prices here?"
+├── Model/Enforce/AnswerMapper.php              Resolve / currency / order-total answers, fail closed
+├── Model/Enforce/PriceResolver.php             One batched resolve per cart, cache, fresh at submit
+├── Model/Enforce/CustomPriceApplier.php        Sets and resets the lines' custom prices
+├── Model/Enforce/OrderLimitProvider.php        order-limits per SKU, cached, fails open
+├── Model/Enforce/OrderLimitChecker.php         Min/max per SKU, order total at submit
 ├── Model/RegistrationConfigProvider.php        Fetches + caches the seller's policy
 ├── Model/ProductQuoteResolver.php              Server-side SKU -> priced line item
 ├── Model/ProductOptionRequirement.php          "Does this product need a selection first?"
@@ -1040,6 +1126,13 @@ magento-extension/                              (repository root)
 ├── Plugin/Quote/QuoteOnlySubmitGuard.php       Refuses order placement (QuoteManagement::submit)
 ├── Plugin/Quote/QuoteOnlyCartItemRepositoryGuard.php  API: no quantity increase on a line
 ├── Plugin/Pricing/QuoteOnlyPriceRender.php     "Price on request" / "Available on quote"
+├── Plugin/Quote/AccountPriceTotalsPlugin.php   Account prices before Quote::collectTotals()
+├── Plugin/Quote/AccountPriceSubmitPlugin.php   Fresh account prices at QuoteManagement::submit()
+├── Plugin/Quote/OrderLimitCartGuard.php        Order limits on Quote::addProduct()
+├── Plugin/Quote/OrderLimitCartItemRepositoryGuard.php  … on an API quantity change
+├── Plugin/Checkout/OrderLimitUpdateItemsGuard.php  … on the cart page's update
+├── Plugin/Quote/OrderLimitSubmitGuard.php      … and at QuoteManagement::submit()
+├── Observer/AccountPriceOrderComment.php       Order note when account prices were not confirmed
 ├── Plugin/PageCache/WholesaleApprovalContext.php  Page-cache vary value for approved buyers
 ├── Observer/QuoteOnlyMultishippingGuard.php    Refuses the multishipping route
 ├── Observer/QuoteOnlyLayoutHandle.php          Adds the quote-only layout handles
@@ -1110,6 +1203,19 @@ magento-extension/                              (repository root)
   TackQuote server that lists `customerIdentity` in `ping`. New phrases are at the end of
   `i18n/en_US.csv`. New unit tests under `Test/Unit/Model/Forms/`, `Test/Unit/Model/Payment/`
   and `Test/Unit/Setup/`.
+- **B2B checkout for signed-in customers** (off by default; new group *B2B Checkout*, two
+  switches). *Charge account prices in the cart*: each cart line is charged the customer's
+  TackQuote price-book price at its quantity, resolved for the whole cart in one request,
+  only in the cart's currency, and resolved again when the order is placed; if TackQuote
+  cannot confirm it, the store's price is charged and the order notes it. Not applied when
+  catalog prices include tax. *Enforce order limits*: adding to the cart, changing a quantity
+  and placing an order are refused when they break the minimum or maximum quantity the product
+  page states, and orders below or above an order total limit are refused. Both work on the
+  storefront, REST, SOAP and GraphQL; guests, the admin and integrations are unaffected. The
+  product page's "for now" line disappears once the cart charges account prices, and the
+  Dashboard's *B2B features* card shows the two switches. New phrases are at the end of
+  `i18n/en_US.csv`. New unit tests under `Test/Unit/Model/Enforce/`, `Test/Unit/Plugin/`,
+  `Test/Unit/Observer/` and `Test/Unit/Layout/CheckoutEnforcementDeclarationsTest.php`.
 - **Quote page, cart-page button, target prices and attachments** (all off by default; new
   group *Quote page, cart button and attachments*). A full quote page at `/tackquote/quote`
   with a link from the quote list; "Request a quote for your cart" on the cart page, which

@@ -35,6 +35,7 @@ use Magento\Catalog\Helper\Data as CatalogHelper;
 use Magento\Catalog\Model\Product;
 use Magento\Framework\Pricing\PriceCurrencyInterface;
 use Magento\Store\Api\Data\StoreInterface;
+use TackQuote\Quotes\Model\Enforce\PriceEnforcementSwitch;
 
 class Presenter
 {
@@ -60,13 +61,23 @@ class Presenter
     private $priceCurrency;
 
     /**
+     * @var PriceEnforcementSwitch
+     */
+    private $priceEnforcement;
+
+    /**
      * @param CatalogHelper $catalogHelper
      * @param PriceCurrencyInterface $priceCurrency
+     * @param PriceEnforcementSwitch $priceEnforcement
      */
-    public function __construct(CatalogHelper $catalogHelper, PriceCurrencyInterface $priceCurrency)
-    {
+    public function __construct(
+        CatalogHelper $catalogHelper,
+        PriceCurrencyInterface $priceCurrency,
+        PriceEnforcementSwitch $priceEnforcement
+    ) {
         $this->catalogHelper = $catalogHelper;
         $this->priceCurrency = $priceCurrency;
+        $this->priceEnforcement = $priceEnforcement;
     }
 
     /**
@@ -120,9 +131,12 @@ class Presenter
             ];
         }
 
-        // Display only: until the cart charges TackQuote prices, a shopper who sees one must
-        // be told plainly which price checkout uses. Shown only beside a TackQuote price.
-        if ($out['accountPrice'] !== null || $out['quantityBreaks'] !== null) {
+        // While the cart does not charge TackQuote prices, a shopper who sees one must be told
+        // plainly which price checkout uses. Shown only beside a TackQuote price, and not once
+        // the cart charges account prices (Model\Enforce\PriceEnforcementSwitch).
+        if (($out['accountPrice'] !== null || $out['quantityBreaks'] !== null)
+            && !$this->priceEnforcement->isOn((int) $store->getId())
+        ) {
             $out['cartNote'] = [
                 'text' => (string) __(
                     'Your account prices are shown here; the cart and checkout use the store\'s prices for now.'

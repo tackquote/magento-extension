@@ -96,7 +96,8 @@ class Dashboard extends Template
     }
 
     /**
-     * The four B2B display switches as the merchant set them, for the "B2B features" card.
+     * The B2B display and B2B checkout switches as the merchant set them, for the "B2B features"
+     * card.
      *
      * Raw switch state (Config::isB2bSwitchOn), like the WooCommerce Overview's card: the
      * merchant sees what they turned on even while the module cannot act on it yet, and
@@ -120,6 +121,16 @@ class Dashboard extends Template
                 'on' => $this->config->isB2bSwitchOn($feature),
             ];
         }
+
+        // B2B checkout enforcement (group `b2b_checkout`), raw switch state like the rows above.
+        $out[] = [
+            'label' => (string) __('Account prices charged in cart'),
+            'on' => $this->config->isEnforcePricesSwitchOn(),
+        ];
+        $out[] = [
+            'label' => (string) __('Order limits enforced'),
+            'on' => $this->config->isEnforceOrderLimitsSwitchOn(),
+        ];
 
         return $out;
     }
