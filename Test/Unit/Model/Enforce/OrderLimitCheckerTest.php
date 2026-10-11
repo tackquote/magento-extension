@@ -57,9 +57,11 @@ class OrderLimitCheckerTest extends TestCase
             return $this->answers[$sku] ?? null;
         });
         $priceCurrency = $this->createMock(PriceCurrencyInterface::class);
-        $priceCurrency->method('format')->willReturnCallback(static function ($amount, $includeContainer, $precision, $scope, $currency) {
-            return $currency . ' ' . number_format((float) $amount, 2);
-        });
+        $priceCurrency->method('format')->willReturnCallback(
+            static function ($amount, $includeContainer, $precision, $scope, $currency) {
+                return $currency . ' ' . number_format((float) $amount, 2);
+            }
+        );
         $presenter = new Presenter(
             $this->createMock(CatalogHelper::class),
             $priceCurrency,
@@ -83,7 +85,14 @@ class OrderLimitCheckerTest extends TestCase
             'status' => 'limited',
             'accountSpecific' => true,
             'limits' => array_merge(
-                [['limitType' => 'product_qty', 'sku' => 'A', 'min' => $min, 'max' => $max, 'currency' => null, 'message' => 'seller text']],
+                [[
+                    'limitType' => 'product_qty',
+                    'sku' => 'A',
+                    'min' => $min,
+                    'max' => $max,
+                    'currency' => null,
+                    'message' => 'seller text'
+                ]],
                 $more
             ),
         ];
@@ -222,7 +231,10 @@ class OrderLimitCheckerTest extends TestCase
     {
         // B sits below its minimum; changing A must not be refused for it.
         $this->answers['A'] = self::limited(1, 100);
-        $this->answers['B'] = ['status' => 'limited', 'limits' => [['limitType' => 'product_qty', 'min' => 10, 'max' => null]]];
+        $this->answers['B'] = [
+            'status' => 'limited',
+            'limits' => [['limitType' => 'product_qty', 'min' => 10, 'max' => null]]
+        ];
         $quote = $this->quote([$this->line(1, 'A', 2), $this->line(2, 'B', 1)]);
 
         self::assertNull($this->refusal(function () use ($quote): void {

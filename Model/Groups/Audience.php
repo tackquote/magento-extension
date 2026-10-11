@@ -137,6 +137,8 @@ class Audience
     }
 
     /**
+     * Whether the customer group is one the merchant selected (none selected means all).
+     *
      * @param int $groupId
      * @param int $storeId
      * @return bool
@@ -149,6 +151,8 @@ class Audience
     }
 
     /**
+     * Id of the current store.
+     *
      * @return int
      */
     private function storeId(): int

@@ -49,7 +49,8 @@
     }
   },
   "scripts": {
-    "lint": "phpcs --standard=Magento2 .",
+    "lint": "phpcs --severity=1",
+    "standards": "bash scripts/check-standards.sh vendor/bin/phpcs",
     "test": "phpunit --configuration Test/Unit/phpunit.xml"
   }
 }

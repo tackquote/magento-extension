@@ -67,6 +67,8 @@ class QuoteOnlyCartItemRepositoryGuard
     }
 
     /**
+     * Apply quote-only mode to a cart item saved through the Web API.
+     *
      * @param CartItemRepositoryInterface $subject
      * @param CartItemInterface $cartItem
      * @return void

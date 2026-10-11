@@ -30,7 +30,13 @@ class PayloadReaderTest extends TestCase
             'poNumber' => 'PO-9',
             'lines' => [
                 ['sku' => 'SKU-A', 'name' => 'Alpha', 'quantity' => 3, 'unitPrice' => '10.00', 'lineTotal' => '30.00'],
-                ['sku' => 'SKU-B', 'name' => '<b>Beta</b>', 'quantity' => 2, 'unitPrice' => '5.5', 'lineTotal' => '11.00'],
+                [
+                    'sku' => 'SKU-B',
+                    'name' => '<b>Beta</b>',
+                    'quantity' => 2,
+                    'unitPrice' => '5.5',
+                    'lineTotal' => '11.00'
+                ],
             ],
             'goodsTotal' => '41.00',
         ], $over);

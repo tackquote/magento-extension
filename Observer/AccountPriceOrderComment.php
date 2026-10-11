@@ -32,6 +32,8 @@ use TackQuote\Quotes\Model\Enforce\CustomPriceApplier;
 class AccountPriceOrderComment implements ObserverInterface
 {
     /**
+     * Note on the order when account prices could not be confirmed.
+     *
      * @param Observer $observer
      * @return void
      */

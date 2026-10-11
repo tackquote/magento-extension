@@ -290,6 +290,8 @@ class CartBuilder
     }
 
     /**
+     * Refuse a quote whose products cannot be bought here.
+     *
      * @param string $number
      * @param string[] $names
      * @return array{ok: bool, message: Phrase}
@@ -307,6 +309,8 @@ class CartBuilder
     }
 
     /**
+     * Build a refused result.
+     *
      * @param Phrase $message
      * @return array{ok: bool, message: Phrase}
      */

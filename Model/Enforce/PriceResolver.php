@@ -126,9 +126,9 @@ class PriceResolver
     /**
      * The chargeable unit price of each line, keyed by AnswerMapper::lineKey().
      *
-     * @param array{storeId: int, customerId: int, email: string, currency: string} $buyer
+     * @param array{storeId:int,customerId:int,email:string,currency:string} $buyer
      *        Model\Enforce\Eligibility::buyer().
-     * @param array<int, array{sku: string, quantity: int}> $lines
+     * @param array<int,array{sku:string,quantity:int}> $lines
      * @param bool $fresh Skip every cache and ask TackQuote now (the order submit).
      * @return array{prices: array<string, float>, fallback: bool}
      */
@@ -194,10 +194,12 @@ class PriceResolver
     }
 
     /**
+     * Cache id of one account price lookup.
+     *
      * The cache id for one customer, currency and set of lines. Public so the test can pin
      * what varies it; hashed because the parts include an email address.
      *
-     * @param array{storeId: int, customerId: int, email: string, currency: string} $buyer
+     * @param array{storeId:int,customerId:int,email:string,currency:string} $buyer
      * @param string[] $lineKeys Sorted AnswerMapper::lineKey() values.
      * @return string
      */
@@ -241,7 +243,7 @@ class PriceResolver
     /**
      * Is the account priced in the cart's currency? See the class docblock.
      *
-     * @param array{storeId: int, customerId: int, email: string, currency: string} $buyer
+     * @param array{storeId:int,customerId:int,email:string,currency:string} $buyer
      * @param string $sku A line the resolve answer priced.
      * @param int $quantity
      * @param bool $fresh

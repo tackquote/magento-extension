@@ -43,7 +43,8 @@
       is itself just a caller (module-checkout/Model/Cart.php:392).
     -->
     <type name="Magento\Quote\Model\Quote">
-        <!-- Accepted quote checkout link (lane MG-QUOTE-CHECKOUT-LINK): FIRST (5) on this method, see the header of Plugin\Quote\QuoteCheckoutCartGuard. -->
+        <!-- Accepted quote checkout link (lane MG-QUOTE-CHECKOUT-LINK): FIRST (5) on this method,
+             see the header of Plugin\Quote\QuoteCheckoutCartGuard. -->
         <plugin name="tackquote_quote_checkout_cart_guard"
                 type="TackQuote\Quotes\Plugin\Quote\QuoteCheckoutCartGuard"
                 sortOrder="5"/>
@@ -64,7 +65,8 @@
 
     <!-- Mutations of a cart that already existed when the mode was switched on. -->
     <type name="Magento\Checkout\Model\Cart">
-        <!-- Accepted quote checkout link (lane MG-QUOTE-CHECKOUT-LINK): FIRST (5) on this method, see the header of Plugin\Quote\QuoteCheckoutUpdateItemsLock. -->
+        <!-- Accepted quote checkout link (lane MG-QUOTE-CHECKOUT-LINK): FIRST (5) on this method,
+             see the header of Plugin\Quote\QuoteCheckoutUpdateItemsLock. -->
         <plugin name="tackquote_quote_checkout_update_items_lock"
                 type="TackQuote\Quotes\Plugin\Quote\QuoteCheckoutUpdateItemsLock"
                 sortOrder="5"/>
@@ -78,7 +80,8 @@
 
     <!-- The checkout route itself. -->
     <type name="Magento\Checkout\Controller\Index\Index">
-        <!-- Accepted quote checkout link (lane MG-QUOTE-CHECKOUT-LINK): FIRST (5) on this method, see the header of Plugin\Quote\QuoteCheckoutPageGuard. -->
+        <!-- Accepted quote checkout link (lane MG-QUOTE-CHECKOUT-LINK): FIRST (5) on this method,
+             see the header of Plugin\Quote\QuoteCheckoutPageGuard. -->
         <plugin name="tackquote_quote_checkout_page_guard"
                 type="TackQuote\Quotes\Plugin\Quote\QuoteCheckoutPageGuard"
                 sortOrder="5"/>
@@ -103,7 +106,8 @@
       Web API and GraphQL areas, where Luma's checkout and GraphQL's placeOrder run.
     -->
     <type name="Magento\Quote\Model\QuoteManagement">
-        <!-- Accepted quote checkout link (lane MG-QUOTE-CHECKOUT-LINK): FIRST (5) on this method, see the header of Plugin\Quote\QuoteCheckoutSubmitGuard. -->
+        <!-- Accepted quote checkout link (lane MG-QUOTE-CHECKOUT-LINK): FIRST (5) on this method,
+             see the header of Plugin\Quote\QuoteCheckoutSubmitGuard. -->
         <plugin name="tackquote_quote_checkout_submit_guard"
                 type="TackQuote\Quotes\Plugin\Quote\QuoteCheckoutSubmitGuard"
                 sortOrder="5"/>
@@ -153,7 +157,8 @@
       B2B CHECKOUT ENFORCEMENT (Stores > Configuration > TackQuote > B2B Checkout). Its plugins
       sit in the quote-only <type> blocks above (one block per class: Magento's di.xsd has a
       `uniqueType` constraint, and a second block for the same class fails validation in
-      developer mode), and every plugin is ordered AFTER the quote-only guard on the same method (sortOrder 20/30 > 10), so a
+      developer mode), and every plugin is ordered AFTER the quote-only guard on the same method
+      (sortOrder 20/30 > 10), so a
       cart quote-only mode refuses is never priced or limit-checked. Area-scoped for the same
       reason as everything else in this file: the admin order editor must keep its own prices.
 

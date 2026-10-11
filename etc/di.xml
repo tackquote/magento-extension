@@ -72,7 +72,8 @@
     <type name="Magento\Checkout\Model\CompositeConfigProvider">
         <arguments>
             <argument name="configProviders" xsi:type="array">
-                <item name="tackquote_net_terms_config_provider" xsi:type="object">TackQuote\Quotes\Model\Payment\NetTermsConfigProvider</item>
+                <item name="tackquote_net_terms_config_provider"
+                      xsi:type="object">TackQuote\Quotes\Model\Payment\NetTermsConfigProvider</item>
             </argument>
         </arguments>
     </type>

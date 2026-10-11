@@ -180,6 +180,8 @@ class FieldRenderer
     }
 
     /**
+     * Accepted MIME types for a file field.
+     *
      * The accepted MIME types for a file field: the field's list, kept to what this store
      * checks (PDF, JPEG, PNG), or all three.
      *
@@ -229,7 +231,9 @@ class FieldRenderer
                 . $this->escaper->escapeHtml($this->definition->addressPartLabel($part)) . '</span></label>'
                 . '<div class="control"><input type="text" id="' . $partId . '"'
                 . ' name="tack_sf[' . $this->escaper->escapeHtmlAttr($key) . '][' . $part . ']"'
-                . ' value="' . $this->escaper->escapeHtmlAttr(is_scalar($value[$part] ?? null) ? (string) $value[$part] : '') . '"'
+                . ' value="'
+                . $this->escaper->escapeHtmlAttr(is_scalar($value[$part] ?? null) ? (string) $value[$part] : '')
+                . '"'
                 . ' maxlength="200"' . ($partRequired ? ' required' : '') . '/></div></div>';
         }
 

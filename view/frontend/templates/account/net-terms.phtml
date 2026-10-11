@@ -24,16 +24,14 @@ if ($view['state'] === 'active'): ?>
                 <dd><?= $escaper->escapeHtml($block->formatMoney($view['available'], $view['currency'])) ?></dd>
             <?php endif; ?>
         </dl>
-        <p><?= $escaper->escapeHtml(
-            __('Choose "Pay on net terms" at checkout when it is offered for your order.')
-        ) ?></p>
+        <?php $checkoutNote = __('Choose "Pay on net terms" at checkout when it is offered for your order.'); ?>
+        <p><?= $escaper->escapeHtml($checkoutNote) ?></p>
     </div>
     <?php return; ?>
 <?php endif; ?>
 <?php if ($view['state'] === 'pending'): ?>
-    <div class="message info"><div><?= $escaper->escapeHtml(
-        __('Your net terms application is being reviewed.')
-    ) ?></div></div>
+    <?php $pendingNote = __('Your net terms application is being reviewed.'); ?>
+    <div class="message info"><div><?= $escaper->escapeHtml($pendingNote) ?></div></div>
     <?php return; ?>
 <?php endif; ?>
 <?php if (!$block->canApply()): ?>
@@ -85,9 +83,8 @@ if ($view['state'] === 'active'): ?>
                 <select id="tq-ct-days" name="tack_ct[requestedTermsDays]">
                     <option value=""><?= $escaper->escapeHtml(__('Please select')) ?></option>
                     <?php foreach ($block->getTermsDays() as $days): ?>
-                        <option value="<?= (int) $days ?>"><?= $escaper->escapeHtml(
-                            __('Net %1 days', $days)
-                        ) ?></option>
+                        <?php $daysLabel = __('Net %1 days', $days); ?>
+                        <option value="<?= (int) $days ?>"><?= $escaper->escapeHtml($daysLabel) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -109,7 +106,8 @@ if ($view['state'] === 'active'): ?>
     </fieldset>
     <fieldset class="fieldset">
         <legend class="legend"><span><?= $escaper->escapeHtml(__('Trade references')) ?></span></legend>
-        <?php for ($i = 0; $i < $block->getReferenceCount(); $i++): ?>
+        <?php $referenceCount = $block->getReferenceCount(); ?>
+        <?php for ($i = 0; $i < $referenceCount; $i++): ?>
             <div class="field">
                 <div class="control">
                     <input type="text" name="tack_ct[tradeReferences][<?= (int) $i ?>][companyName]" maxlength="200"

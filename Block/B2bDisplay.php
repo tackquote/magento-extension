@@ -16,8 +16,8 @@ declare(strict_types=1);
 
 namespace TackQuote\Quotes\Block;
 
+use Magento\Catalog\Helper\Data as CatalogHelper;
 use Magento\Catalog\Model\Product;
-use Magento\Framework\Registry;
 use Magento\Framework\View\Element\Template;
 use Magento\Framework\View\Element\Template\Context;
 use TackQuote\Quotes\Model\Config;
@@ -30,21 +30,23 @@ class B2bDisplay extends Template
     private $config;
 
     /**
-     * @var Registry
+     * Reads the product the page is about (Magento's `current_product`).
+     *
+     * @var CatalogHelper
      */
-    private $registry;
+    private $catalogHelper;
 
     /**
      * @param Context $context
      * @param Config $config
-     * @param Registry $registry
+     * @param CatalogHelper $catalogHelper
      * @param array $data
      */
-    public function __construct(Context $context, Config $config, Registry $registry, array $data = [])
+    public function __construct(Context $context, Config $config, CatalogHelper $catalogHelper, array $data = [])
     {
         parent::__construct($context, $data);
         $this->config = $config;
-        $this->registry = $registry;
+        $this->catalogHelper = $catalogHelper;
     }
 
     /**
@@ -64,7 +66,7 @@ class B2bDisplay extends Template
      */
     public function getProductId(): int
     {
-        $product = $this->registry->registry('current_product');
+        $product = $this->catalogHelper->getProduct();
 
         return $product instanceof Product ? (int) $product->getId() : 0;
     }

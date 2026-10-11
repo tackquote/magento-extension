@@ -69,7 +69,13 @@ class AccountApiClientTest extends TestCase
             return $curl;
         });
 
-        return new AccountApiClient($config, $factory, new Json(), $this->createMock(LoggerInterface::class), $this->createConfiguredMock(PluginHeaders::class, ['get' => []]));
+        return new AccountApiClient(
+            $config,
+            $factory,
+            new Json(),
+            $this->createMock(LoggerInterface::class),
+            $this->createConfiguredMock(PluginHeaders::class, ['get' => []])
+        );
     }
 
     private function query(string $url): array
@@ -127,7 +133,13 @@ class AccountApiClientTest extends TestCase
 
         self::assertStringStartsWith(self::API_BASE . '/storefront/v1/wholesale-upload?', $this->sent[0]['url']);
         self::assertSame(
-            ['form' => 'trade', 'field' => 'cert', 'name' => 'cert.pdf', 'buyerEmail' => 'buyer@example.test', 'buyerExternalId' => '42'],
+            [
+                'form' => 'trade',
+                'field' => 'cert',
+                'name' => 'cert.pdf',
+                'buyerEmail' => 'buyer@example.test',
+                'buyerExternalId' => '42'
+            ],
             $this->query($this->sent[0]['url'])
         );
         self::assertSame('application/octet-stream', $this->sent[0]['headers']['Content-Type']);
@@ -169,7 +181,12 @@ class AccountApiClientTest extends TestCase
     {
         $this->status = $status;
         $this->body = $body;
-        $result = $this->client()->getWholesaleApplication(new AccountIdentity(42, 'b@example.test', self::INSTALL, true));
+        $result = $this->client()->getWholesaleApplication(new AccountIdentity(
+            42,
+            'b@example.test',
+            self::INSTALL,
+            true
+        ));
 
         self::assertFalse($result['ok']);
         self::assertArrayNotHasKey('data', $result);

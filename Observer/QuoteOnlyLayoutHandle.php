@@ -92,6 +92,8 @@ class QuoteOnlyLayoutHandle implements ObserverInterface
     }
 
     /**
+     * Add the quote-only layout handles for this request.
+     *
      * @param Observer $observer
      * @return void
      */

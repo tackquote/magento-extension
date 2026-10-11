@@ -147,7 +147,10 @@ class QuoteCheckoutDeclarationsTest extends TestCase
         $removed = $events->xpath('//event[@name="sales_quote_remove_item"]/observer') ?: [];
 
         self::assertSame('TackQuote\Quotes\Observer\QuoteCheckoutOrderReport', (string) ($report[0]['instance'] ?? ''));
-        self::assertSame('TackQuote\Quotes\Observer\QuoteCheckoutLineRemoved', (string) ($removed[0]['instance'] ?? ''));
+        self::assertSame(
+            'TackQuote\Quotes\Observer\QuoteCheckoutLineRemoved',
+            (string) ($removed[0]['instance'] ?? '')
+        );
     }
 
     public function testTheLandingPageIsNotCacheable(): void

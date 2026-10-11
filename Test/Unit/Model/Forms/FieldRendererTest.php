@@ -65,18 +65,37 @@ class FieldRendererTest extends TestCase
             $r->render($this->field(['key' => 'about', 'type' => 'textarea', 'label' => 'About']))
         );
 
-        $select = $r->render($this->field(['key' => 'size', 'type' => 'select', 'label' => 'Size', 'options' => ['S', 'L']]), 'L');
+        $select = $r->render(
+            $this->field(['key' => 'size', 'type' => 'select', 'label' => 'Size', 'options' => ['S', 'L']]),
+            'L'
+        );
         self::assertStringContainsString('<select id="tq-sf-size" name="tack_sf[size]"', $select);
         self::assertStringContainsString('<option value="L" selected="selected">L</option>', $select);
 
-        $multi = $r->render($this->field(['key' => 'lines', 'type' => 'multiselect', 'label' => 'Lines', 'options' => ['A', 'B']]), ['B']);
+        $multi = $r->render(
+            $this->field(['key' => 'lines', 'type' => 'multiselect', 'label' => 'Lines', 'options' => ['A', 'B']]),
+            ['B']
+        );
         self::assertSame(2, substr_count($multi, 'name="tack_sf[lines][]"'));
         self::assertStringContainsString('value="B" checked="checked"', $multi);
 
-        $box = $r->render($this->field(['key' => 'terms', 'type' => 'checkbox', 'label' => 'Agree', 'required' => true]));
-        self::assertStringContainsString('type="checkbox" id="tq-sf-terms" name="tack_sf[terms]" value="1" required', $box);
+        $box = $r->render($this->field([
+            'key' => 'terms',
+            'type' => 'checkbox',
+            'label' => 'Agree',
+            'required' => true
+        ]));
+        self::assertStringContainsString(
+            'type="checkbox" id="tq-sf-terms" name="tack_sf[terms]" value="1" required',
+            $box
+        );
 
-        $address = $r->render($this->field(['key' => 'ship', 'type' => 'address', 'label' => 'Ship to', 'required' => true]));
+        $address = $r->render($this->field([
+            'key' => 'ship',
+            'type' => 'address',
+            'label' => 'Ship to',
+            'required' => true
+        ]));
         foreach (FormDefinition::ADDRESS_PARTS as $part) {
             self::assertStringContainsString('name="tack_sf[ship][' . $part . ']"', $address);
         }

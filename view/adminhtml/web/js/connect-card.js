@@ -33,7 +33,7 @@ define([], function () {
      * @param {HTMLElement} card
      */
     return function (config, card) {
-        card.querySelectorAll('.tq-connect__post').forEach(function (btn) {
+        card.querySelectorAll('.tq-connect-post').forEach(function (btn) {
             btn.addEventListener('click', function () {
                 var message = btn.getAttribute('data-confirm');
 
@@ -45,7 +45,7 @@ define([], function () {
             });
         });
 
-        card.querySelectorAll('form.tq-connect__disconnect').forEach(function (form) {
+        card.querySelectorAll('form.tq-connect-disconnect').forEach(function (form) {
             form.addEventListener('submit', function (event) {
                 var message = form.getAttribute('data-confirm');
 

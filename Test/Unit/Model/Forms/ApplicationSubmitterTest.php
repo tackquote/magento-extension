@@ -115,7 +115,10 @@ class ApplicationSubmitterTest extends TestCase
 
     public function testARefusedFileStopsEverythingBeforeAnyCall(): void
     {
-        $this->attachments->method('validateOne')->willReturn(['ok' => false, 'message' => 'cert.exe: attach a PDF, JPEG or PNG file.']);
+        $this->attachments->method('validateOne')->willReturn([
+            'ok' => false,
+            'message' => 'cert.exe: attach a PDF, JPEG or PNG file.'
+        ]);
         $this->client->expects($this->never())->method('uploadWholesaleFile');
         $this->client->expects($this->never())->method('submitWholesale');
 
@@ -178,9 +181,11 @@ class ApplicationSubmitterTest extends TestCase
             'error' => ['cert' => 0, 'w9' => 4],
         ];
 
-        self::assertSame(['cert'], array_keys(ApplicationSubmitter::filesByField($laminas)));
-        self::assertSame(['cert'], array_keys(ApplicationSubmitter::filesByField($php)));
-        self::assertSame([], ApplicationSubmitter::filesByField(null));
+        $submitter = $this->submitter();
+
+        self::assertSame(['cert'], array_keys($submitter->filesByField($laminas)));
+        self::assertSame(['cert'], array_keys($submitter->filesByField($php)));
+        self::assertSame([], $submitter->filesByField(null));
     }
 
     public function testACreditApplicationGoesUnderTheAccountEmailNeverAPostedOne(): void

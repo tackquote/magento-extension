@@ -123,7 +123,9 @@ class WholesalePost extends AbstractAccount implements HttpPostActionInterface
         // The LIVE form, so an answer is checked against what the seller asks today.
         $form = $this->source->get($slug, $storeId, true);
         if ($form === null) {
-            $this->messageManager->addErrorMessage(__('The application form is not available right now. Please try again later.'));
+            $this->messageManager->addErrorMessage(
+                __('The application form is not available right now. Please try again later.')
+            );
 
             return $redirect;
         }
@@ -139,7 +141,7 @@ class WholesalePost extends AbstractAccount implements HttpPostActionInterface
             $slug,
             $form,
             is_array($posted) ? $posted : [],
-            ApplicationSubmitter::filesByField($request->getFiles('tack_file')),
+            $this->submitter->filesByField($request->getFiles('tack_file')),
             $who,
             $storeId
         );

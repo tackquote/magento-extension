@@ -24,8 +24,8 @@ declare(strict_types=1);
 namespace TackQuote\Quotes\Block;
 
 use Magento\Catalog\Block\Product\Context;
+use Magento\Catalog\Helper\Data as CatalogHelper;
 use Magento\Catalog\Model\Product;
-use Magento\Framework\Registry;
 use Magento\Framework\View\Element\Template;
 use TackQuote\Quotes\Model\Config;
 use TackQuote\Quotes\Model\ProductOptionRequirement;
@@ -39,9 +39,11 @@ class RequestQuote extends Template
     private $config;
 
     /**
-     * @var Registry
+     * Reads the product the page is about (Magento's `current_product`).
+     *
+     * @var CatalogHelper
      */
-    private $registry;
+    private $catalogHelper;
 
     /**
      * @var ProductOptionRequirement
@@ -58,7 +60,7 @@ class RequestQuote extends Template
      *
      * @param Context $context
      * @param Config $config
-     * @param Registry $registry
+     * @param CatalogHelper $catalogHelper
      * @param ProductOptionRequirement $optionRequirement
      * @param QuoteOnlyMode $quoteOnlyMode
      * @param array $data
@@ -66,14 +68,14 @@ class RequestQuote extends Template
     public function __construct(
         Context $context,
         Config $config,
-        Registry $registry,
+        CatalogHelper $catalogHelper,
         ProductOptionRequirement $optionRequirement,
         QuoteOnlyMode $quoteOnlyMode,
         array $data = []
     ) {
         parent::__construct($context, $data);
         $this->config = $config;
-        $this->registry = $registry;
+        $this->catalogHelper = $catalogHelper;
         $this->optionRequirement = $optionRequirement;
         $this->quoteOnlyMode = $quoteOnlyMode;
     }
@@ -183,7 +185,7 @@ class RequestQuote extends Template
      */
     public function getCurrentProduct(): ?Product
     {
-        $product = $this->registry->registry('current_product');
+        $product = $this->catalogHelper->getProduct();
 
         return $product instanceof Product ? $product : null;
     }

@@ -76,7 +76,10 @@ class BuyerGroupWiringTest extends TestCase
             self::assertSame($subject, $plugins[$plugin] ?? null, "$plugin is not declared on $subject");
         }
         // The quote-only plugins on the same types are still there.
-        self::assertSame('Magento\Quote\Model\Quote', $plugins['TackQuote\Quotes\Plugin\Quote\QuoteOnlyCartGuard'] ?? null);
+        self::assertSame(
+            'Magento\Quote\Model\Quote',
+            $plugins['TackQuote\Quotes\Plugin\Quote\QuoteOnlyCartGuard'] ?? null
+        );
         self::assertSame(
             'Magento\Framework\App\Http\Context',
             $plugins['TackQuote\Quotes\Plugin\PageCache\WholesaleApprovalContext'] ?? null
@@ -107,10 +110,23 @@ class BuyerGroupWiringTest extends TestCase
     public function testTheApiAreasRestrictPaymentShippingTaxAndHiddenProducts(string $area): void
     {
         $plugins = $this->plugins("$area/di.xml");
-        self::assertSame('Magento\Payment\Model\MethodList', $plugins['TackQuote\Quotes\Plugin\Payment\MethodListRestriction'] ?? null);
-        self::assertSame('Magento\Shipping\Model\Shipping', $plugins['TackQuote\Quotes\Plugin\Shipping\GroupShippingRates'] ?? null);
-        self::assertSame('Magento\Quote\Model\Quote', $plugins['TackQuote\Quotes\Plugin\Tax\TaxExemptCustomerClass'] ?? null);
-        self::assertArrayNotHasKey('TackQuote\Quotes\Plugin\PageCache\BuyerGroupContext', $plugins, 'no page cache in the API');
+        self::assertSame(
+            'Magento\Payment\Model\MethodList',
+            $plugins['TackQuote\Quotes\Plugin\Payment\MethodListRestriction'] ?? null
+        );
+        self::assertSame(
+            'Magento\Shipping\Model\Shipping',
+            $plugins['TackQuote\Quotes\Plugin\Shipping\GroupShippingRates'] ?? null
+        );
+        self::assertSame(
+            'Magento\Quote\Model\Quote',
+            $plugins['TackQuote\Quotes\Plugin\Tax\TaxExemptCustomerClass'] ?? null
+        );
+        self::assertArrayNotHasKey(
+            'TackQuote\Quotes\Plugin\PageCache\BuyerGroupContext',
+            $plugins,
+            'no page cache in the API'
+        );
 
         $events = $this->observers("$area/events.xml");
         self::assertContains('payment_method_is_active', $events);
@@ -122,8 +138,14 @@ class BuyerGroupWiringTest extends TestCase
     {
         $events = $this->observers('etc/frontend/events.xml');
 
-        self::assertSame('payment_method_is_active', $events['TackQuote\Quotes\Observer\PaymentMethodGroupRestriction@payment_method_is_active'] ?? null);
-        self::assertSame('catalog_product_is_salable_after', $events['TackQuote\Quotes\Observer\HiddenProductNotSalable@catalog_product_is_salable_after'] ?? null);
+        self::assertSame(
+            'payment_method_is_active',
+            $events['TackQuote\Quotes\Observer\PaymentMethodGroupRestriction@payment_method_is_active'] ?? null
+        );
+        self::assertSame(
+            'catalog_product_is_salable_after',
+            $events['TackQuote\Quotes\Observer\HiddenProductNotSalable@catalog_product_is_salable_after'] ?? null
+        );
         self::assertSame('customer_login', $events['TackQuote\Quotes\Observer\GroupMirrorSync@customer_login'] ?? null);
         self::assertSame(
             'controller_action_predispatch',
@@ -153,7 +175,13 @@ class BuyerGroupWiringTest extends TestCase
      */
     public function testEachDiFileDeclaresAClassInOneBlockOnly(): void
     {
-        foreach (['etc/di.xml', 'etc/frontend/di.xml', 'etc/webapi_rest/di.xml', 'etc/webapi_soap/di.xml', 'etc/graphql/di.xml'] as $file) {
+        foreach ([
+            'etc/di.xml',
+            'etc/frontend/di.xml',
+            'etc/webapi_rest/di.xml',
+            'etc/webapi_soap/di.xml',
+            'etc/graphql/di.xml'
+        ] as $file) {
             $names = [];
             foreach ($this->xml($file)->xpath('/config/type') ?: [] as $type) {
                 $names[] = (string) $type['name'];
@@ -169,8 +197,16 @@ class BuyerGroupWiringTest extends TestCase
     public function testEverySwitchIsOffByDefault(): void
     {
         $defaults = $this->xml('etc/config.xml')->default->tackquote_quotes->b2b_groups;
-        foreach (['enable_catalog_visibility', 'hide_catalog_when_unknown', 'enable_restrictions', 'restrict_when_unknown',
-                     'enable_shipping_discounts', 'enable_tax_exempt', 'enable_group_mirror'] as $switch) {
+        $switches = [
+            'enable_catalog_visibility',
+            'hide_catalog_when_unknown',
+            'enable_restrictions',
+            'restrict_when_unknown',
+            'enable_shipping_discounts',
+            'enable_tax_exempt',
+            'enable_group_mirror',
+        ];
+        foreach ($switches as $switch) {
             self::assertSame('0', (string) $defaults->{$switch}, "$switch must default to 0");
         }
     }
@@ -179,7 +215,13 @@ class BuyerGroupWiringTest extends TestCase
     {
         $group = $this->xml('etc/adminhtml/system.xml')->xpath('//group[@id="b2b_groups"]');
         self::assertNotEmpty($group);
-        foreach (['catalog_visibility_map', 'payment_map', 'shipping_map', 'shipping_discount_map', 'group_mirror_map'] as $field) {
+        foreach ([
+            'catalog_visibility_map',
+            'payment_map',
+            'shipping_map',
+            'shipping_discount_map',
+            'group_mirror_map'
+        ] as $field) {
             $node = $group[0]->xpath("field[@id='$field']");
             self::assertNotEmpty($node, "$field is missing");
             self::assertSame(
@@ -195,11 +237,14 @@ class BuyerGroupWiringTest extends TestCase
         $xml = $this->xml('etc/search_request.xml');
         foreach (['quick_search_container', 'catalog_view_container'] as $request) {
             $refs = $xml->xpath(
-                "//request[@query='$request']/queries/query[@name='$request']/queryReference[@ref='tackquote_hidden_categories']"
+                "//request[@query='$request']/queries/query[@name='$request']"
+                . "/queryReference[@ref='tackquote_hidden_categories']"
             );
             self::assertNotEmpty($refs, "$request does not exclude hidden categories");
             self::assertSame('not', (string) $refs[0]['clause']);
-            $filter = $xml->xpath("//request[@query='$request']/filters/filter[@name='tackquote_hidden_categories_filter']");
+            $filter = $xml->xpath(
+                "//request[@query='$request']/filters/filter[@name='tackquote_hidden_categories_filter']"
+            );
             self::assertSame('category_ids', (string) $filter[0]['field']);
             self::assertSame('$tackquote_hidden_category_ids$', (string) $filter[0]['value']);
         }

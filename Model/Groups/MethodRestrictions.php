@@ -153,6 +153,8 @@ class MethodRestrictions
     }
 
     /**
+     * Whether payment restrictions are suspended for this cart.
+     *
      * @param CartInterface $quote
      * @return bool
      */
@@ -202,7 +204,7 @@ class MethodRestrictions
      * Remove the rates this group may not use, never all of them.
      *
      * @param array $rates
-     * @param array<string, string[]> $map
+     * @param array<string,string[]> $map
      * @param BuyerGroupAnswer $answer
      * @param bool $restrictWhenUnknown
      * @return array
@@ -234,11 +236,13 @@ class MethodRestrictions
     }
 
     /**
+     * Apply the buyer group's shipping discount.
+     *
      * Apply this group's shipping discount. Only a buyer TackQuote places in a group gets one:
      * a discount is a grant, so an unknown group, no group and guests pay the normal rate.
      *
      * @param array $rates
-     * @param array<string, array{mode: string, percent: float, methods: string[]}> $rules
+     * @param array<string,array{mode:string,percent:float,methods:string[]}> $rules
      * @param BuyerGroupAnswer $answer
      * @return array The same objects; discounted ones have a new price.
      */
@@ -272,7 +276,11 @@ class MethodRestrictions
 
         foreach ($rates as $rate) {
             if (!$rate instanceof Method
-                || !GroupRules::discountCovers($rule['methods'], (string) $rate->getCarrier(), (string) $rate->getMethod())
+                || !GroupRules::discountCovers(
+                    $rule['methods'],
+                    (string) $rate->getCarrier(),
+                    (string) $rate->getMethod()
+                )
             ) {
                 continue;
             }
@@ -287,6 +295,8 @@ class MethodRestrictions
     }
 
     /**
+     * Whether the rates include at least one shipping method.
+     *
      * @param array $rates
      * @return bool
      */
@@ -302,6 +312,8 @@ class MethodRestrictions
     }
 
     /**
+     * Cache id of the cart's suspension marker, or '' for an unsaved cart.
+     *
      * @param CartInterface $quote
      * @return string '' for a cart that was never saved (nothing to remember it by).
      */

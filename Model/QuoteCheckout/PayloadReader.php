@@ -33,6 +33,8 @@ class PayloadReader
     private const MAX_QUANTITY = 1000000;
 
     /**
+     * Read and validate the quote-checkout payload TackQuote returned.
+     *
      * @param mixed $data Decoded JSON.
      * @return array{quoteRef: string, quoteNumber: string, currency: string, buyerEmail: string,
      *               poNumber: string, lines: array<int, array{sku: string, name: string, quantity: int,

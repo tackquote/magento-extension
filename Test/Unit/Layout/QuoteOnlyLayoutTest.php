@@ -115,7 +115,10 @@ class QuoteOnlyLayoutTest extends TestCase
         foreach (self::REMOVED_BLOCK_PARENTS as $parent) {
             self::assertSame(
                 [],
-                $xml->xpath(sprintf('//referenceContainer[@name="%s"]//block[@name="tackquote.request.quote"]', $parent)) ?: [],
+                $xml->xpath(sprintf(
+                    '//referenceContainer[@name="%s"]//block[@name="tackquote.request.quote"]',
+                    $parent
+                )) ?: [],
                 sprintf('The CTA must not be declared inside %s — quote-only mode strips it.', $parent)
             );
         }
@@ -306,7 +309,10 @@ class QuoteOnlyLayoutTest extends TestCase
         // (quantity changes) or QuoteManagement::submit() (orders).
         $plugins = $this->pluginsIn($file);
 
-        self::assertSame('Magento\Quote\Model\Quote', $plugins['TackQuote\Quotes\Plugin\Quote\QuoteOnlyCartGuard'] ?? null);
+        self::assertSame(
+            'Magento\Quote\Model\Quote',
+            $plugins['TackQuote\Quotes\Plugin\Quote\QuoteOnlyCartGuard'] ?? null
+        );
         self::assertSame(
             'Magento\Quote\Api\CartItemRepositoryInterface',
             $plugins['TackQuote\Quotes\Plugin\Quote\QuoteOnlyCartItemRepositoryGuard'] ?? null
@@ -329,7 +335,10 @@ class QuoteOnlyLayoutTest extends TestCase
 
     public function testTheStorefrontIdentifiesVisitorsBySession(): void
     {
-        self::assertSame('TackQuote\Quotes\Model\QuoteOnly\SessionVisitorContext', $this->preferenceIn('etc/frontend/di.xml'));
+        self::assertSame(
+            'TackQuote\Quotes\Model\QuoteOnly\SessionVisitorContext',
+            $this->preferenceIn('etc/frontend/di.xml')
+        );
     }
 
     public function testTheGlobalFallbackVisitorIsExemptAndTheGlobalFileHoldsNoGuard(): void
@@ -344,13 +353,19 @@ class QuoteOnlyLayoutTest extends TestCase
     {
         $plugins = $this->pluginsIn('etc/frontend/di.xml');
 
-        self::assertSame('Magento\Framework\Pricing\Render', $plugins['TackQuote\Quotes\Plugin\Pricing\QuoteOnlyPriceRender'] ?? null);
+        self::assertSame(
+            'Magento\Framework\Pricing\Render',
+            $plugins['TackQuote\Quotes\Plugin\Pricing\QuoteOnlyPriceRender'] ?? null
+        );
         self::assertSame(
             'Magento\Framework\App\Http\Context',
             $plugins['TackQuote\Quotes\Plugin\PageCache\WholesaleApprovalContext'] ?? null,
             'without the vary value an approved buyer\'s cached page is served to an unapproved one'
         );
-        self::assertSame('Magento\Quote\Model\QuoteManagement', $plugins['TackQuote\Quotes\Plugin\Quote\QuoteOnlySubmitGuard'] ?? null);
+        self::assertSame(
+            'Magento\Quote\Model\QuoteManagement',
+            $plugins['TackQuote\Quotes\Plugin\Quote\QuoteOnlySubmitGuard'] ?? null
+        );
 
         foreach (['etc/webapi_rest/di.xml', 'etc/webapi_soap/di.xml', 'etc/graphql/di.xml'] as $api) {
             self::assertArrayNotHasKey('TackQuote\Quotes\Plugin\Pricing\QuoteOnlyPriceRender', $this->pluginsIn($api));

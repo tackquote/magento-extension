@@ -42,6 +42,8 @@ class MethodListRestriction
     }
 
     /**
+     * Suspend the payment rules for a cart they would leave with no way to pay.
+     *
      * @param MethodList $subject
      * @param callable $proceed
      * @param CartInterface|null $quote

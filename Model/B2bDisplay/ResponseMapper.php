@@ -102,7 +102,7 @@ class ResponseMapper
         }
         usort(
             $rows,
-            static function (array $a, array $b): int {
+            function (array $a, array $b): int {
                 return $a['minQty'] <=> $b['minQty'];
             }
         );

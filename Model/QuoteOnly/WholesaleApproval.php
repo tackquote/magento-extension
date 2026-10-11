@@ -88,6 +88,8 @@ class WholesaleApproval
     }
 
     /**
+     * Whether TackQuote has approved this customer's wholesale account.
+     *
      * @param string $email The signed-in customer's account email ('' asks nothing).
      * @param int|null $customerId
      * @param int|null $storeId
@@ -100,7 +102,7 @@ class WholesaleApproval
             return false;
         }
 
-        $cacheId = self::cacheId($email, $customerId, $storeId);
+        $cacheId = $this->cacheId($email, $customerId, $storeId);
         if (array_key_exists($cacheId, $this->memo)) {
             return $this->memo[$cacheId];
         }
@@ -142,7 +144,7 @@ class WholesaleApproval
      * @param int|null $storeId
      * @return string
      */
-    public static function cacheId(string $email, ?int $customerId, ?int $storeId): string
+    public function cacheId(string $email, ?int $customerId, ?int $storeId): string
     {
         return self::CACHE_PREFIX . hash(
             'sha256',

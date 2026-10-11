@@ -66,7 +66,8 @@ class EligibilityTest extends TestCase
 
     public function testAnExemptCallerIsNeverEnforced(): void
     {
-        self::assertNull($this->eligibility($this->visitor(true, true, 7, 2, 'b@example.test'))->buyer($this->quote(7)));
+        $visitor = $this->visitor(true, true, 7, 2, 'b@example.test');
+        self::assertNull($this->eligibility($visitor)->buyer($this->quote(7)));
     }
 
     public function testAGuestIsNeverEnforced(): void
@@ -76,7 +77,8 @@ class EligibilityTest extends TestCase
 
     public function testSomebodyElsesCartIsNeverPricedAsTheVisitor(): void
     {
-        self::assertNull($this->eligibility($this->visitor(false, true, 7, 2, 'b@example.test'))->buyer($this->quote(8)));
+        $visitor = $this->visitor(false, true, 7, 2, 'b@example.test');
+        self::assertNull($this->eligibility($visitor)->buyer($this->quote(8)));
     }
 
     public function testTheB2bGroupFilterApplies(): void
@@ -90,6 +92,7 @@ class EligibilityTest extends TestCase
     public function testNoEmailOrNoCurrencyMeansNoBuyer(): void
     {
         self::assertNull($this->eligibility($this->visitor(false, true, 7, 2, ''))->buyer($this->quote(7)));
-        self::assertNull($this->eligibility($this->visitor(false, true, 7, 2, 'b@example.test'))->buyer($this->quote(7, '')));
+        $visitor = $this->visitor(false, true, 7, 2, 'b@example.test');
+        self::assertNull($this->eligibility($visitor)->buyer($this->quote(7, '')));
     }
 }

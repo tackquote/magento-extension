@@ -68,6 +68,8 @@ class QuotedCart
     }
 
     /**
+     * Mark the quoted cart as built.
+     *
      * @return void
      */
     public function stopBuilding(): void
@@ -76,6 +78,8 @@ class QuotedCart
     }
 
     /**
+     * Whether the quoted cart is being built right now.
+     *
      * @return bool
      */
     public function isBuilding(): bool
@@ -95,6 +99,8 @@ class QuotedCart
     }
 
     /**
+     * Whether quoted lines are being dropped right now.
+     *
      * @return bool
      */
     public function isDropping(): bool
@@ -203,6 +209,8 @@ class QuotedCart
     }
 
     /**
+     * Take every quoted line out of the cart.
+     *
      * Take every quoted line out of the cart (a broken quote leaves whole; the shopper's own
      * lines, if any, stay).
      *

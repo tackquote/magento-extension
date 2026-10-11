@@ -30,6 +30,8 @@ class ConnectButton extends Field
     }
 
     /**
+     * Render the Connect card in place of the configuration field.
+     *
      * @param AbstractElement $element
      * @return string
      */

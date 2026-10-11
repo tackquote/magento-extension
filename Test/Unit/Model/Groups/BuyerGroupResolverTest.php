@@ -78,7 +78,11 @@ class BuyerGroupResolverTest extends TestCase
     {
         $this->client->expects(self::once())->method('get')
             ->with(StorefrontClient::ROUTE_BUYER_GROUP, ['buyerEmail' => self::EMAIL], 3, [])
-            ->willReturn(['ok' => true, 'status' => 200, 'data' => ['status' => 'grouped', 'name' => 'Gold', 'code' => 'gold']]);
+            ->willReturn([
+                'ok' => true,
+                'status' => 200,
+                'data' => ['status' => 'grouped', 'name' => 'Gold', 'code' => 'gold']
+            ]);
 
         $answer = $this->resolver()->resolve(3, 42, '  Buyer@Example.TEST ');
 
@@ -101,14 +105,14 @@ class BuyerGroupResolverTest extends TestCase
         $answer = $this->resolver()->resolve(3, 42, self::EMAIL);
 
         self::assertTrue($answer->isTaxExempt());
-        self::assertArrayHasKey(BuyerGroupResolver::cacheId(3, 42, self::EMAIL, true), $this->saved);
+        self::assertArrayHasKey($this->resolver()->cacheId(3, 42, self::EMAIL, true), $this->saved);
     }
 
     public function testAnEmailOnlyAnswerIsNotReusedForALinkedRead(): void
     {
         self::assertNotSame(
-            BuyerGroupResolver::cacheId(3, 42, self::EMAIL, false),
-            BuyerGroupResolver::cacheId(3, 42, self::EMAIL, true)
+            $this->resolver()->cacheId(3, 42, self::EMAIL, false),
+            $this->resolver()->cacheId(3, 42, self::EMAIL, true)
         );
     }
 
@@ -126,7 +130,12 @@ class BuyerGroupResolverTest extends TestCase
     public static function answers(): array
     {
         return [
-            'grouped' => [['status' => 'grouped', 'name' => 'G', 'code' => 'Tier2', 'taxExempt' => true], 'grouped', 'TIER2', true],
+            'grouped' => [
+                ['status' => 'grouped', 'name' => 'G', 'code' => 'Tier2', 'taxExempt' => true],
+                'grouped',
+                'TIER2',
+                true
+            ],
             'grouped, no code' => [['status' => 'grouped', 'name' => 'G', 'code' => ''], 'none', '', false],
             'none, exempt' => [['status' => 'none', 'taxExempt' => true], 'none', '', true],
             'none, exempt as a string' => [['status' => 'none', 'taxExempt' => 'true'], 'none', '', false],
@@ -145,7 +154,7 @@ class BuyerGroupResolverTest extends TestCase
      */
     public function testTheMapping($data, string $status, string $code, bool $taxExempt): void
     {
-        $answer = BuyerGroupResolver::map($data);
+        $answer = $this->resolver()->map($data);
 
         self::assertSame($status, $answer->getStatus());
         self::assertSame($code, $answer->getCode());
@@ -158,24 +167,28 @@ class BuyerGroupResolverTest extends TestCase
 
         $this->resolver()->resolve(1, 42, self::EMAIL);
 
-        $id = BuyerGroupResolver::cacheId(1, 42, self::EMAIL);
+        $id = $this->resolver()->cacheId(1, 42, self::EMAIL);
         self::assertStringNotContainsString('example', $id, 'no email address in a cache id');
         self::assertSame(60, $this->saved[$id][2] ?? null);
     }
 
     public function testTheCacheIdVariesByStoreCustomerAndEmail(): void
     {
-        $id = BuyerGroupResolver::cacheId(1, 42, self::EMAIL);
+        $id = $this->resolver()->cacheId(1, 42, self::EMAIL);
 
-        self::assertNotSame($id, BuyerGroupResolver::cacheId(2, 42, self::EMAIL));
-        self::assertNotSame($id, BuyerGroupResolver::cacheId(1, 43, self::EMAIL));
-        self::assertNotSame($id, BuyerGroupResolver::cacheId(1, 42, 'other@example.test'));
+        self::assertNotSame($id, $this->resolver()->cacheId(2, 42, self::EMAIL));
+        self::assertNotSame($id, $this->resolver()->cacheId(1, 43, self::EMAIL));
+        self::assertNotSame($id, $this->resolver()->cacheId(1, 42, 'other@example.test'));
     }
 
     public function testACachedAnswerIsReusedWithoutAsking(): void
     {
         $this->client->expects(self::once())->method('get')
-            ->willReturn(['ok' => true, 'status' => 200, 'data' => ['status' => 'grouped', 'name' => 'G', 'code' => 'GOLD', 'taxExempt' => true]]);
+            ->willReturn([
+                'ok' => true,
+                'status' => 200,
+                'data' => ['status' => 'grouped', 'name' => 'G', 'code' => 'GOLD', 'taxExempt' => true]
+            ]);
 
         $this->resolver()->resolve(1, 42, self::EMAIL);
         $again = $this->resolver()->resolve(1, 42, self::EMAIL);
@@ -190,7 +203,7 @@ class BuyerGroupResolverTest extends TestCase
 
         self::assertTrue($this->resolver()->resolve(1, 42, self::EMAIL)->isUnknown());
         self::assertTrue($this->resolver()->resolve(1, 42, self::EMAIL)->isUnknown());
-        self::assertSame(30, $this->saved[BuyerGroupResolver::cacheId(1, 42, self::EMAIL)][2] ?? null);
+        self::assertSame(30, $this->saved[$this->resolver()->cacheId(1, 42, self::EMAIL)][2] ?? null);
     }
 
     public function testA429PausesTheWholeStore(): void
@@ -204,7 +217,7 @@ class BuyerGroupResolverTest extends TestCase
 
     public function testADamagedCacheEntryIsAskedAgain(): void
     {
-        $this->store[BuyerGroupResolver::cacheId(1, 42, self::EMAIL)] = '{not json';
+        $this->store[$this->resolver()->cacheId(1, 42, self::EMAIL)] = '{not json';
         $this->client->expects(self::once())->method('get')
             ->willReturn(['ok' => true, 'status' => 200, 'data' => ['status' => 'anonymous']]);
 

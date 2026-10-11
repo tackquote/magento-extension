@@ -54,7 +54,7 @@ class ApplicationStatus
             return self::UNKNOWN;
         }
 
-        return self::stateOf($this->client->getWholesaleApplication($who, $storeId));
+        return $this->stateOf($this->client->getWholesaleApplication($who, $storeId));
     }
 
     /**
@@ -63,7 +63,7 @@ class ApplicationStatus
      * @param array $result AccountApiClient result.
      * @return string
      */
-    public static function stateOf(array $result): string
+    public function stateOf(array $result): string
     {
         $data = !empty($result['ok']) && is_array($result['data'] ?? null) ? $result['data'] : [];
         if (($data['status'] ?? null) !== 'application') {

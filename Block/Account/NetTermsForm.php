@@ -95,6 +95,8 @@ class NetTermsForm extends Template
     }
 
     /**
+     * The customer's net terms standing, for the template.
+     *
      * NetTermsEligibility::view() of the customer's standing (`state`: none, pending,
      * declined or active). `none` when it cannot be read.
      *
@@ -124,6 +126,8 @@ class NetTermsForm extends Template
     }
 
     /**
+     * Payment terms, in days, the applicant can choose from.
+     *
      * @return int[]
      */
     public function getTermsDays(): array
@@ -132,6 +136,8 @@ class NetTermsForm extends Template
     }
 
     /**
+     * Number of trade reference rows the form offers.
+     *
      * @return int
      */
     public function getReferenceCount(): int
@@ -165,6 +171,8 @@ class NetTermsForm extends Template
     }
 
     /**
+     * URL the application form posts to.
+     *
      * @return string
      */
     public function getActionUrl(): string
@@ -173,6 +181,8 @@ class NetTermsForm extends Template
     }
 
     /**
+     * Identity of the signed-in customer, as TackQuote knows it.
+     *
      * @return \TackQuote\Quotes\Model\Forms\AccountIdentity
      */
     private function identity()
@@ -187,6 +197,8 @@ class NetTermsForm extends Template
     }
 
     /**
+     * Id of the current store, or null when it cannot be read.
+     *
      * @return int|null
      */
     private function storeId(): ?int

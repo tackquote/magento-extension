@@ -71,6 +71,8 @@ class LayerVisibility
     }
 
     /**
+     * Leave hidden categories' products out of the listing.
+     *
      * @param Layer $subject
      * @param Layer $result
      * @param mixed $collection

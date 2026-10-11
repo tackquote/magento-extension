@@ -81,6 +81,8 @@ class AccountIdentity
     }
 
     /**
+     * Magento customer id of the account.
+     *
      * @return int
      */
     public function getCustomerId(): int
@@ -89,6 +91,8 @@ class AccountIdentity
     }
 
     /**
+     * Email address of the account.
+     *
      * @return string
      */
     public function getEmail(): string
@@ -115,6 +119,8 @@ class AccountIdentity
     }
 
     /**
+     * Identity headers for requests about this account.
+     *
      * Headers naming the platform (whenever the server reads it) and the install (only
      * beside a customer id).
      *

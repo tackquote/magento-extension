@@ -48,6 +48,8 @@ class BuyerGroupWarmup
     }
 
     /**
+     * Decide the visitor's hidden categories before the page is built.
+     *
      * @param ActionInterface $subject
      * @return void
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)

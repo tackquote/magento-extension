@@ -139,11 +139,13 @@ class OrderLimitChecker
     }
 
     /**
+     * Check order limits for new quantities of existing lines.
+     *
      * Setting the quantity of existing lines: [quote item id => new quantity]. A quantity of 0
      * is a removal.
      *
      * @param Quote $quote
-     * @param array<int|string, float> $quantities
+     * @param array<int|string,float> $quantities
      * @return void
      * @throws LocalizedException
      */
@@ -232,7 +234,7 @@ class OrderLimitChecker
      * Quantity per SKU across the visible lines, with some lines' quantities replaced.
      *
      * @param Quote $quote
-     * @param array<string, float> $overrides [item id => quantity]
+     * @param array<string,float> $overrides [item id => quantity]
      * @return array<string, array{qty: float, name: string}>
      */
     private function totals(Quote $quote, array $overrides): array
@@ -260,8 +262,8 @@ class OrderLimitChecker
     /**
      * One sentence per SKU whose total breaks its bound.
      *
-     * @param array{storeId: int, customerId: int, email: string, currency: string} $buyer
-     * @param array<string, array{qty: float, name: string}> $totals
+     * @param array{storeId:int,customerId:int,email:string,currency:string} $buyer
+     * @param array<string,array{qty:float,name:string}> $totals
      * @return string[]
      */
     private function quantityViolations(array $buyer, array $totals): array
@@ -293,6 +295,8 @@ class OrderLimitChecker
     }
 
     /**
+     * Refuse the cart change with the given messages.
+     *
      * @param string[] $messages
      * @return void
      * @throws LocalizedException
@@ -307,7 +311,7 @@ class OrderLimitChecker
     /**
      * Item ids as string keys (a posted cart form keys them by string, a quote by int).
      *
-     * @param array<int|string, mixed> $quantities
+     * @param array<int|string,mixed> $quantities
      * @return array<string, float>
      */
     private function stringKeys(array $quantities): array

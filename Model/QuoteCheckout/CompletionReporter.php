@@ -81,7 +81,7 @@ class CompletionReporter
             if (!is_object($item) || !method_exists($item, 'getAdditionalData')) {
                 continue;
             }
-            $marker = QuotedLine::fromData($this->quotedLine->decode($item->getAdditionalData()));
+            $marker = $this->quotedLine->fromData($this->quotedLine->decode($item->getAdditionalData()));
             if ($marker !== null) {
                 $refs[$marker['ref']] = true;
             }

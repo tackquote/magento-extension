@@ -62,6 +62,8 @@ class CronStatus implements ArgumentInterface
     }
 
     /**
+     * When this module's cron jobs last ran.
+     *
      * The latest `executed_at` of this module's jobs (UTC, as stored), or null. The template
      * shows it in the admin's locale and time zone (AbstractBlock::formatDate()).
      *

@@ -64,6 +64,8 @@ class GroupMirrorSync implements ObserverInterface
     }
 
     /**
+     * Run the customer-group mirror for the signed-in customer.
+     *
      * @param Observer $observer
      * @return void
      */

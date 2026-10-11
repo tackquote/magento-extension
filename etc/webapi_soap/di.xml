@@ -21,7 +21,8 @@
 
     <!-- Every new cart line: CartItemPersister / AddProductsToCart call Quote::addProduct(). -->
     <type name="Magento\Quote\Model\Quote">
-        <!-- Accepted quote checkout link (lane MG-QUOTE-CHECKOUT-LINK): FIRST (5) on this method, see the header of Plugin\Quote\QuoteCheckoutCartGuard. -->
+        <!-- Accepted quote checkout link (lane MG-QUOTE-CHECKOUT-LINK): FIRST (5) on this method,
+             see the header of Plugin\Quote\QuoteCheckoutCartGuard. -->
         <plugin name="tackquote_quote_checkout_cart_guard"
                 type="TackQuote\Quotes\Plugin\Quote\QuoteCheckoutCartGuard"
                 sortOrder="5"/>
@@ -42,7 +43,8 @@
 
     <!-- Quantity increases on an existing line, which never reach addProduct(). -->
     <type name="Magento\Quote\Api\CartItemRepositoryInterface">
-        <!-- Accepted quote checkout link (lane MG-QUOTE-CHECKOUT-LINK): FIRST (5) on this method, see the header of Plugin\Quote\QuoteCheckoutCartItemRepositoryLock. -->
+        <!-- Accepted quote checkout link (lane MG-QUOTE-CHECKOUT-LINK): FIRST (5) on this method,
+             see the header of Plugin\Quote\QuoteCheckoutCartItemRepositoryLock. -->
         <plugin name="tackquote_quote_checkout_cart_item_repository_lock"
                 type="TackQuote\Quotes\Plugin\Quote\QuoteCheckoutCartItemRepositoryLock"
                 sortOrder="5"/>
@@ -56,7 +58,8 @@
 
     <!-- Order placement: placeOrder / payment-information end in QuoteManagement::submit(). -->
     <type name="Magento\Quote\Model\QuoteManagement">
-        <!-- Accepted quote checkout link (lane MG-QUOTE-CHECKOUT-LINK): FIRST (5) on this method, see the header of Plugin\Quote\QuoteCheckoutSubmitGuard. -->
+        <!-- Accepted quote checkout link (lane MG-QUOTE-CHECKOUT-LINK): FIRST (5) on this method,
+             see the header of Plugin\Quote\QuoteCheckoutSubmitGuard. -->
         <plugin name="tackquote_quote_checkout_submit_guard"
                 type="TackQuote\Quotes\Plugin\Quote\QuoteCheckoutSubmitGuard"
                 sortOrder="5"/>
@@ -75,7 +78,8 @@
       B2B CHECKOUT ENFORCEMENT (Stores > Configuration > TackQuote > B2B Checkout). Its plugins
       sit in the quote-only <type> blocks above (one block per class: Magento's di.xsd has a
       `uniqueType` constraint, and a second block for the same class fails validation in
-      developer mode), and every plugin is ordered AFTER the quote-only guard on the same method (sortOrder 20/30 > 10), so a
+      developer mode), and every plugin is ordered AFTER the quote-only guard on the same method
+      (sortOrder 20/30 > 10), so a
       cart quote-only mode refuses is never priced or limit-checked. Area-scoped for the same
       reason as everything else in this file: the admin order editor must keep its own prices.
 

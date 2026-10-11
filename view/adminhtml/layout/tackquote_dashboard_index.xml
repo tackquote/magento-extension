@@ -29,7 +29,8 @@
                    template="TackQuote_Quotes::dashboard.phtml">
                 <arguments>
                     <argument name="overview" xsi:type="object">TackQuote\Quotes\ViewModel\Adminhtml\Overview</argument>
-                    <argument name="cron_status" xsi:type="object">TackQuote\Quotes\ViewModel\Adminhtml\CronStatus</argument>
+                    <argument name="cron_status"
+                              xsi:type="object">TackQuote\Quotes\ViewModel\Adminhtml\CronStatus</argument>
                 </arguments>
                 <!-- Connect with TackQuote: connection state, Connect / Disconnect. -->
                 <block class="TackQuote\Quotes\Block\Adminhtml\ConnectCard"

@@ -95,7 +95,9 @@ class CheckoutApiClientTest extends TestCase
     public function testOnlyXApiKeyIsSent(): void
     {
         $this->client(200, '{}')->exchange(self::TOKEN);
-        $this->client(200, '{}')->complete(['quoteRef' => 'tqco_AAAAAAAAAAAAAAAAAAAAAA', 'orderId' => '1', 'incrementId' => '1']);
+        $this->client(200, '{}')->complete(
+            ['quoteRef' => 'tqco_AAAAAAAAAAAAAAAAAAAAAA', 'orderId' => '1', 'incrementId' => '1']
+        );
 
         foreach ($this->calls as $call) {
             self::assertSame('tq_live_key', $call['headers']['X-Api-Key'] ?? null);
@@ -157,7 +159,10 @@ class CheckoutApiClientTest extends TestCase
 
         self::assertTrue($out['ok']);
         self::assertSame('POST', $this->calls[0]['method']);
-        self::assertSame('https://api.tackquote.test/v1/integrations/magento/quote-checkout/complete', $this->calls[0]['url']);
+        self::assertSame(
+            'https://api.tackquote.test/v1/integrations/magento/quote-checkout/complete',
+            $this->calls[0]['url']
+        );
         self::assertSame($report, json_decode((string) $this->calls[0]['body'], true));
         self::assertSame('application/json', $this->calls[0]['headers']['Content-Type'] ?? null);
     }

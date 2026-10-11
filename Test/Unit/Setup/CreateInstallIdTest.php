@@ -24,7 +24,10 @@ class CreateInstallIdTest extends TestCase
     public function testUuid4IsAVersion4VariantOneUuid(): void
     {
         $id = CreateInstallId::uuid4(str_repeat("\xff", 16));
-        self::assertMatchesRegularExpression('/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/', $id);
+        self::assertMatchesRegularExpression(
+            '/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/',
+            $id
+        );
         self::assertTrue(CreateInstallId::isUuid($id));
         self::assertFalse(CreateInstallId::isUuid('not-a-uuid'));
     }

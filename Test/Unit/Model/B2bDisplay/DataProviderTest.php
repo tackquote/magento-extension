@@ -155,8 +155,12 @@ class DataProviderTest extends TestCase
     /**
      * @dataProvider nobodyToAskAbout
      */
-    public function testNothingIsAskedWithoutACustomerProductAndCurrency(int $id, string $email, string $sku, string $cur): void
-    {
+    public function testNothingIsAskedWithoutACustomerProductAndCurrency(
+        int $id,
+        string $email,
+        string $sku,
+        string $cur
+    ): void {
         $result = $this->provider()->get(1, $id, $email, $sku, $cur);
 
         self::assertSame([], $this->calls);

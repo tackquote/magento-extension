@@ -38,6 +38,8 @@ class Disconnect extends Action implements HttpPostActionInterface
     }
 
     /**
+     * Only admins allowed to manage the TackQuote configuration may disconnect.
+     *
      * @return bool
      */
     protected function _isAllowed(): bool
@@ -46,6 +48,8 @@ class Disconnect extends Action implements HttpPostActionInterface
     }
 
     /**
+     * Forget the stored TackQuote connection.
+     *
      * @return Redirect
      */
     public function execute()

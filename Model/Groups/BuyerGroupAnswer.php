@@ -79,6 +79,8 @@ class BuyerGroupAnswer
     }
 
     /**
+     * Status of the answer.
+     *
      * @return string
      */
     public function getStatus(): string
@@ -97,6 +99,8 @@ class BuyerGroupAnswer
     }
 
     /**
+     * Whether the buyer group is tax exempt.
+     *
      * @return bool
      */
     public function isTaxExempt(): bool
@@ -105,6 +109,8 @@ class BuyerGroupAnswer
     }
 
     /**
+     * Whether the visitor is exempt from buyer-group rules.
+     *
      * @return bool
      */
     public function isExempt(): bool

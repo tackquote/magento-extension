@@ -19,6 +19,8 @@ use TackQuote\Quotes\Model\QuoteOnlyRules;
 class QuoteOnlyScope implements OptionSourceInterface
 {
     /**
+     * Quote-only scope options for the configuration field.
+     *
      * @return array<int, array{value: string, label: \Magento\Framework\Phrase}>
      */
     public function toOptionArray(): array

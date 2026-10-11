@@ -143,7 +143,10 @@ class StartTest extends TestCase
             ->getMock();
         $redirectFactory->method('create')->willReturn($this->redirect);
 
-        $this->notice = $this->getMockBuilder(Template::class)->disableOriginalConstructor()->onlyMethods([])->getMock();
+        $this->notice = $this->getMockBuilder(Template::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods([])
+            ->getMock();
         $layout = $this->createMock(LayoutInterface::class);
         $layout->method('getBlock')->with(Start::NOTICE_BLOCK)->willReturn($this->notice);
         $pageConfig = $this->createMock(PageConfig::class);
@@ -219,7 +222,10 @@ class StartTest extends TestCase
 
         $controller->execute();
 
-        self::assertStringContainsString('could not be opened in the store', (string) $this->notice->getData('message'));
+        self::assertStringContainsString(
+            'could not be opened in the store',
+            (string) $this->notice->getData('message')
+        );
     }
 
     public function testTheSameLinkAgainGoesStraightToCheckout(): void

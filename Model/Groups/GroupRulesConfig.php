@@ -86,6 +86,8 @@ class GroupRulesConfig
     }
 
     /**
+     * Category visibility rules, parsed from the stored map.
+     *
      * @param int|null $storeId
      * @return array<int, string[]>
      */
@@ -95,6 +97,8 @@ class GroupRulesConfig
     }
 
     /**
+     * Whether the catalog rules hide categories when the buyer group is unknown.
+     *
      * @param int|null $storeId
      * @return bool
      */
@@ -115,6 +119,8 @@ class GroupRulesConfig
     }
 
     /**
+     * Payment method rules, parsed from the stored map.
+     *
      * @param int|null $storeId
      * @return array<string, string[]>
      */
@@ -124,6 +130,8 @@ class GroupRulesConfig
     }
 
     /**
+     * Shipping method rules, parsed from the stored map.
+     *
      * @param int|null $storeId
      * @return array<string, string[]>
      */
@@ -133,6 +141,8 @@ class GroupRulesConfig
     }
 
     /**
+     * Whether methods are restricted while the buyer group cannot be read.
+     *
      * The strict reading for an outage (WooCommerce's `tackquote_restrict_when_group_unknown`
      * filter, made a setting). Default No: an outage leaves restricted methods available.
      *
@@ -156,6 +166,8 @@ class GroupRulesConfig
     }
 
     /**
+     * Shipping discount rules, parsed from the stored map.
+     *
      * @param int|null $storeId
      * @return array<string, array{mode: string, percent: float, methods: string[]}>
      */
@@ -165,6 +177,8 @@ class GroupRulesConfig
     }
 
     /**
+     * Customer tax class for tax-exempt buyers.
+     *
      * The customer tax class charged to a buyer TackQuote marks tax exempt, or 0 when the
      * feature is off, not connected or no class is chosen (then nobody is exempted).
      *
@@ -193,6 +207,8 @@ class GroupRulesConfig
     }
 
     /**
+     * Customer group mirror rules, parsed from the stored map.
+     *
      * @param int|null $storeId
      * @return array<string, int>
      */
@@ -215,6 +231,8 @@ class GroupRulesConfig
     }
 
     /**
+     * Whether any rule that needs the buyer group is active.
+     *
      * Is ANY rule that needs the buyer group active? (The dashboard and the observers' cheap
      * first check.)
      *
@@ -231,6 +249,8 @@ class GroupRulesConfig
     }
 
     /**
+     * Whether a rule switch is on and the module can call TackQuote.
+     *
      * @param string $field
      * @param int|null $storeId
      * @return bool
@@ -241,6 +261,8 @@ class GroupRulesConfig
     }
 
     /**
+     * Raw stored value of a rule field.
+     *
      * @param string $field
      * @param int|null $storeId
      * @return string

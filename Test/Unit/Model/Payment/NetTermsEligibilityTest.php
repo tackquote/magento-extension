@@ -24,7 +24,13 @@ class NetTermsEligibilityTest extends TestCase
             'state' => 'approved',
             'application' => null,
             'account' => array_merge(
-                ['status' => 'active', 'termsDays' => 30, 'creditLimit' => '1000.00', 'currency' => 'USD', 'available' => '400.00'],
+                [
+                    'status' => 'active',
+                    'termsDays' => 30,
+                    'creditLimit' => '1000.00',
+                    'currency' => 'USD',
+                    'available' => '400.00'
+                ],
                 $account
             ),
         ], $extra);
@@ -54,7 +60,12 @@ class NetTermsEligibilityTest extends TestCase
             'other currency' => [self::standing(), 10, 'EUR', 'currency_mismatch'],
             'one cent over available' => [self::standing(), '400.01', 'USD', 'insufficient_available_credit'],
             'no available, over the limit' => [self::standing(['available' => null]), '1000.01', 'USD', 'over_limit'],
-            'no available and no limit' => [self::standing(['available' => null, 'creditLimit' => null]), 1, 'USD', 'no_limit'],
+            'no available and no limit' => [
+                self::standing(['available' => null, 'creditLimit' => null]),
+                1,
+                'USD',
+                'no_limit'
+            ],
             'negative amount' => [self::standing(), -1, 'USD', 'bad_amount'],
             'not a number' => [self::standing(), 'abc', 'USD', 'bad_amount'],
             'not even an array' => ['standing', 1, 'USD', 'not_standing'],
@@ -79,8 +90,14 @@ class NetTermsEligibilityTest extends TestCase
         $e = new NetTermsEligibility();
         self::assertSame('active', $e->view(self::standing())['state']);
         self::assertSame('400.00', $e->view(self::standing())['available']);
-        self::assertSame('pending', $e->view(['status' => 'standing', 'state' => 'pending', 'account' => null])['state']);
-        self::assertSame('declined', $e->view(['status' => 'standing', 'state' => 'declined', 'account' => null])['state']);
+        self::assertSame(
+            'pending',
+            $e->view(['status' => 'standing', 'state' => 'pending', 'account' => null])['state']
+        );
+        self::assertSame(
+            'declined',
+            $e->view(['status' => 'standing', 'state' => 'declined', 'account' => null])['state']
+        );
         self::assertSame('none', $e->view(null)['state']);
         self::assertSame('none', $e->view(['status' => 'unlinked'])['state']);
     }

@@ -241,6 +241,7 @@ class NetTermsMethod extends Adapter
         return $this;
     }
 
+    // phpcs:disable Magento2.Functions.StaticFunction -- pure sanitiser, also used by Block\Payment\NetTermsInfo
     /**
      * A PO number as stored: plain text, one line, at most PO_MAX_LENGTH characters.
      *
@@ -256,11 +257,12 @@ class NetTermsMethod extends Adapter
 
         return mb_substr($text, 0, self::PO_MAX_LENGTH);
     }
+    // phpcs:enable Magento2.Functions.StaticFunction
 
     /**
      * The verdict for one subject.
      *
-     * @param array{storeId: int|null, customerId: int, email: string, amount: mixed, currency: string} $subject
+     * @param array{storeId:int|null,customerId:int,email:string,amount:mixed,currency:string} $subject
      * @param bool $fresh
      * @return array{eligible: bool, reason: string, termsDays: int}
      */
@@ -288,7 +290,7 @@ class NetTermsMethod extends Adapter
      */
     private function subjectOfQuote($quote): ?array
     {
-        return self::subjectOf($quote, 'quote_currency_code');
+        return $this->subjectOf($quote, 'quote_currency_code');
     }
 
     /**
@@ -299,7 +301,7 @@ class NetTermsMethod extends Adapter
      */
     private function subjectOfOrder($order): ?array
     {
-        return self::subjectOf($order, 'order_currency_code');
+        return $this->subjectOf($order, 'order_currency_code');
     }
 
     /**
@@ -314,7 +316,7 @@ class NetTermsMethod extends Adapter
      * @param string $currencyKey
      * @return array|null Null for a guest or a quote/order with no customer.
      */
-    public static function subjectOf($owner, string $currencyKey): ?array
+    public function subjectOf($owner, string $currencyKey): ?array
     {
         if (!$owner instanceof DataObject) {
             return null;
@@ -361,8 +363,14 @@ class NetTermsMethod extends Adapter
     private function refusal(string $reason): \Magento\Framework\Phrase
     {
         return in_array($reason, ['over_limit', 'insufficient_available_credit'], true)
-            ? __('This order is more than the net-terms credit you have available. Please choose another payment method or contact us.')
-            : __('Net terms are not available for this order right now. Please choose another payment method or contact us.');
+            ? __(
+                'This order is more than the net-terms credit you have available. Please choose another payment '
+                . 'method or contact us.'
+            )
+            : __(
+                'Net terms are not available for this order right now. Please choose another payment method or '
+                . 'contact us.'
+            );
     }
 
     /**

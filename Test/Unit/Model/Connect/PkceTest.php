@@ -23,7 +23,7 @@ class PkceTest extends TestCase
         // RFC 7636 appendix B: the verifier and its S256 challenge.
         $this->assertSame(
             'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM',
-            Pkce::challenge('dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk')
+            (new Pkce())->challenge('dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk')
         );
     }
 
@@ -42,7 +42,8 @@ class PkceTest extends TestCase
 
     public function testChallengeIsUnpaddedBase64Url(): void
     {
-        $challenge = Pkce::challenge((new Pkce())->newVerifier());
+        $pkce = new Pkce();
+        $challenge = $pkce->challenge($pkce->newVerifier());
         $this->assertMatchesRegularExpression('/^[A-Za-z0-9_-]{43}$/', $challenge);
         $this->assertStringNotContainsString('=', $challenge);
     }

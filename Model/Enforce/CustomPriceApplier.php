@@ -272,6 +272,8 @@ class CustomPriceApplier
     }
 
     /**
+     * The line's additional data, if this module may write to it.
+     *
      * The line's `additional_data` as an array we may write to: [] when empty, the decoded
      * object when it is a JSON object, and null when it holds anything else.
      *

@@ -143,7 +143,13 @@ class QuoteOnlyCheckoutGuardTest extends TestCase
         $quotedCart = $this->createMock(QuotedCart::class);
         $quotedCart->method('isIntact')->with($this->cart)->willReturn(true);
 
-        $guard = new QuoteOnlyCheckoutGuard($this->mode, $this->redirectFactory, $this->messages, $this->session, $quotedCart);
+        $guard = new QuoteOnlyCheckoutGuard(
+            $this->mode,
+            $this->redirectFactory,
+            $this->messages,
+            $this->session,
+            $quotedCart
+        );
         $result = $guard->aroundExecute($this->controller, static function () {
             return 'the real checkout page';
         });

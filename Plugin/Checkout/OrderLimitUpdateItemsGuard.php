@@ -36,6 +36,8 @@ class OrderLimitUpdateItemsGuard
     }
 
     /**
+     * Check order limits before cart quantities are updated.
+     *
      * @param Cart $subject
      * @param mixed $data
      * @return void

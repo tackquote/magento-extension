@@ -27,7 +27,7 @@ class Pkce
      * @param string $bytes
      * @return string
      */
-    public static function b64url(string $bytes): string
+    public function b64url(string $bytes): string
     {
         // phpcs:ignore Magento2.Functions.DiscouragedFunction -- RFC 7636 base64url, not obfuscation.
         return rtrim(strtr(base64_encode($bytes), '+/', '-_'), '=');
@@ -40,7 +40,7 @@ class Pkce
      */
     public function newVerifier(): string
     {
-        return self::b64url(random_bytes(32));
+        return $this->b64url(random_bytes(32));
     }
 
     /**
@@ -52,7 +52,7 @@ class Pkce
      */
     public function newState(): string
     {
-        return self::b64url(random_bytes(32));
+        return $this->b64url(random_bytes(32));
     }
 
     /**
@@ -61,8 +61,8 @@ class Pkce
      * @param string $verifier
      * @return string
      */
-    public static function challenge(string $verifier): string
+    public function challenge(string $verifier): string
     {
-        return self::b64url(hash('sha256', $verifier, true));
+        return $this->b64url(hash('sha256', $verifier, true));
     }
 }

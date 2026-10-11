@@ -163,6 +163,8 @@ class Styling implements ArgumentInterface
     }
 
     /**
+     * The storefront styling CSS for the page head.
+     *
      * The CSS to print in the page head, or '' when nothing differs from the defaults or no
      * TackQuote control can render (module off or no API key).
      *

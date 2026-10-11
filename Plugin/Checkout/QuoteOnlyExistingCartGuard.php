@@ -75,7 +75,7 @@ class QuoteOnlyExistingCartGuard
      * reads it at Cart.php:527-543.
      *
      * @param Cart $subject
-     * @param array<int|string, mixed> $data
+     * @param array<int|string,mixed> $data
      * @return void
      * @throws LocalizedException
      */

@@ -33,7 +33,17 @@ class CatalogueTest extends TestCase
     private const LOCALES = ['de_DE', 'es_ES', 'fr_FR', 'it_IT', 'ja_JP', 'nl_NL', 'pt_BR'];
 
     /** Source directories scanned for phrases. Test/ is not shipped and is not scanned. */
-    private const SOURCE_DIRS = ['Block', 'Controller', 'Cron', 'Model', 'Observer', 'Plugin', 'Setup', 'ViewModel', 'view'];
+    private const SOURCE_DIRS = [
+        'Block',
+        'Controller',
+        'Cron',
+        'Model',
+        'Observer',
+        'Plugin',
+        'Setup',
+        'ViewModel',
+        'view'
+    ];
 
     /** @var string */
     private $root;
@@ -75,8 +85,16 @@ class CatalogueTest extends TestCase
         $english = array_keys($this->read('en_US'));
         $translated = array_keys($this->read($locale));
 
-        self::assertSame([], array_values(array_diff($english, $translated)), $locale . ': phrases with no translation');
-        self::assertSame([], array_values(array_diff($translated, $english)), $locale . ': phrases en_US.csv does not have');
+        self::assertSame(
+            [],
+            array_values(array_diff($english, $translated)),
+            $locale . ': phrases with no translation'
+        );
+        self::assertSame(
+            [],
+            array_values(array_diff($translated, $english)),
+            $locale . ': phrases en_US.csv does not have'
+        );
         self::assertCount(count($english), $translated);
     }
 
@@ -247,7 +265,10 @@ class CatalogueTest extends TestCase
                 }
                 $k = $this->next($tokens, $j + 1);
                 if ($k === null || !is_array($tokens[$k]) || $tokens[$k][0] !== T_CONSTANT_ENCAPSED_STRING) {
-                    $out[] = substr($file, strlen($this->root) + 1) . ': ' . (is_array($tokens[$i]) ? $tokens[$i][2] : '?');
+                    $out[] = substr(
+                        $file,
+                        strlen($this->root) + 1
+                    ) . ': ' . (is_array($tokens[$i]) ? $tokens[$i][2] : '?');
                 }
             }
         }
@@ -314,7 +335,11 @@ class CatalogueTest extends TestCase
             if (in_array('label', $translate, true) && (string) $node->label !== '') {
                 $out[(string) $node->label] = 'etc/adminhtml/system.xml';
             }
-            if ($node->getName() === 'group' && in_array('comment', $translate, true) && (string) $node->comment !== '') {
+            if ($node->getName() === 'group' && in_array(
+                'comment',
+                $translate,
+                true
+            ) && (string) $node->comment !== '') {
                 $out[(string) $node->comment] = 'etc/adminhtml/system.xml';
             }
         }
@@ -455,7 +480,10 @@ class CatalogueTest extends TestCase
             if (!is_dir($base)) {
                 continue;
             }
-            $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($base, \FilesystemIterator::SKIP_DOTS));
+            $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(
+                $base,
+                \FilesystemIterator::SKIP_DOTS
+            ));
             foreach ($iterator as $file) {
                 if (in_array($file->getExtension(), ['php', 'phtml', 'js', 'html'], true)) {
                     $out[] = $file->getPathname();

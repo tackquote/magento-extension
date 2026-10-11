@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace TackQuote\Quotes\Model\Connect;
 
+// phpcs:disable Magento2.Functions.StaticFunction -- stateless pure URL checks, see the file comment
 class ConnectUrlPolicy
 {
     /** The default API base URL (Model\Config::DEFAULT_API_BASE_URL). */
@@ -42,6 +43,8 @@ class ConnectUrlPolicy
     private const NON_PUBLIC_SUFFIXES = ['.local', '.localhost', '.test', '.internal'];
 
     /**
+     * Whether a host is not on the public internet.
+     *
      * Localhost, a single-label name, a .local/.localhost/.test/.internal name,
      * or an IP literal in private or reserved space.
      *
@@ -96,6 +99,8 @@ class ConnectUrlPolicy
     }
 
     /**
+     * Host of the consent page the browser may be sent to.
+     *
      * The host of the consent page TackQuote answered with, or '' when the
      * browser must not be sent there.
      *
@@ -129,6 +134,7 @@ class ConnectUrlPolicy
             return '';
         }
         $query = [];
+        // phpcs:ignore Magento2.Functions.DiscouragedFunction -- two-argument form: fills $query only.
         parse_str((string) ($parts['query'] ?? ''), $query);
         if (($query['request'] ?? '') !== $requestId) {
             return '';
@@ -137,3 +143,4 @@ class ConnectUrlPolicy
         return $host;
     }
 }
+// phpcs:enable Magento2.Functions.StaticFunction

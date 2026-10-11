@@ -66,6 +66,8 @@ class ApiVisitorContext implements VisitorContextInterface
     }
 
     /**
+     * Whether the API caller is exempt from quote-only mode.
+     *
      * @return bool
      */
     public function isExempt(): bool
@@ -77,6 +79,8 @@ class ApiVisitorContext implements VisitorContextInterface
     }
 
     /**
+     * Whether the API caller is a signed-in customer.
+     *
      * @return bool
      */
     public function isLoggedIn(): bool
@@ -86,6 +90,8 @@ class ApiVisitorContext implements VisitorContextInterface
     }
 
     /**
+     * Customer group of the API caller.
+     *
      * @return int
      */
     public function getCustomerGroupId(): int
@@ -98,6 +104,8 @@ class ApiVisitorContext implements VisitorContextInterface
     }
 
     /**
+     * Customer id of the API caller, or null for a guest.
+     *
      * @return int|null
      */
     public function getCustomerId(): ?int
@@ -106,6 +114,8 @@ class ApiVisitorContext implements VisitorContextInterface
     }
 
     /**
+     * Email address of the API caller, or '' for a guest.
+     *
      * @return string
      */
     public function getCustomerEmail(): string
@@ -116,6 +126,8 @@ class ApiVisitorContext implements VisitorContextInterface
     }
 
     /**
+     * Customer the API token belongs to, if any.
+     *
      * @return CustomerInterface|null
      */
     private function customer(): ?CustomerInterface

@@ -111,6 +111,8 @@ class BuyerGroupResolver
     }
 
     /**
+     * Resolve the buyer group of one customer on one store.
+     *
      * @param int $storeId
      * @param int $customerId
      * @param string $email The customer's account email.
@@ -124,7 +126,7 @@ class BuyerGroupResolver
             return new BuyerGroupAnswer(BuyerGroupAnswer::ANONYMOUS);
         }
 
-        $cacheId = self::cacheId($storeId, $customerId, $email, $who->carriesCustomerId());
+        $cacheId = $this->cacheId($storeId, $customerId, $email, $who->carriesCustomerId());
         if (isset($this->memo[$cacheId])) {
             return $this->memo[$cacheId];
         }
@@ -134,7 +136,7 @@ class BuyerGroupResolver
             return $this->memo[$cacheId] = $cached;
         }
 
-        if ($this->cache->load(self::storeBackoffId($storeId))) {
+        if ($this->cache->load($this->storeBackoffId($storeId))) {
             return $this->memo[$cacheId] = new BuyerGroupAnswer(BuyerGroupAnswer::UNAVAILABLE);
         }
 
@@ -147,11 +149,11 @@ class BuyerGroupResolver
 
         if (empty($answer['ok'])) {
             if ((int) ($answer['status'] ?? 0) === 429) {
-                $this->cache->save('1', self::storeBackoffId($storeId), [self::CACHE_TAG], self::THROTTLED_TTL);
+                $this->cache->save('1', $this->storeBackoffId($storeId), [self::CACHE_TAG], self::THROTTLED_TTL);
             }
             $result = new BuyerGroupAnswer(BuyerGroupAnswer::UNAVAILABLE);
         } else {
-            $result = self::map($answer['data'] ?? null);
+            $result = $this->map($answer['data'] ?? null);
         }
 
         $this->cache->save(
@@ -170,7 +172,7 @@ class BuyerGroupResolver
      * @param mixed $data
      * @return BuyerGroupAnswer
      */
-    public static function map($data): BuyerGroupAnswer
+    public function map($data): BuyerGroupAnswer
     {
         if (!is_array($data) || !is_string($data['status'] ?? null)) {
             return new BuyerGroupAnswer(BuyerGroupAnswer::UNAVAILABLE);
@@ -205,7 +207,7 @@ class BuyerGroupResolver
      * @param bool $withCustomerId
      * @return string
      */
-    public static function cacheId(int $storeId, int $customerId, string $email, bool $withCustomerId = false): string
+    public function cacheId(int $storeId, int $customerId, string $email, bool $withCustomerId = false): string
     {
         return self::CACHE_PREFIX . hash(
             'sha256',
@@ -214,15 +216,19 @@ class BuyerGroupResolver
     }
 
     /**
+     * Cache id of the store's back-off marker.
+     *
      * @param int $storeId
      * @return string
      */
-    private static function storeBackoffId(int $storeId): string
+    private function storeBackoffId(int $storeId): string
     {
         return self::CACHE_PREFIX . 'throttled_' . $storeId;
     }
 
     /**
+     * Encode an answer for the cache.
+     *
      * @param BuyerGroupAnswer $answer
      * @return string
      */

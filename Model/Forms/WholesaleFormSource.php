@@ -64,6 +64,8 @@ class WholesaleFormSource
     }
 
     /**
+     * The wholesale form with this slug, normalised.
+     *
      * The normalised form, or null when TackQuote has none to show (no form with this slug,
      * no fields, or TackQuote unreachable).
      *

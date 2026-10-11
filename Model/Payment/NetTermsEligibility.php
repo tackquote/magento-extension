@@ -143,6 +143,8 @@ class NetTermsEligibility
     }
 
     /**
+     * Build a not-eligible verdict.
+     *
      * @param string $reason
      * @return array{eligible: bool, reason: string, termsDays: int}
      */

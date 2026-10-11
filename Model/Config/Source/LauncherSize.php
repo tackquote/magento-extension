@@ -18,6 +18,8 @@ use TackQuote\Quotes\Model\Styling\StyleRules;
 class LauncherSize implements OptionSourceInterface
 {
     /**
+     * Launcher size options for the configuration field.
+     *
      * @return array<int, array{value: string, label: \Magento\Framework\Phrase}>
      */
     public function toOptionArray(): array

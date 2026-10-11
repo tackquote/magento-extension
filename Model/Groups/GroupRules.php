@@ -40,6 +40,7 @@ declare(strict_types=1);
 
 namespace TackQuote\Quotes\Model\Groups;
 
+// phpcs:disable Magento2.Functions.StaticFunction -- stateless pure functions over primitives, see the file comment
 class GroupRules
 {
     /** Everybody outside a group: guests, ungrouped and unlinked customers. */
@@ -228,6 +229,8 @@ class GroupRules
     }
 
     /**
+     * Audience of a buyer-group answer, for a rule.
+     *
      * Who is shopping, for a rule: an upper-cased group code, GUESTS, or null when the group
      * could not be read. Port of WooCommerce `Tack_Catalog_Visibility::audience()`.
      *
@@ -256,7 +259,7 @@ class GroupRules
      * strict reading, which hides every category hidden from anyone. An exempt caller (admin,
      * integration) is never filtered.
      *
-     * @param array<int, string[]> $map From parseCategoryMap().
+     * @param array<int,string[]> $map From parseCategoryMap().
      * @param BuyerGroupAnswer $answer
      * @param bool $hideWhenUnknown
      * @return int[]
@@ -301,14 +304,18 @@ class GroupRules
      *   - when TackQuote could not be asked the method stays available (an outage must not
      *     remove the ability to pay or ship) unless the merchant chose the strict reading.
      *
-     * @param array<string, string[]> $map From parseMap().
+     * @param array<string,string[]> $map From parseMap().
      * @param string $key
      * @param BuyerGroupAnswer $answer
      * @param bool $restrictWhenUnknown
      * @return bool
      */
-    public static function isPermitted(array $map, string $key, BuyerGroupAnswer $answer, bool $restrictWhenUnknown): bool
-    {
+    public static function isPermitted(
+        array $map,
+        string $key,
+        BuyerGroupAnswer $answer,
+        bool $restrictWhenUnknown
+    ): bool {
         if (!isset($map[$key]) || $map[$key] === [] || $answer->isExempt()) {
             return true;
         }
@@ -322,6 +329,8 @@ class GroupRules
     }
 
     /**
+     * Shipping map line that governs a rate.
+     *
      * Which line of a shipping map governs a rate: the full rate code (`carrier_method`)
      * first, the carrier code second, evaluated ONCE.
      *
@@ -329,7 +338,7 @@ class GroupRules
      * OR-ing the answers lets an unconfigured full id ("permitted") short-circuit the
      * carrier's rule, so every carrier-level restriction silently did nothing.
      *
-     * @param array<string, mixed> $map
+     * @param array<string,mixed> $map
      * @param string $carrier
      * @param string $method
      * @return string
@@ -342,6 +351,8 @@ class GroupRules
     }
 
     /**
+     * Whether a discount rule covers a rate.
+     *
      * Does a discount rule cover this rate? An empty method list covers every rate; otherwise
      * the full rate code or the carrier code must be listed.
      *
@@ -366,7 +377,7 @@ class GroupRules
      * (DEFAULT_PRECISION = 2). Never below 0. A rate that already costs 0 is returned as is.
      *
      * @param float $price
-     * @param array{mode: string, percent: float, methods: string[]} $rule
+     * @param array{mode:string,percent:float,methods:string[]} $rule
      * @return float
      */
     public static function discountedPrice(float $price, array $rule): float
@@ -497,3 +508,4 @@ class GroupRules
         return true;
     }
 }
+// phpcs:enable Magento2.Functions.StaticFunction

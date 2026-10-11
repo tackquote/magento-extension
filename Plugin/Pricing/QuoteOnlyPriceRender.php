@@ -85,6 +85,8 @@ class QuoteOnlyPriceRender
     }
 
     /**
+     * Render "Price on request" instead of the price where quote-only applies.
+     *
      * @param Render $subject
      * @param callable $proceed
      * @param string $priceCode

@@ -59,6 +59,8 @@ class GroupShippingRates
     }
 
     /**
+     * Apply the buyer group's shipping rules to the collected rates.
+     *
      * @param Shipping $subject
      * @param Shipping $result
      * @param RateRequest $request
@@ -86,6 +88,8 @@ class GroupShippingRates
     }
 
     /**
+     * Cart the rate request was made for, if it can be found.
+     *
      * @param RateRequest $request
      * @return CartInterface|null
      */

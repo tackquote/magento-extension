@@ -85,6 +85,8 @@ class WholesaleApprovalContext
     }
 
     /**
+     * Add the wholesale approval to the page cache vary string.
+     *
      * @param HttpContext $subject
      * @return void
      */

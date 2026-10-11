@@ -18,6 +18,8 @@ use TackQuote\Quotes\Model\Styling\StyleRules;
 class LauncherPosition implements OptionSourceInterface
 {
     /**
+     * Launcher position options for the configuration field.
+     *
      * @return array<int, array{value: string, label: \Magento\Framework\Phrase}>
      */
     public function toOptionArray(): array

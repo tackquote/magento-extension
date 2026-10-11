@@ -64,7 +64,11 @@ class WholesaleApprovalTest extends TestCase
     {
         $this->client->expects(self::once())->method('get')
             ->with(StorefrontClient::ROUTE_PRICE_ACCESS, ['buyerEmail' => self::EMAIL], 3)
-            ->willReturn(['ok' => true, 'status' => 200, 'data' => ['status' => 'linked', 'wholesaleApproved' => true]]);
+            ->willReturn([
+                'ok' => true,
+                'status' => 200,
+                'data' => ['status' => 'linked', 'wholesaleApproved' => true]
+            ]);
 
         self::assertTrue($this->approval()->isApproved('  Buyer@Example.TEST ', 42, 3));
     }
@@ -75,7 +79,7 @@ class WholesaleApprovalTest extends TestCase
 
         self::assertTrue($this->approval()->isApproved(self::EMAIL, 42, 1));
 
-        $entry = $this->saved[WholesaleApproval::cacheId(self::EMAIL, 42, 1)] ?? null;
+        $entry = $this->saved[$this->approval()->cacheId(self::EMAIL, 42, 1)] ?? null;
         self::assertNotNull($entry, 'the answer was not cached');
         self::assertSame(300, $entry[2], 'the WooCommerce plugin TTL: five minutes');
         self::assertSame(WholesaleApproval::CACHE_TTL, $entry[2]);
@@ -99,7 +103,7 @@ class WholesaleApprovalTest extends TestCase
         $this->answer(['ok' => true, 'status' => 200, 'data' => ['status' => 'linked', 'wholesaleApproved' => false]]);
 
         self::assertFalse($this->approval()->isApproved(self::EMAIL, 42, 1));
-        self::assertSame(300, $this->saved[WholesaleApproval::cacheId(self::EMAIL, 42, 1)][2]);
+        self::assertSame(300, $this->saved[$this->approval()->cacheId(self::EMAIL, 42, 1)][2]);
     }
 
     public function testUnlinkedAndAnonymousAreNotApproval(): void
@@ -121,7 +125,7 @@ class WholesaleApprovalTest extends TestCase
         $this->answer($result);
 
         self::assertFalse($this->approval()->isApproved(self::EMAIL, 42, 1), 'a failure must fail CLOSED');
-        $entry = $this->saved[WholesaleApproval::cacheId(self::EMAIL, 42, 1)] ?? null;
+        $entry = $this->saved[$this->approval()->cacheId(self::EMAIL, 42, 1)] ?? null;
         self::assertNotNull($entry, 'a failure must be remembered so an outage is not retried per page view');
         self::assertSame(60, $entry[2]);
         self::assertSame(WholesaleApproval::FAIL_TTL, $entry[2]);
@@ -159,12 +163,12 @@ class WholesaleApprovalTest extends TestCase
 
     public function testTheCacheIdNeverContainsTheEmailAndSeparatesCustomersAndStores(): void
     {
-        $id = WholesaleApproval::cacheId(self::EMAIL, 42, 1);
+        $id = $this->approval()->cacheId(self::EMAIL, 42, 1);
 
         self::assertStringNotContainsString('example', $id);
         self::assertMatchesRegularExpression('/^[a-z0-9_]+$/', $id, 'a valid Magento cache id');
-        self::assertNotSame($id, WholesaleApproval::cacheId(self::EMAIL, 43, 1));
-        self::assertNotSame($id, WholesaleApproval::cacheId(self::EMAIL, 42, 2));
-        self::assertNotSame($id, WholesaleApproval::cacheId('other@example.test', 42, 1));
+        self::assertNotSame($id, $this->approval()->cacheId(self::EMAIL, 43, 1));
+        self::assertNotSame($id, $this->approval()->cacheId(self::EMAIL, 42, 2));
+        self::assertNotSame($id, $this->approval()->cacheId('other@example.test', 42, 1));
     }
 }

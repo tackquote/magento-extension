@@ -1273,16 +1273,21 @@ without guessing versions, and `autoload-dev` is what makes `Test/` loadable:
 ```bash
 composer install                     # at the repository root
 vendor/bin/phpcs                     # picks up ./phpcs.xml -> the Magento2 standard
+scripts/check-standards.sh           # the same, failing on ANY error or warning (severity 1)
 vendor/bin/phpunit -c Test/Unit/phpunit.xml
 node Test/Js/cart-seed.test.js       # the cart-page mapper; plain Node, no dependencies
 ```
+
+The module is held to the Magento coding standard with **zero errors and zero warnings**;
+`docs/CODING_STANDARDS.md` has the policy, the commands and every suppression with its
+reason.
 
 `Test/` is deliberately absent from the PRODUCTION `autoload` block. That block used to map
 the module root (`"TackQuote\\Quotes\\": ""`), which made
 `TackQuote\Quotes\Test\Unit\Controller\Quote\SubmitTest` — and therefore PHPUnit, an
 undeclared dependency — resolvable on a live store. The production map now names only the
-six namespaces that ship code (`Block\`, `Controller\`, `Cron\`, `Model\`, `Observer\`,
-`Plugin\`), and `Test\` lives in `autoload-dev`. **Adding a new top-level source directory
+namespaces that ship code (`Block\`, `Controller\`, `Cron\`, `Model\`, `Observer\`,
+`Plugin\`, `Setup\`, `ViewModel\`), and `Test\` lives in `autoload-dev`. **Adding a new top-level source directory
 means adding it to `autoload.psr-4`**; that is the cost of not mapping the root.
 
 That cost is not theoretical. `Plugin\` — which is the whole of quote-only enforcement — was
@@ -1781,6 +1786,18 @@ magento-extension/                              (repository root)
   integration access token as a Bearer token and asked merchants to enable Magento's
   standalone-Bearer setting. TackQuote signs with OAuth 1.0a using all four Integration
   values, so that setting is not needed.
+- **Magento coding standard: zero errors, zero warnings.** No behaviour change. `phpcs`
+  with the `Magento2` standard now passes at every severity (`--severity=1`), and
+  `scripts/check-standards.sh` fails on any finding so it stays that way
+  (`docs/CODING_STANDARDS.md`). The one error is gone: `QuoteOnlyRules` is no longer
+  `final` (a test now keeps it unextended). Every method has a one-line summary,
+  long lines are wrapped, the product page reads the current product through
+  `Magento\Catalog\Helper\Data` instead of the deprecated `Magento\Framework\Registry`,
+  `registration.php` declares strict types, and static helpers that had an instance at
+  hand became instance methods (the stateless rule classes keep documented suppressions).
+  The admin Overview's class names are now dash-separated (`tq-overview-*`, `tq-connect-*`) as
+  the LESS standard asks; the storefront's `tackquote-*__*` class names are unchanged, since
+  merchants' custom CSS targets them.
 
 ### 1.4.1
 

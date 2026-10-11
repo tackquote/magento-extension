@@ -18,6 +18,8 @@ use TackQuote\Quotes\Model\Styling\StyleRules;
 class ButtonStyle implements OptionSourceInterface
 {
     /**
+     * Button style options for the configuration field.
+     *
      * @return array<int, array{value: string, label: \Magento\Framework\Phrase}>
      */
     public function toOptionArray(): array

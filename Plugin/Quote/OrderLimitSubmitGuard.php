@@ -48,6 +48,8 @@ class OrderLimitSubmitGuard
     }
 
     /**
+     * Check order limits before the order is placed.
+     *
      * @param QuoteManagement $subject
      * @param Quote $quote
      * @param array $orderData

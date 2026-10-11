@@ -81,7 +81,15 @@ class OverviewTest extends TestCase
         self::assertSame(2, $overview->countOn($rows));
         self::assertSame(7, $overview->countSwitches($rows));
         self::assertSame(
-            ['storefront', 'storefront', 'storefront', 'quote_request', 'quote_request', 'quote_request', 'quote_request'],
+            [
+                'storefront',
+                'storefront',
+                'storefront',
+                'quote_request',
+                'quote_request',
+                'quote_request',
+                'quote_request'
+            ],
             array_column($rows, 'group')
         );
     }
@@ -115,7 +123,10 @@ class OverviewTest extends TestCase
 
         self::assertSame('https://admin.test/adminhtml/system_config/edit#tackquote_quotes_styling-link', $link);
         self::assertSame(
-            [['adminhtml/system_config/edit', ['section' => 'tackquote_quotes', '_fragment' => 'tackquote_quotes_styling-link']]],
+            [[
+                'adminhtml/system_config/edit',
+                ['section' => 'tackquote_quotes', '_fragment' => 'tackquote_quotes_styling-link']
+            ]],
             $urls
         );
     }

@@ -47,7 +47,10 @@ class QuoteOnlySubmitGuardTest extends TestCase
 
         $this->expectException(LocalizedException::class);
 
-        (new QuoteOnlySubmitGuard($this->mode, new QuotedCart(new QuotedLine(new Json()))))->beforeSubmit($this->management, $this->cart);
+        (new QuoteOnlySubmitGuard(
+            $this->mode,
+            new QuotedCart(new QuotedLine(new Json()))
+        ))->beforeSubmit($this->management, $this->cart);
     }
 
     public function testACartHoldingAQuoteOnlyProductCannotBeConvertedInNormalMode(): void
@@ -57,7 +60,10 @@ class QuoteOnlySubmitGuardTest extends TestCase
 
         $this->expectException(LocalizedException::class);
 
-        (new QuoteOnlySubmitGuard($this->mode, new QuotedCart(new QuotedLine(new Json()))))->beforeSubmit($this->management, $this->cart);
+        (new QuoteOnlySubmitGuard(
+            $this->mode,
+            new QuotedCart(new QuotedLine(new Json()))
+        ))->beforeSubmit($this->management, $this->cart);
     }
 
     public function testAnOrdinaryCartInANormalStoreIsPlaced(): void
@@ -67,7 +73,10 @@ class QuoteOnlySubmitGuardTest extends TestCase
         $this->mode->method('isActive')->willReturn(false);
         $this->mode->method('cartHasQuoteOnlyProduct')->willReturn(false);
 
-        (new QuoteOnlySubmitGuard($this->mode, new QuotedCart(new QuotedLine(new Json()))))->beforeSubmit($this->management, $this->cart);
+        (new QuoteOnlySubmitGuard(
+            $this->mode,
+            new QuotedCart(new QuotedLine(new Json()))
+        ))->beforeSubmit($this->management, $this->cart);
 
         self::assertTrue(true);
     }
