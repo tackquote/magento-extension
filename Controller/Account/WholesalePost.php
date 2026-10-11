@@ -4,8 +4,11 @@
  *
  * Signed-in customers only (AbstractAccount); the form key is checked by Magento's CSRF
  * validator for every HttpPostActionInterface action. The applicant is the SESSION's customer,
- * never a posted field. Post/Redirect/Get: the outcome is a session message on the page the
- * form was on (the account tab or a CMS page), validated as this store's own URL.
+ * never a posted field. Post/Redirect/Get: the outcome is a session message on the Wholesale
+ * account tab whenever that tab is on, wherever the form was (the tab then shows the pending
+ * state too; devstore Q/A finding #5, the browser used to land on whatever the referer was).
+ * Only with the tab off does it go back to the page the form was on (a CMS page), validated as
+ * this store's own URL.
  *
  * @package TackQuote_Quotes
  */
@@ -101,9 +104,13 @@ class WholesalePost extends AbstractAccount implements HttpPostActionInterface
      */
     public function execute()
     {
-        $redirect = $this->resultRedirectFactory->create();
-        $redirect->setUrl($this->_redirect->getRefererUrl());
         $storeId = (int) $this->storeManager->getStore()->getId();
+        $redirect = $this->resultRedirectFactory->create();
+        if ($this->config->isWholesaleTabEnabled($storeId)) {
+            $redirect->setPath('tackquote/account/wholesale');
+        } else {
+            $redirect->setUrl($this->_redirect->getRefererUrl());
+        }
         if (!$this->config->isConfigured($storeId)) {
             $this->messageManager->addErrorMessage(__('Applications are not available right now.'));
 
@@ -146,12 +153,12 @@ class WholesalePost extends AbstractAccount implements HttpPostActionInterface
             $storeId
         );
 
+        // A received application (`pending`) is a success for the customer: it was filed, and
+        // the tab they land on shows that it is being reviewed.
         if ($outcome['kind'] === 'error') {
             $this->messageManager->addErrorMessage($outcome['message']);
-        } elseif ($outcome['kind'] === 'success') {
-            $this->messageManager->addSuccessMessage($outcome['message']);
         } else {
-            $this->messageManager->addNoticeMessage($outcome['message']);
+            $this->messageManager->addSuccessMessage($outcome['message']);
         }
 
         return $redirect;
