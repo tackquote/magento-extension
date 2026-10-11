@@ -28,7 +28,9 @@
  * Context::CONTEXT_AUTH (line 55) on every frontend action
  * (vendor/magento/module-customer/etc/frontend/di.xml:23-26). So a guest and a Trade-group
  * customer get different cache entries and therefore different markup, without this module
- * declaring a vary dimension of its own.
+ * declaring a vary dimension of its own. The one input that is NOT in Magento's own context —
+ * TackQuote's approval of a wholesale customer, for the "except approved wholesale accounts"
+ * scope — gets its own vary value from Plugin\PageCache\WholesaleApprovalContext.
  *
  * ─────────────────────────────────────────────────────────────────────────────────────────
  * WHY THE HANDLES ARE SPLIT BY PAGE
@@ -46,6 +48,7 @@ declare(strict_types=1);
 
 namespace TackQuote\Quotes\Observer;
 
+use Magento\Framework\App\RequestInterface;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Framework\View\LayoutInterface;
@@ -74,11 +77,18 @@ class QuoteOnlyLayoutHandle implements ObserverInterface
     private $quoteOnlyMode;
 
     /**
-     * @param QuoteOnlyMode $quoteOnlyMode
+     * @var RequestInterface
      */
-    public function __construct(QuoteOnlyMode $quoteOnlyMode)
+    private $request;
+
+    /**
+     * @param QuoteOnlyMode $quoteOnlyMode
+     * @param RequestInterface $request
+     */
+    public function __construct(QuoteOnlyMode $quoteOnlyMode, RequestInterface $request)
     {
         $this->quoteOnlyMode = $quoteOnlyMode;
+        $this->request = $request;
     }
 
     /**
@@ -87,20 +97,31 @@ class QuoteOnlyLayoutHandle implements ObserverInterface
      */
     public function execute(Observer $observer): void
     {
-        if (!$this->quoteOnlyMode->isActive()) {
-            return;
-        }
-
         $layout = $observer->getData('layout');
 
         if (!$layout instanceof LayoutInterface) {
             return;
         }
 
+        $action = (string) $observer->getData('full_action_name');
+
+        if (!$this->quoteOnlyMode->isActive()) {
+            // PER-PRODUCT: a product quote-only by its own flag loses its Add to Cart blocks
+            // on its own page, and nothing else changes — no body class, so every other tile
+            // and page keeps its cart. The product page is cached per product and cleaned on
+            // product save, so this cannot leak to another product. The id is the catalog
+            // route's own `id` parameter (catalog/product/view/id/<id>).
+            if ($action === self::ACTION_PRODUCT_VIEW
+                && $this->quoteOnlyMode->isProductIdQuoteOnly((int) $this->request->getParam('id'))
+            ) {
+                $layout->getUpdate()->addHandle(self::HANDLE_PRODUCT);
+            }
+
+            return;
+        }
+
         $update = $layout->getUpdate();
         $update->addHandle(self::HANDLE_GLOBAL);
-
-        $action = (string) $observer->getData('full_action_name');
 
         if ($action === self::ACTION_PRODUCT_VIEW) {
             $update->addHandle(self::HANDLE_PRODUCT);

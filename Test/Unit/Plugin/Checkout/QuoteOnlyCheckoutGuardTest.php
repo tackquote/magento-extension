@@ -8,9 +8,11 @@ declare(strict_types=1);
 namespace TackQuote\Quotes\Test\Unit\Plugin\Checkout;
 
 use Magento\Checkout\Controller\Index\Index as CheckoutIndex;
+use Magento\Checkout\Model\Session as CheckoutSession;
 use Magento\Framework\Controller\Result\Redirect;
 use Magento\Framework\Controller\Result\RedirectFactory;
 use Magento\Framework\Message\ManagerInterface as MessageManager;
+use Magento\Quote\Model\Quote;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use TackQuote\Quotes\Model\QuoteOnlyMode;
@@ -36,6 +38,12 @@ class QuoteOnlyCheckoutGuardTest extends TestCase
     /** @var CheckoutIndex&MockObject */
     private $controller;
 
+    /** @var CheckoutSession&MockObject */
+    private $session;
+
+    /** @var Quote&MockObject */
+    private $cart;
+
     protected function setUp(): void
     {
         $this->mode = $this->createMock(QuoteOnlyMode::class);
@@ -49,11 +57,18 @@ class QuoteOnlyCheckoutGuardTest extends TestCase
         $this->redirectFactory->method('create')->willReturn($this->redirect);
 
         $this->controller = $this->createMock(CheckoutIndex::class);
+
+        $this->cart = $this->createMock(Quote::class);
+        $this->session = $this->getMockBuilder(CheckoutSession::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['getQuote'])
+            ->getMock();
+        $this->session->method('getQuote')->willReturn($this->cart);
     }
 
     private function guard(): QuoteOnlyCheckoutGuard
     {
-        return new QuoteOnlyCheckoutGuard($this->mode, $this->redirectFactory, $this->messages);
+        return new QuoteOnlyCheckoutGuard($this->mode, $this->redirectFactory, $this->messages, $this->session);
     }
 
     public function testCheckoutIsRefusedAndTheShopperIsSentBackToTheirCart(): void
@@ -88,5 +103,26 @@ class QuoteOnlyCheckoutGuardTest extends TestCase
         });
 
         self::assertSame('the real checkout page', $result);
+    }
+
+    public function testACartHoldingAQuoteOnlyProductIsRefusedInNormalMode(): void
+    {
+        // Per-product: the store is not quote-only, but this cart holds a product whose own
+        // flag is Yes (added before the flag was set). It must not reach checkout.
+        $this->mode->method('isActive')->willReturn(false);
+        $this->mode->method('cartHasQuoteOnlyProduct')->with($this->cart)->willReturn(true);
+
+        $this->redirect->expects(self::once())->method('setPath')->with('checkout/cart')->willReturnSelf();
+        $this->messages->expects(self::once())->method('addErrorMessage');
+
+        $proceedWasCalled = false;
+        $result = $this->guard()->aroundExecute($this->controller, function () use (&$proceedWasCalled) {
+            $proceedWasCalled = true;
+
+            return 'the real checkout page';
+        });
+
+        self::assertFalse($proceedWasCalled);
+        self::assertSame($this->redirect, $result);
     }
 }

@@ -73,7 +73,10 @@
                         they work normally again the moment you switch this off.<br>
                         Creating orders from the Admin (Sales &gt; Orders &gt; Create New
                         Order) is unaffected, and so is TackQuote turning an accepted quote
-                        into a real order.<br>
+                        into a real order. The same refusals apply to shoppers using the REST
+                        and GraphQL APIs; your admin and integration tokens are exempt.<br>
+                        To make only <strong>some</strong> products quote-only, leave this off
+                        and set <em>Quote only (TackQuote)</em> to Yes on those products.<br>
                         <em>Requires a saved API key above — without one no quote button can
                         render, so quote-only mode stays inactive rather than leaving your
                         storefront with no way to buy AND no way to ask.</em>]]></comment>
@@ -82,9 +85,34 @@
                        showInDefault="1" showInWebsite="1" showInStore="0">
                     <label>Applies to</label>
                     <source_model>TackQuote\Quotes\Model\Config\Source\QuoteOnlyScope</source_model>
-                    <comment>Who sees the quote-only storefront. "Guests only" is the usual
-                        B2B setup: the public gets a catalog, and approved customers who have
-                        signed in keep a normal cart and checkout.</comment>
+                    <comment><![CDATA[Who sees the quote-only storefront. "Guests only" is the usual
+                        B2B setup: the public gets a catalog, and customers who have signed in
+                        keep a normal cart and checkout.<br>
+                        "Everyone except approved wholesale accounts" keeps the cart only for a
+                        signed-in customer whose wholesale application you have approved in
+                        TackQuote (matched by the customer's email address, re-checked every
+                        5 minutes). If TackQuote cannot be reached the customer is treated as
+                        not approved and sees the quote-only storefront. Magento does not
+                        confirm a customer's email on its own: turn on
+                        <em>Customer Configuration &gt; Create New Account Options &gt; Require
+                        Emails Confirmation</em> so nobody can sign up with an approved buyer's
+                        address.]]></comment>
+                    <depends>
+                        <field id="enabled">1</field>
+                    </depends>
+                </field>
+                <field id="hide_prices" translate="label comment" type="select" sortOrder="40"
+                       showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Show "Price on request" instead of prices</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>For the shoppers quote-only mode applies to, product pages and
+                        category, search and related-product tiles show "Price on request"
+                        instead of the price (and no account price or volume table). Everyone
+                        else, the cart, the admin and the quote request you receive in
+                        TackQuote keep Magento's prices. This changes what is displayed; it
+                        does not remove prices from the product data feeds, REST or GraphQL.
+                        Products that are quote-only on their own (the product's "Quote only
+                        (TackQuote)" setting) keep their price and show "Available on quote".</comment>
                     <depends>
                         <field id="enabled">1</field>
                     </depends>

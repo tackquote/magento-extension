@@ -15,6 +15,7 @@
     "magento/module-configurable-product": "100.4.*",
     "magento/module-cron": "100.4.*",
     "magento/module-customer": "103.0.*",
+    "magento/module-eav": "102.1.*",
     "magento/module-quote": "101.2.*",
     "magento/module-store": "101.1.*",
     "magento/module-ui": "101.2.*"
@@ -31,7 +32,8 @@
       "TackQuote\\Quotes\\Cron\\": "Cron/",
       "TackQuote\\Quotes\\Model\\": "Model/",
       "TackQuote\\Quotes\\Observer\\": "Observer/",
-      "TackQuote\\Quotes\\Plugin\\": "Plugin/"
+      "TackQuote\\Quotes\\Plugin\\": "Plugin/",
+      "TackQuote\\Quotes\\Setup\\": "Setup/"
     }
   },
   "autoload-dev": {

@@ -97,4 +97,28 @@ class QuoteOnlyCartGuardTest extends TestCase
 
         $this->guard()->beforeAddProduct($this->quote, $this->product, 1);
     }
+
+    public function testAQuoteOnlyProductIsRefusedWhileTheStoreIsInNormalMode(): void
+    {
+        // Per-product: the store sells normally, this one product is quote-only.
+        $this->mode->method('isActive')->willReturn(false);
+        $this->mode->method('isProductQuoteOnly')->with($this->product)->willReturn(true);
+        $this->product->method('getName')->willReturn('Industrial pump');
+
+        try {
+            $this->guard()->beforeAddProduct($this->quote, $this->product, 1);
+            self::fail('a quote-only product went into the cart');
+        } catch (LocalizedException $e) {
+            self::assertStringContainsString('Industrial pump', (string) $e->getMessage());
+            self::assertStringContainsString('quote', strtolower((string) $e->getMessage()));
+        }
+    }
+
+    public function testAnOrdinaryProductInANormalStoreIsNotRefused(): void
+    {
+        $this->mode->method('isActive')->willReturn(false);
+        $this->mode->expects(self::once())->method('isProductQuoteOnly')->willReturn(false);
+
+        $this->guard()->beforeAddProduct($this->quote, $this->product, 1);
+    }
 }

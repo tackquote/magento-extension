@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace TackQuote\Quotes\Test\Unit\Observer;
 
+use Magento\Framework\App\RequestInterface;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\View\Layout\ProcessorInterface;
 use Magento\Framework\View\LayoutInterface;
@@ -29,12 +30,19 @@ class QuoteOnlyLayoutHandleTest extends TestCase
     /** @var LayoutInterface&MockObject */
     private $layout;
 
+    /** @var RequestInterface&MockObject */
+    private $request;
+
     protected function setUp(): void
     {
         $this->mode = $this->createMock(QuoteOnlyMode::class);
         $this->update = $this->createMock(ProcessorInterface::class);
         $this->layout = $this->createMock(LayoutInterface::class);
         $this->layout->method('getUpdate')->willReturn($this->update);
+        $this->request = $this->createMock(RequestInterface::class);
+        $this->request->method('getParam')->willReturnCallback(static function ($name) {
+            return $name === 'id' ? '7' : null;
+        });
     }
 
     private function observerFor(string $fullActionName): Observer
@@ -58,7 +66,7 @@ class QuoteOnlyLayoutHandleTest extends TestCase
             }
         );
 
-        (new QuoteOnlyLayoutHandle($this->mode))->execute($this->observerFor($fullActionName));
+        (new QuoteOnlyLayoutHandle($this->mode, $this->request))->execute($this->observerFor($fullActionName));
 
         return $added;
     }
@@ -120,8 +128,30 @@ class QuoteOnlyLayoutHandleTest extends TestCase
         $observer = new Observer();
         $observer->setData('full_action_name', 'catalog_product_view');
 
-        (new QuoteOnlyLayoutHandle($this->mode))->execute($observer);
+        (new QuoteOnlyLayoutHandle($this->mode, $this->request))->execute($observer);
 
         self::assertTrue(true, 'an observer must not fatal the whole storefront');
+    }
+
+    public function testAQuoteOnlyProductLosesItsAddToCartOnItsOwnPageInNormalMode(): void
+    {
+        $this->mode->method('isActive')->willReturn(false);
+        $this->mode->method('isProductIdQuoteOnly')->willReturnCallback(static function (int $id): bool {
+            return $id === 7;
+        });
+
+        self::assertSame(
+            [QuoteOnlyLayoutHandle::HANDLE_PRODUCT],
+            $this->handlesAddedOn('catalog_product_view'),
+            'only the product handle: no body class, so every other tile keeps its cart'
+        );
+    }
+
+    public function testAQuoteOnlyProductDoesNotChangeAnyOtherPage(): void
+    {
+        $this->mode->method('isActive')->willReturn(false);
+        $this->mode->method('isProductIdQuoteOnly')->willReturn(true);
+
+        self::assertSame([], $this->handlesAddedOn('catalog_category_view'));
     }
 }

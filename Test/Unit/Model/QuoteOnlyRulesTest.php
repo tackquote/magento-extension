@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace TackQuote\Quotes\Test\Unit\Model;
 
 use PHPUnit\Framework\TestCase;
+use TackQuote\Quotes\Model\Config\Source\QuoteOnlyScope;
 use TackQuote\Quotes\Model\QuoteOnlyRules;
 
 /**
@@ -107,6 +108,88 @@ class QuoteOnlyRulesTest extends TestCase
     {
         // The admin source model is built from these constants; if the vocabulary changes,
         // storefront and admin must change together.
-        self::assertSame(['all', 'guests', 'groups'], QuoteOnlyRules::scopes());
+        self::assertSame(['all', 'guests', 'groups', 'unapproved'], QuoteOnlyRules::scopes());
+
+        $values = array_map(
+            static function (array $option): string {
+                return (string) $option['value'];
+            },
+            (new QuoteOnlyScope())->toOptionArray()
+        );
+        self::assertSame(QuoteOnlyRules::scopes(), $values, 'the admin dropdown offers every scope, and only those');
+    }
+
+    // ── "Everyone except approved wholesale accounts" ────────────────────────────────────
+
+    public function testScopeUnapprovedSparesOnlyASignedInApprovedBuyer(): void
+    {
+        self::assertFalse(QuoteOnlyRules::applies(true, 'unapproved', [], true, 1, true));
+        self::assertTrue(QuoteOnlyRules::applies(true, 'unapproved', [], true, 1, false), 'unapproved buyer');
+        self::assertTrue(QuoteOnlyRules::applies(true, 'unapproved', [], false, 0, false), 'guest');
+        self::assertTrue(
+            QuoteOnlyRules::applies(true, 'unapproved', [], false, 0, true),
+            'an approval answer for somebody who is not signed in cannot be about them'
+        );
+    }
+
+    public function testScopeUnapprovedFailsClosedWhenNoAnswerIsPassed(): void
+    {
+        // The default for $isApprovedWholesale is FALSE: a caller that could not ask gets
+        // the quote-only storefront.
+        self::assertTrue(QuoteOnlyRules::applies(true, 'unapproved', [], true, 1));
+    }
+
+    public function testOnlyAStrictLinkedAndApprovedAnswerIsApproval(): void
+    {
+        self::assertTrue(QuoteOnlyRules::isApprovedAnswer(['status' => 'linked', 'wholesaleApproved' => true]));
+        self::assertFalse(QuoteOnlyRules::isApprovedAnswer(['status' => 'linked', 'wholesaleApproved' => false]));
+        self::assertFalse(QuoteOnlyRules::isApprovedAnswer(['status' => 'linked', 'wholesaleApproved' => 'true']));
+        self::assertFalse(QuoteOnlyRules::isApprovedAnswer(['status' => 'linked', 'wholesaleApproved' => 1]));
+        self::assertFalse(QuoteOnlyRules::isApprovedAnswer(['status' => 'linked']));
+        self::assertFalse(QuoteOnlyRules::isApprovedAnswer(['status' => 'unlinked', 'reason' => 'customer_not_linked']));
+        self::assertFalse(QuoteOnlyRules::isApprovedAnswer(['status' => 'anonymous']));
+        self::assertFalse(QuoteOnlyRules::isApprovedAnswer(['status' => 'approved', 'wholesaleApproved' => true]));
+        self::assertFalse(QuoteOnlyRules::isApprovedAnswer(null));
+    }
+
+    // ── Per-product flag ─────────────────────────────────────────────────────────────────
+
+    /**
+     * @dataProvider flagValues
+     * @param mixed $raw
+     */
+    public function testOnlyAnExplicitOneSwitchesAProductToQuoteOnly($raw, bool $expected): void
+    {
+        self::assertSame($expected, QuoteOnlyRules::isFlagOn($raw));
+    }
+
+    /**
+     * @return array<string, array{0: mixed, 1: bool}>
+     */
+    public static function flagValues(): array
+    {
+        return [
+            'string 1 (EAV int read back)' => ['1', true],
+            'int 1' => [1, true],
+            'bool true' => [true, true],
+            'padded string' => [' 1 ', true],
+            'string 0' => ['0', false],
+            'int 0' => [0, false],
+            'never set (null)' => [null, false],
+            'attribute missing (false)' => [false, false],
+            'array (multi-attribute read)' => [['1'], false],
+            'junk' => ['yes', false],
+            'int 2' => [2, false],
+        ];
+    }
+
+    // ── Price on request ─────────────────────────────────────────────────────────────────
+
+    public function testPricesHideOnlyWhereTheStoreWideModeAppliesAndTheSwitchIsOn(): void
+    {
+        self::assertTrue(QuoteOnlyRules::hidesPrices(true, true));
+        self::assertFalse(QuoteOnlyRules::hidesPrices(true, false));
+        self::assertFalse(QuoteOnlyRules::hidesPrices(false, true));
+        self::assertFalse(QuoteOnlyRules::hidesPrices(false, false));
     }
 }

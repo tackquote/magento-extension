@@ -89,7 +89,15 @@ class RequestQuote extends Template
      */
     public function isQuoteOnly(): bool
     {
-        return $this->quoteOnlyMode->isActive();
+        if ($this->quoteOnlyMode->isActive()) {
+            return true;
+        }
+
+        // Per-product quote-only: Observer\QuoteOnlyLayoutHandle removed this page's Add to
+        // Cart blocks, so the request trigger has to render for the same reason as below.
+        $product = $this->getCurrentProduct();
+
+        return $product !== null && $this->quoteOnlyMode->isProductQuoteOnly($product);
     }
 
     /**

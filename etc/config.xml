@@ -2,16 +2,18 @@
 <!--
   Default values for TackQuote settings that need an explicit default.
 
-  Only the B2B display switches and the quote page / cart button / target price /
-  attachment switches are listed. Each is OFF until a merchant turns it on:
-  showing a customer's negotiated prices is a decision a merchant makes, not something a
-  module upgrade does to their storefront (the WooCommerce plugin ships the same switches
-  defaulting to "no").
+  Each switch listed is OFF until a merchant turns it on: showing a customer's negotiated
+  prices, or hiding the catalogue's prices behind "Price on request", is a decision a
+  merchant makes, not something a module upgrade does to their storefront (the WooCommerce
+  plugin ships the same switches defaulting to "no").
 -->
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
     <default>
         <tackquote_quotes>
+            <quote_only>
+                <hide_prices>0</hide_prices>
+            </quote_only>
             <b2b>
                 <enable_account_price>0</enable_account_price>
                 <enable_quantity_breaks>0</enable_quantity_breaks>

@@ -12,6 +12,7 @@ namespace TackQuote\Quotes\Block\Adminhtml;
 use Magento\Backend\Block\Template;
 use Magento\Backend\Block\Template\Context;
 use TackQuote\Quotes\Model\Config;
+use TackQuote\Quotes\Model\Config\Source\QuoteOnlyScope;
 
 class Dashboard extends Template
 {
@@ -21,14 +22,25 @@ class Dashboard extends Template
     private $config;
 
     /**
+     * @var QuoteOnlyScope
+     */
+    private $quoteOnlyScope;
+
+    /**
      * @param Context $context
      * @param Config $config
+     * @param QuoteOnlyScope $quoteOnlyScope
      * @param array $data
      */
-    public function __construct(Context $context, Config $config, array $data = [])
-    {
+    public function __construct(
+        Context $context,
+        Config $config,
+        QuoteOnlyScope $quoteOnlyScope,
+        array $data = []
+    ) {
         parent::__construct($context, $data);
         $this->config = $config;
+        $this->quoteOnlyScope = $quoteOnlyScope;
     }
 
     /**
@@ -110,6 +122,43 @@ class Dashboard extends Template
         }
 
         return $out;
+    }
+
+    /**
+     * The quote-only rows of the "B2B features" card, as the merchant set them.
+     *
+     * Raw settings, like getB2bSwitches(): the store-wide switch, who it applies to (shown only
+     * while it is on), and "Price on request". The per-product switch lives on each product
+     * (attribute `tackquote_quote_only`), so the card names it instead of counting products.
+     *
+     * @return array<int, array{label: string, on: bool|null, value?: string}>
+     */
+    public function getQuoteOnlyRows(): array
+    {
+        $enabled = $this->config->isQuoteOnlyEnabled();
+        $rows = [
+            ['label' => (string) __('Quote-only store'), 'on' => $enabled],
+        ];
+
+        if ($enabled) {
+            $scope = $this->config->getQuoteOnlyScope();
+            $label = $scope;
+            foreach ($this->quoteOnlyScope->toOptionArray() as $option) {
+                if ($option['value'] === $scope) {
+                    $label = (string) $option['label'];
+                }
+            }
+            $rows[] = ['label' => (string) __('Applies to'), 'on' => null, 'value' => $label];
+        }
+
+        $rows[] = ['label' => (string) __('Price on request'), 'on' => $this->config->isQuoteOnlyHidePrices()];
+        $rows[] = [
+            'label' => (string) __('Quote only, per product'),
+            'on' => null,
+            'value' => (string) __('Set "Quote only (TackQuote)" on a product'),
+        ];
+
+        return $rows;
     }
 
     /**

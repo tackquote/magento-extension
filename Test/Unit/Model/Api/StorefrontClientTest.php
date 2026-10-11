@@ -120,6 +120,22 @@ class StorefrontClientTest extends TestCase
         );
     }
 
+    public function testPriceAccessAsksWithTheBuyerEmailOnlyAndXApiKey(): void
+    {
+        // The exact query ApiKeyStorefrontIdentityResolver reads (`buyerEmail`,
+        // api-key-storefront-identity.resolver.ts:98-99) on StorefrontV1Controller's
+        // `price-access` route (storefront-v1.controller.ts:211-220).
+        $this->respond(200, '{"status":"linked","wholesaleApproved":true}');
+
+        $result = $this->client()->get(StorefrontClient::ROUTE_PRICE_ACCESS, ['buyerEmail' => self::EMAIL]);
+
+        self::assertTrue($result['ok']);
+        self::assertSame(['status' => 'linked', 'wholesaleApproved' => true], $result['data']);
+        self::assertSame(self::API_BASE . '/storefront/v1/price-access?buyerEmail=buyer%40example.test', $this->urls[0]);
+        self::assertSame(self::KEY, $this->headers['X-Api-Key'] ?? null);
+        self::assertArrayNotHasKey('Authorization', $this->headers);
+    }
+
     public function testTheKeyTravelsInXApiKeyOnlyNeverInAuthorization(): void
     {
         // StorefrontIdentityGuard refuses two storefront credentials, and Authorization is

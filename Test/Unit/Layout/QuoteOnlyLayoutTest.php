@@ -261,4 +261,108 @@ class QuoteOnlyLayoutTest extends TestCase
             'the cart-page CTA has no document-level handler, so clicking it does nothing'
         );
     }
+
+    /**
+     * @return array<string, string> plugin type => intercepted class, for one di.xml
+     */
+    private function pluginsIn(string $relative): array
+    {
+        $out = [];
+        foreach ($this->xml($relative)->xpath('//type[plugin]') ?: [] as $type) {
+            foreach ($type->plugin as $plugin) {
+                $out[(string) $plugin['type']] = (string) $type['name'];
+            }
+        }
+
+        return $out;
+    }
+
+    private function preferenceIn(string $relative): string
+    {
+        foreach ($this->xml($relative)->xpath('//preference') ?: [] as $preference) {
+            if ((string) $preference['for'] === 'TackQuote\Quotes\Model\QuoteOnly\VisitorContextInterface') {
+                return (string) $preference['type'];
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * @return string[][]
+     */
+    public static function apiAreas(): array
+    {
+        return [['etc/webapi_rest/di.xml'], ['etc/webapi_soap/di.xml'], ['etc/graphql/di.xml']];
+    }
+
+    /**
+     * @dataProvider apiAreas
+     */
+    public function testTheWebApiAndGraphqlCartAndCheckoutAreGuarded(string $file): void
+    {
+        // README "Known limitations" used to say these areas were open. Every cart path there
+        // ends in Quote::addProduct() (new lines), CartItemRepositoryInterface::save()
+        // (quantity changes) or QuoteManagement::submit() (orders).
+        $plugins = $this->pluginsIn($file);
+
+        self::assertSame('Magento\Quote\Model\Quote', $plugins['TackQuote\Quotes\Plugin\Quote\QuoteOnlyCartGuard'] ?? null);
+        self::assertSame(
+            'Magento\Quote\Api\CartItemRepositoryInterface',
+            $plugins['TackQuote\Quotes\Plugin\Quote\QuoteOnlyCartItemRepositoryGuard'] ?? null
+        );
+        self::assertSame(
+            'Magento\Quote\Model\QuoteManagement',
+            $plugins['TackQuote\Quotes\Plugin\Quote\QuoteOnlySubmitGuard'] ?? null
+        );
+    }
+
+    /**
+     * @dataProvider apiAreas
+     */
+    public function testTheApiAreasIdentifyCallersByUserContextSoIntegrationsStayExempt(string $file): void
+    {
+        // The session-based visitor here would treat TackQuote's own OAuth-signed quote
+        // conversion as an anonymous shopper and refuse it.
+        self::assertSame('TackQuote\Quotes\Model\QuoteOnly\ApiVisitorContext', $this->preferenceIn($file));
+    }
+
+    public function testTheStorefrontIdentifiesVisitorsBySession(): void
+    {
+        self::assertSame('TackQuote\Quotes\Model\QuoteOnly\SessionVisitorContext', $this->preferenceIn('etc/frontend/di.xml'));
+    }
+
+    public function testTheGlobalFallbackVisitorIsExemptAndTheGlobalFileHoldsNoGuard(): void
+    {
+        // Outside the storefront and API areas (adminhtml, crontab) quote-only never applies.
+        self::assertSame('TackQuote\Quotes\Model\QuoteOnly\NoVisitorContext', $this->preferenceIn('etc/di.xml'));
+        self::assertSame([], $this->pluginsIn('etc/di.xml'), 'a global plugin would also run in the admin');
+        self::assertTrue((new \TackQuote\Quotes\Model\QuoteOnly\NoVisitorContext())->isExempt());
+    }
+
+    public function testThePriceAndPlacementPluginsAreFrontendOnlyWhereTheyBelong(): void
+    {
+        $plugins = $this->pluginsIn('etc/frontend/di.xml');
+
+        self::assertSame('Magento\Framework\Pricing\Render', $plugins['TackQuote\Quotes\Plugin\Pricing\QuoteOnlyPriceRender'] ?? null);
+        self::assertSame(
+            'Magento\Framework\App\Http\Context',
+            $plugins['TackQuote\Quotes\Plugin\PageCache\WholesaleApprovalContext'] ?? null,
+            'without the vary value an approved buyer\'s cached page is served to an unapproved one'
+        );
+        self::assertSame('Magento\Quote\Model\QuoteManagement', $plugins['TackQuote\Quotes\Plugin\Quote\QuoteOnlySubmitGuard'] ?? null);
+
+        foreach (['etc/webapi_rest/di.xml', 'etc/webapi_soap/di.xml', 'etc/graphql/di.xml'] as $api) {
+            self::assertArrayNotHasKey('TackQuote\Quotes\Plugin\Pricing\QuoteOnlyPriceRender', $this->pluginsIn($api));
+        }
+    }
+
+    public function testMultishippingIsGuardedByItsRoutePredispatchEvent(): void
+    {
+        $events = $this->xml('etc/frontend/events.xml');
+        $observers = $events->xpath('//event[@name="controller_action_predispatch_multishipping"]/observer');
+
+        self::assertNotEmpty($observers, 'multishipping has its own checkout controllers');
+        self::assertSame('TackQuote\Quotes\Observer\QuoteOnlyMultishippingGuard', (string) $observers[0]['instance']);
+    }
 }

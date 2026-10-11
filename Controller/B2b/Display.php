@@ -49,6 +49,7 @@ use Magento\Store\Model\StoreManagerInterface;
 use TackQuote\Quotes\Model\B2bDisplay\DataProvider;
 use TackQuote\Quotes\Model\B2bDisplay\Presenter;
 use TackQuote\Quotes\Model\Config;
+use TackQuote\Quotes\Model\QuoteOnlyMode;
 use TackQuote\Quotes\Model\QuoteOnlyRules;
 
 class Display implements HttpPostActionInterface
@@ -104,6 +105,11 @@ class Display implements HttpPostActionInterface
     private $presenter;
 
     /**
+     * @var QuoteOnlyMode
+     */
+    private $quoteOnlyMode;
+
+    /**
      * @param RequestInterface $request
      * @param JsonFactory $jsonFactory
      * @param CustomerSession $customerSession
@@ -112,6 +118,7 @@ class Display implements HttpPostActionInterface
      * @param Config $config
      * @param DataProvider $dataProvider
      * @param Presenter $presenter
+     * @param QuoteOnlyMode $quoteOnlyMode
      */
     public function __construct(
         RequestInterface $request,
@@ -121,7 +128,8 @@ class Display implements HttpPostActionInterface
         ProductRepositoryInterface $productRepository,
         Config $config,
         DataProvider $dataProvider,
-        Presenter $presenter
+        Presenter $presenter,
+        QuoteOnlyMode $quoteOnlyMode
     ) {
         $this->request = $request;
         $this->jsonFactory = $jsonFactory;
@@ -131,6 +139,7 @@ class Display implements HttpPostActionInterface
         $this->config = $config;
         $this->dataProvider = $dataProvider;
         $this->presenter = $presenter;
+        $this->quoteOnlyMode = $quoteOnlyMode;
     }
 
     /**
@@ -176,7 +185,11 @@ class Display implements HttpPostActionInterface
         }
 
         // Not even asked for a selection-priced product: nothing it answered could be shown.
+        // Nor is a price where quote-only mode shows "Price on request" to this customer: an
+        // account price or a volume table beside that text would put back the very numbers
+        // the merchant chose to hide (Plugin\Pricing\QuoteOnlyPriceRender).
         $only = in_array((string) $product->getTypeId(), self::SELECTION_PRICED_TYPES, true)
+            || $this->quoteOnlyMode->shouldHidePrices($storeId)
             ? [Config::B2B_ORDER_LIMITS, Config::B2B_BUYER_GROUP]
             : null;
 

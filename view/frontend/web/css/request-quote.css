@@ -588,6 +588,30 @@ body.tackquote-quote-only .tackquote-quote-only-notice__actions {
     margin-top: 1rem;
 }
 
+/* ─────────────────────────────────────────────────────────────────────────────────────────
+   Quote-only per product, and "Price on request".
+
+   `.tackquote-available-on-quote` is added after a quote-only product's price by
+   Plugin\Pricing\QuoteOnlyPriceRender, inside that product's own tile, so the tile rule below
+   hides THAT tile's Add to Cart and no other. Cosmetic only, like the store-wide rule above:
+   the server refuses the POST regardless (Plugin\Quote\QuoteOnlyCartGuard). `:has()` is
+   supported by every current browser; where it is not, the button simply stays visible and
+   the refusal message explains.
+   ───────────────────────────────────────────────────────────────────────────────────────── */
+.product-item-info:has(.tackquote-available-on-quote) .actions-primary form[data-role="tocart-form"] {
+    display: none !important;
+}
+
+.tackquote-available-on-quote,
+.tackquote-price-on-request {
+    margin: 0.25rem 0 0.5rem;
+    font-weight: 600;
+}
+
+.tackquote-price-on-request {
+    font-size: 1.15em;
+}
+
 /* ---------------------------------------------------------------------------
  * B2B display (product page): account price, buyer-group badge, order-limit notice and
  * volume table, filled by b2b-display.js for a signed-in customer.

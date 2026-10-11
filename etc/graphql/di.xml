@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<!--
+  Quote-only (B2B catalog) mode in the graphql area.
+
+  Storefront callers of the GraphQL API — a customer token, a customer session, or nobody at
+  all — get the same refusals as the storefront. The merchant's admin and integration tokens
+  do not: Model\QuoteOnly\ApiVisitorContext types the caller through
+  Magento\Authorization\Model\UserContextInterface and marks USER_TYPE_ADMIN and
+  USER_TYPE_INTEGRATION as exempt. That is what keeps TackQuote's own quote conversion
+  working: it calls the store's guest-cart REST endpoints signed with the Integration's
+  OAuth credentials, which Magento types as an integration.
+
+  Area-scoped di.xml: developer.adobe.com/commerce/php/development/build/dependency-injection-file
+  ("Areas and application entry points"). The admin area loads none of these files.
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+
+    <preference for="TackQuote\Quotes\Model\QuoteOnly\VisitorContextInterface"
+                type="TackQuote\Quotes\Model\QuoteOnly\ApiVisitorContext"/>
+
+    <!-- Every new cart line: CartItemPersister / AddProductsToCart call Quote::addProduct(). -->
+    <type name="Magento\Quote\Model\Quote">
+        <plugin name="tackquote_quote_only_cart_guard"
+                type="TackQuote\Quotes\Plugin\Quote\QuoteOnlyCartGuard"
+                sortOrder="10"/>
+    </type>
+
+    <!-- Quantity increases on an existing line, which never reach addProduct(). -->
+    <type name="Magento\Quote\Api\CartItemRepositoryInterface">
+        <plugin name="tackquote_quote_only_cart_item_repository_guard"
+                type="TackQuote\Quotes\Plugin\Quote\QuoteOnlyCartItemRepositoryGuard"
+                sortOrder="10"/>
+    </type>
+
+    <!-- Order placement: placeOrder / payment-information end in QuoteManagement::submit(). -->
+    <type name="Magento\Quote\Model\QuoteManagement">
+        <plugin name="tackquote_quote_only_submit_guard"
+                type="TackQuote\Quotes\Plugin\Quote\QuoteOnlySubmitGuard"
+                sortOrder="10"/>
+    </type>
+</config>

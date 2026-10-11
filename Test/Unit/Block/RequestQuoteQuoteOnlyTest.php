@@ -41,14 +41,14 @@ class RequestQuoteQuoteOnlyTest extends TestCase
         $this->mode = $this->createMock(QuoteOnlyMode::class);
     }
 
-    private function block(): RequestQuote
+    private function block(?Registry $registry = null): RequestQuote
     {
         $context = $this->createMock(Context::class);
 
         return new RequestQuote(
             $context,
             $this->config,
-            $this->createMock(Registry::class),
+            $registry ?? $this->createMock(Registry::class),
             $this->createMock(ProductOptionRequirement::class),
             $this->mode
         );
@@ -112,5 +112,35 @@ class RequestQuoteQuoteOnlyTest extends TestCase
         $this->mode->method('isActive')->willReturn(true);
 
         self::assertTrue($this->block()->isQuoteOnly());
+    }
+
+    public function testAQuoteOnlyProductGetsItsCtaInNormalModeEvenWithShowButtonOff(): void
+    {
+        // Per-product twin of the test above: Observer\QuoteOnlyLayoutHandle removed this
+        // product's Add to Cart blocks, so the request trigger must render.
+        $product = $this->createMock(\Magento\Catalog\Model\Product::class);
+        $registry = $this->createMock(Registry::class);
+        $registry->method('registry')->with('current_product')->willReturn($product);
+
+        $this->config->method('isButtonEnabled')->willReturn(false);
+        $this->mode->method('isActive')->willReturn(false);
+        $this->mode->method('isProductQuoteOnly')->with($product)->willReturn(true);
+
+        $block = $this->block($registry);
+        self::assertTrue($block->isQuoteOnly());
+        self::assertTrue($block->isEnabled(), 'a quote-only product page with no CTA is a dead end');
+    }
+
+    public function testAnOrdinaryProductInNormalModeHonoursShowButton(): void
+    {
+        $product = $this->createMock(\Magento\Catalog\Model\Product::class);
+        $registry = $this->createMock(Registry::class);
+        $registry->method('registry')->willReturn($product);
+
+        $this->config->method('isButtonEnabled')->willReturn(false);
+        $this->mode->method('isActive')->willReturn(false);
+        $this->mode->method('isProductQuoteOnly')->willReturn(false);
+
+        self::assertFalse($this->block($registry)->isEnabled());
     }
 }

@@ -20,11 +20,17 @@
         xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
 
     <!--
-      The session is injected as a Proxy so that merely CONSTRUCTING the resolver never
+      WHO IS ASKING, on the storefront: the customer session. Other areas bind the same
+      interface to the Web API user context (etc/webapi_rest, etc/webapi_soap, etc/graphql)
+      or to an always-exempt visitor (global etc/di.xml).
+
+      The session is injected as a Proxy so that merely CONSTRUCTING the visitor never
       starts a customer session. QuoteOnlyMode::isActive() runs the cheap store-config checks
       first and only touches the session once the mode might actually apply.
     -->
-    <type name="TackQuote\Quotes\Model\QuoteOnlyMode">
+    <preference for="TackQuote\Quotes\Model\QuoteOnly\VisitorContextInterface"
+                type="TackQuote\Quotes\Model\QuoteOnly\SessionVisitorContext"/>
+    <type name="TackQuote\Quotes\Model\QuoteOnly\SessionVisitorContext">
         <arguments>
             <argument name="customerSession" xsi:type="object">Magento\Customer\Model\Session\Proxy</argument>
         </arguments>
@@ -54,5 +60,53 @@
         <plugin name="tackquote_quote_only_checkout_guard"
                 type="TackQuote\Quotes\Plugin\Checkout\QuoteOnlyCheckoutGuard"
                 sortOrder="10"/>
+    </type>
+    <type name="TackQuote\Quotes\Plugin\Checkout\QuoteOnlyCheckoutGuard">
+        <arguments>
+            <argument name="checkoutSession" xsi:type="object">Magento\Checkout\Model\Session\Proxy</argument>
+        </arguments>
+    </type>
+    <type name="TackQuote\Quotes\Observer\QuoteOnlyMultishippingGuard">
+        <arguments>
+            <argument name="checkoutSession" xsi:type="object">Magento\Checkout\Model\Session\Proxy</argument>
+        </arguments>
+    </type>
+
+    <!--
+      ORDER PLACEMENT from the storefront area (payment flows such as PayPal Express review
+      that place the order without the checkout page). The same plugin is declared for the
+      Web API and GraphQL areas, where Luma's checkout and GraphQL's placeOrder run.
+    -->
+    <type name="Magento\Quote\Model\QuoteManagement">
+        <plugin name="tackquote_quote_only_submit_guard"
+                type="TackQuote\Quotes\Plugin\Quote\QuoteOnlySubmitGuard"
+                sortOrder="10"/>
+    </type>
+
+    <!-- "Price on request" and the per-product "Available on quote" label. -->
+    <type name="Magento\Framework\Pricing\Render">
+        <plugin name="tackquote_quote_only_price_render"
+                type="TackQuote\Quotes\Plugin\Pricing\QuoteOnlyPriceRender"
+                sortOrder="10"/>
+    </type>
+
+    <!--
+      Page-cache vary value for the "except approved wholesale accounts" scope. Adobe's
+      documented way to vary public content: a beforeGetVaryString plugin on the HTTP context.
+    -->
+    <type name="Magento\Framework\App\Http\Context">
+        <plugin name="tackquote_wholesale_approval_context"
+                type="TackQuote\Quotes\Plugin\PageCache\WholesaleApprovalContext"
+                sortOrder="10"/>
+    </type>
+    <!--
+      The vary string is computed on every storefront response, so the plugin gets the mode
+      through a Proxy: nothing behind it (product resource, API client) is built unless the
+      store actually uses the "except approved wholesale accounts" scope.
+    -->
+    <type name="TackQuote\Quotes\Plugin\PageCache\WholesaleApprovalContext">
+        <arguments>
+            <argument name="quoteOnlyMode" xsi:type="object">TackQuote\Quotes\Model\QuoteOnlyMode\Proxy</argument>
+        </arguments>
     </type>
 </config>

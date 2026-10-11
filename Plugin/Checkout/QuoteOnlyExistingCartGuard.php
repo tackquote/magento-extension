@@ -36,6 +36,10 @@
  * clear. Letting them shrink or empty it costs the policy nothing — the cart still cannot
  * be checked out — and is the difference between a catalog and a hostage situation.
  *
+ * PER-PRODUCT. A line whose product carries its own `tackquote_quote_only` flag is treated
+ * the same way even when the store-wide mode is off: it may shrink or be removed, but not
+ * grow, be reconfigured or be re-added by reorder.
+ *
  * @package TackQuote_Quotes
  */
 
@@ -44,6 +48,7 @@ declare(strict_types=1);
 namespace TackQuote\Quotes\Plugin\Checkout;
 
 use Magento\Checkout\Model\Cart;
+use Magento\Framework\DataObject;
 use Magento\Framework\Exception\LocalizedException;
 use TackQuote\Quotes\Model\QuoteOnlyMode;
 
@@ -76,9 +81,11 @@ class QuoteOnlyExistingCartGuard
      */
     public function beforeUpdateItems(Cart $subject, $data): void
     {
-        if (!$this->quoteOnlyMode->isActive() || !is_array($data)) {
+        if (!is_array($data)) {
             return;
         }
+
+        $storeWide = $this->quoteOnlyMode->isActive();
 
         foreach ($data as $itemId => $itemInfo) {
             if (!is_array($itemInfo)) {
@@ -94,7 +101,8 @@ class QuoteOnlyExistingCartGuard
                 continue;
             }
 
-            $item = $subject->getQuote()->getItemById($itemId);
+            $quote = $subject->getQuote();
+            $item = $quote ? $quote->getItemById($itemId) : false;
 
             if (!$item) {
                 // Core skips unknown ids (Cart.php:529-531); so do we, rather than refusing a
@@ -102,14 +110,21 @@ class QuoteOnlyExistingCartGuard
                 continue;
             }
 
-            if ((float) $itemInfo['qty'] > (float) $item->getQty()) {
+            if ((float) $itemInfo['qty'] <= (float) $item->getQty()) {
+                continue;
+            }
+            if ($storeWide) {
                 $this->refuse();
+            }
+            if ($this->quoteOnlyMode->isProductIdQuoteOnly((int) $item->getProductId())) {
+                $this->refuseProduct();
             }
         }
     }
 
     /**
-     * "Edit item" / reconfigure from the cart page. Always refused: it can raise the quantity
+     * "Edit item" / reconfigure from the cart page. Always refused where the mode applies, or
+     * where this line's product is quote-only by its own flag: it can raise the quantity
      * and change the configuration, and there is no shrink-only version of it worth carving
      * out.
      *
@@ -125,7 +140,15 @@ class QuoteOnlyExistingCartGuard
      */
     public function beforeUpdateItem(Cart $subject, $itemId, $requestInfo = null, $updatingParams = null): void
     {
-        $this->refuse();
+        if ($this->quoteOnlyMode->isActive()) {
+            $this->refuse();
+        }
+
+        $quote = $subject->getQuote();
+        $item = $quote ? $quote->getItemById($itemId) : false;
+        if ($item && $this->quoteOnlyMode->isProductIdQuoteOnly((int) $item->getProductId())) {
+            $this->refuseProduct();
+        }
     }
 
     /**
@@ -145,23 +168,44 @@ class QuoteOnlyExistingCartGuard
      */
     public function beforeAddOrderItem(Cart $subject, $orderItem, $qtyFlag = null): void
     {
-        $this->refuse();
+        if ($this->quoteOnlyMode->isActive()) {
+            $this->refuse();
+        }
+
+        $productId = $orderItem instanceof DataObject ? (int) $orderItem->getProductId() : 0;
+        if ($productId > 0 && $this->quoteOnlyMode->isProductIdQuoteOnly($productId)) {
+            $this->refuseProduct();
+        }
     }
 
     /**
+     * Unconditional: callers decide WHETHER to refuse.
+     *
      * @return void
      * @throws LocalizedException
      */
     private function refuse(): void
     {
-        if (!$this->quoteOnlyMode->isActive()) {
-            return;
-        }
-
         throw new LocalizedException(
             __(
                 'This store is quote-only. You can review or empty your basket, but it cannot '
                 . 'be increased or checked out — request a quote instead.'
+            )
+        );
+    }
+
+    /**
+     * The per-product refusal: the store sells normally, this line's product does not.
+     *
+     * @return void
+     * @throws LocalizedException
+     */
+    private function refuseProduct(): void
+    {
+        throw new LocalizedException(
+            __(
+                'This product is available on quote only. You can lower or remove it, but not '
+                . 'add more or order it again — request a quote instead.'
             )
         );
     }

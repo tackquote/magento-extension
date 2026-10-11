@@ -31,6 +31,7 @@
             <directory suffix=".php">../../Cron</directory>
             <directory suffix=".php">../../Observer</directory>
             <directory suffix=".php">../../Plugin</directory>
+            <directory suffix=".php">../../Setup</directory>
         </include>
     </source>
     <php>

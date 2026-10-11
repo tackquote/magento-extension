@@ -210,6 +210,11 @@ view.
 | Quote page, cart button and attachments | **Show a quote button on the cart page** | Off by default. Copies the cart into the quote list. Needs "Add to Quote". |
 | Quote page, cart button and attachments | **Cart button label** | |
 | Quote page, cart button and attachments | **Allow attachments on quote requests** | Off by default. Up to 3 files, PDF/JPEG/PNG, 5 MB each, sent to TackQuote. |
+| Quote-Only Store | **Enable quote-only mode** | Off by default. See *Quote-only mode*. |
+| Quote-Only Store | **Applies to** | Everyone / Guests only / Selected customer groups / Everyone except approved wholesale accounts. |
+| Quote-Only Store | **Show "Price on request" instead of prices** | Off by default. For the shoppers the mode applies to. |
+| Quote-Only Store | **Customer groups** | For *Selected customer groups*. |
+| Product (Catalog > Products) | **Quote only (TackQuote)** | Yes/No product attribute, default No. One product quote-only for everyone. |
 | B2B Display | **Show account price** | Off by default. "Your account price" for a signed-in customer. Display only. |
 | B2B Display | **Show volume pricing table** | Off by default. The customer's quantity breaks. Display only. |
 | B2B Display | **Show order limits notice** | Off by default. "Order between X and Y units". Not enforced in the cart yet. |
@@ -236,8 +241,9 @@ seller JWT:
 | `GET /v1/storefront/v1/quantity-breaks` | none | B2B display: the customer's quantity-break ladder for one SKU. |
 | `GET /v1/storefront/v1/order-limits` | none | B2B display: quantity limits for one SKU. |
 | `GET /v1/storefront/v1/buyer-group` | none | B2B display: the customer's buyer group. |
+| `GET /v1/storefront/v1/price-access` | none | Quote-only *Everyone except approved wholesale accounts*: is this signed-in customer's wholesale application approved? |
 
-The four `/storefront/v1` reads are TackQuote's platform-neutral storefront API
+The five `/storefront/v1` reads are TackQuote's platform-neutral storefront API
 (`apps/api/src/modules/storefront-api/storefront-v1.controller.ts`), called by
 `Model/Api/StorefrontClient.php` with the key in `X-Api-Key` **only** — that API refuses a
 request carrying a second credential in `Authorization`. They need no scope.
@@ -253,6 +259,23 @@ forwarded rather than assumed.
 Turns the whole storefront into a B2B catalog: Add to Cart and checkout are refused and
 shoppers request a quote instead. Off by default.
 
+Three parts, each matching the WooCommerce plugin (1.11.0):
+
+- **The store-wide mode** (this section's switch), scoped by *Applies to*.
+- **Per product:** the product attribute **Quote only (TackQuote)** (Catalog > Products >
+  *product* > Product Details), Yes/No, default No. A Yes product is quote-only for every
+  storefront visitor **even while the store-wide mode is off**: its own Add to Cart blocks
+  are removed from its page, its tiles show **"Available on quote"** beside the price and
+  hide their Add to Cart, the quote buttons show regardless of the button settings, and the
+  cart, checkout and APIs refuse it like everything below. Set it on the parent of a
+  configurable, bundle or grouped product; its options follow the parent. Created by
+  `Setup/Patch/Data/AddQuoteOnlyProductAttribute.php` on `setup:upgrade`.
+- **"Price on request"** (*Show "Price on request" instead of prices*, off by default): for
+  the shoppers the store-wide mode applies to, product pages and category, search, related
+  and widget tiles show the translatable text "Price on request" instead of the price, and
+  the B2B display's account price and volume table are withheld. A per-product quote-only
+  item keeps its price (as in WooCommerce). See *Price on request* below.
+
 ### It is refused by the server, not hidden by CSS
 
 | where | what |
@@ -260,6 +283,12 @@ shoppers request a quote instead. Off by default.
 | `Plugin/Quote/QuoteOnlyCartGuard.php` → `beforeAddProduct()` | refuses `Magento\Quote\Model\Quote::addProduct()` |
 | `Plugin/Checkout/QuoteOnlyExistingCartGuard.php` | refuses quantity increases, reconfigure and reorder on a pre-existing cart |
 | `Plugin/Checkout/QuoteOnlyCheckoutGuard.php` → `aroundExecute()` | refuses `Magento\Checkout\Controller\Index\Index`, redirecting to the cart with a reason |
+| `Plugin/Quote/QuoteOnlySubmitGuard.php` → `beforeSubmit()` | refuses `Magento\Quote\Model\QuoteManagement::submit()` — every order placement: Luma's REST payment step, GraphQL `placeOrder`, frontend payment flows |
+| `Plugin/Quote/QuoteOnlyCartItemRepositoryGuard.php` → `beforeSave()` | REST/SOAP/GraphQL: refuses quantity increases on an existing line through `CartItemRepositoryInterface::save()` |
+| `Observer/QuoteOnlyMultishippingGuard.php` | refuses the whole `multishipping` route (*Check Out with Multiple Addresses*) |
+
+Every one of them refuses the store-wide mode **and** a product that is quote-only by its own
+flag (a cart already holding such a product cannot be checked out until it is removed).
 
 `curl -d 'product=42&qty=1' https://store/checkout/cart/add/` gets the same refusal as the
 browser: a `before` plugin that throws aborts the intercepted call, so core's cart code never
@@ -278,12 +307,56 @@ instead` in its own docblock. `LocalizedException` is thrown rather than a gener
 because `Magento\Checkout\Controller\Cart\Add::execute()` catches that type at
 `Add.php:170` and renders the message to the shopper instead of producing a 500.
 
+### The REST API, GraphQL and multishipping are guarded too
+
+Earlier versions left these open (they were in *Known limitations*). They are now closed,
+by guarding the methods every path there funnels into rather than individual endpoints
+(Magento 2.4.8 line numbers):
+
+- **New cart lines.** `POST /V1/carts/mine/items` and `POST /V1/guest-carts/{id}/items` run
+  `CartItemRepositoryInterface::save()` (the guest repository delegates to it,
+  `GuestCartItemRepository.php:61-66`), whose persister calls `$quote->addProduct()` for a
+  new line (`CartItemPersister.php:98`); GraphQL `addProductsToCart` calls
+  `$cart->addProduct()` (`Quote/Model/Cart/AddProductsToCart.php:163`) and
+  `addSimpleProductsToCart` does too (`QuoteGraphQl/Model/Cart/AddSimpleProductToCart.php:65`).
+  So the existing `Quote::addProduct()` guard is now also declared in `etc/webapi_rest`,
+  `etc/webapi_soap` and `etc/graphql` `di.xml`.
+- **Quantity increases on an existing line** over REST/SOAP never reach `addProduct()` — the
+  persister sets the quantity directly (`CartItemPersister.php:84`) — so
+  `CartItemRepositoryInterface::save()` gets its own guard. The storefront does not use that
+  repository (`checkout/cart/add` goes through `Checkout\Model\Cart` to
+  `Quote::addProduct()`), which is why the storefront keeps its own guards.
+- **Orders.** `QuoteManagement::submit()` is where Luma's REST payment step
+  (`PaymentInformationManagement.php:156`), the guest variant, GraphQL `placeOrder`
+  (`QuoteGraphQl/Model/Cart/PlaceOrder.php:61`) and `placeOrder()` itself
+  (`QuoteManagement.php:476`) all end, so it is guarded in the frontend and API areas.
+- **Multishipping** has its own controllers and places orders through the order service
+  (`Multishipping.php:826` → `PlaceOrderDefault.php:39`), so its route is refused by an
+  observer on `controller_action_predispatch_multishipping` that sets `FLAG_NO_DISPATCH`
+  (`FrontController.php:240`, `:269-281`). An event, unlike a plugin, names no class of the
+  optional `Magento_Multishipping` module, so it is inert where that module is removed.
+
+**Who is refused in the API areas** is decided by the caller's type, read from
+`Magento\Authorization\Model\UserContextInterface` (`Model/QuoteOnly/ApiVisitorContext.php`):
+a customer token, the Luma checkout's customer session, or an anonymous caller is a
+shopper and gets the same answers as the storefront (customer group and email come from the
+customer record); **an admin or integration token is exempt**. That keeps TackQuote's own
+quote conversion working: it calls the store's guest-cart REST endpoints signed with the
+Integration's OAuth credentials (tack `magento.service.ts:1650`, `:1660`, `:1735`), and in
+`webapi_rest` the OAuth user context (sort order 40) is consulted before the guest context
+(100) and answers `USER_TYPE_INTEGRATION`. UNVERIFIED on a running store; the manual check is
+in the pull request.
+
 ### Admin and integrations stay exempt — structurally
 
-Everything is declared in **`etc/frontend/di.xml`**, so Magento generates the interceptors
-for the frontend area only. Admin order creation (Sales > Orders > Create New Order) drives
-the very same `Quote::addProduct()`, and so does TackQuote turning an accepted quote into a
-real order; both keep working because adminhtml never loads that file. Area-scoped `di.xml`
+Every guard is declared in an **area** `di.xml` — `etc/frontend`, and for the cart and order
+guards also `etc/webapi_rest`, `etc/webapi_soap` and `etc/graphql` — never in the global
+`etc/di.xml`. Admin order creation (Sales > Orders > Create New Order) drives the very same
+`Quote::addProduct()` and `QuoteManagement::submit()`; it keeps working because adminhtml
+never loads any of those files. (The global `etc/di.xml` holds only the fallback visitor,
+`Model/QuoteOnly/NoVisitorContext.php`, which is always exempt.) In the API areas, where the
+same methods also carry the merchant's integrations, the exemption is the caller's type —
+see the section above. Area-scoped `di.xml`
 is Magento's own mechanism for this — core scopes
 `Magento\Customer\Model\App\Action\ContextPlugin` the same way in
 `vendor/magento/module-customer/etc/frontend/di.xml:23-26`. There is deliberately no runtime
@@ -293,18 +366,48 @@ area check: a check can be edited out, a file adminhtml never loads cannot be.
 ### Who it applies to
 
 **Everyone** (default), **Guests only** (signed-in customers keep a normal cart and
-checkout — the usual B2B setup), or **Selected customer groups**. Magento group 0 is
+checkout — the usual B2B setup), **Selected customer groups**, or **Everyone except approved
+wholesale accounts**. Magento group 0 is
 `NOT LOGGED IN`, a real row in the customer-group grid, so it can be selected on its own and
 is equivalent to "Guests only". (The OpenCart build of this feature deliberately *drops*
 group 0, because OpenCart uses it as a "no group" sentinel; copying that rule here would
 silently delete a merchant's selection.)
 
-Full-page cache is safe without a custom vary dimension: the decision reads only store config
+**Everyone except approved wholesale accounts** keeps the cart only for a signed-in
+customer whose TackQuote wholesale application is **approved**. The module asks
+`GET /v1/storefront/v1/price-access?buyerEmail=<the customer's email>` with the API key in
+`X-Api-Key` (`Model/QuoteOnly/WholesaleApproval.php` through `Model/Api/StorefrontClient.php`;
+server: `StorefrontV1Controller::priceAccess`, tack
+`apps/api/src/modules/storefront-api/storefront-v1.controller.ts:211-220`). Only
+`{"status": "linked", "wholesaleApproved": true}` is approval (`PriceAccessResult`,
+`storefront-core/storefront-results.ts:96-99`); a buyer linked any other way, an unknown
+buyer and a guest are not. The answer is cached per customer for **5 minutes**, so an
+approval reaches the storefront within that. **It fails closed:** TackQuote unreachable, an
+HTTP error (429 included), a body that is not JSON or an answer this module does not
+recognise all mean "not approved", and that is remembered for 1 minute so an outage is not
+retried on every page view. An approved buyer caught by an outage can still request a
+quote. TackQuote matches the buyer by email address, which Magento does not confirm unless
+*Require Emails Confirmation* is on — turn it on with this scope.
+
+Full-page cache is safe without a custom vary dimension for the first three scopes: the decision reads only store config
 plus signed-in state and customer group, and Magento already puts both into the HTTP context
 that produces the vary hash (`Magento\Customer\Model\App\Action\ContextPlugin` lines 50
 and 55). **Adding any other input to `Model/QuoteOnlyMode.php` — a cookie, a time of day, the
 customer id — would serve one visitor's storefront to another** and needs its own
 `HttpContext::setValue()` first.
+
+The approved-wholesale scope is exactly such an input, so it ships with its own vary value:
+`Plugin/PageCache/WholesaleApprovalContext.php` is a `beforeGetVaryString` plugin on
+`Magento\Framework\App\Http\Context` that sets `tackquote_wholesale_approved` to 1 for an
+approved signed-in customer and leaves it at its default 0 for everyone else — Adobe's
+documented way to vary public content
+(<https://developer.adobe.com/commerce/php/development/cache/page/public-content>,
+*Configure page variations*). A value equal to its default is left out of the vary data, so
+guests, unapproved customers and stores using another scope keep exactly the cache entries
+they had; only approved customers get a second copy. The plugin reads the HTTP context's
+signed-in flag before anything else, so an anonymous page view never starts a session or
+calls TackQuote. A per-product flag needs no vary value: it is part of the product, whose
+pages and listings Magento caches per product and cleans on product save.
 
 ### The store is never left unable to transact
 
@@ -344,6 +447,21 @@ Category and search tiles keep their cart button in the DOM and hidden by CSS
 overriding that template would clobber every theme. **That hiding is cosmetic only** — the
 server refuses the POST regardless.
 
+### Price on request
+
+`Plugin/Pricing/QuoteOnlyPriceRender.php` is an `around` plugin on
+`Magento\Framework\Pricing\Render::render()`, the one method every catalogue price box is
+drawn through: the product page's price blocks (`Catalog/Pricing/Render.php:60`) and every
+tile (`ListProduct::getProductPrice()`, `ListProduct.php:419`). No price template is
+overridden. Where prices are hidden, the final-price box becomes "Price on request" and every
+other price code (tier prices, MSRP) renders nothing; the replacement does not carry the
+`price-box` class, so Magento's price-box JavaScript leaves it alone. Otherwise a
+per-product quote-only item gets "Available on quote" after its price.
+
+It is declared for the storefront only. The cart, mini-cart and checkout totals, the admin,
+and the quote request sent to TackQuote (which still carries Magento's price) are unchanged.
+It changes what is displayed, not what is published: see *Known limitations*.
+
 ### Existing carts and the checkout route
 
 Turning the mode on **does not empty anybody's cart**. Magento persists carts server-side in
@@ -360,7 +478,22 @@ destroyed**, and works normally again the moment the mode is switched off.
 
 ### Verification
 
-51 unit tests were added (85 → 136, 255 assertions), run against a real Magento 2.4.8-p5
+**Parity change** (per-product, "Price on request", the approved-wholesale scope, the API and
+multishipping guards): the full suite is 438 tests, 995 assertions, run with phpunit 10.5 on
+PHP 8.2 against Magento framework packages from the Mage-OS mirror and a stand-in bootstrap.
+Every new guard was mutation-tested: **30 deliberate breaks, 30 caught**, each restored and
+byte-compared. Among them: the per-product refusal removed from the cart, submit, checkout and
+existing-cart guards; the approved-wholesale scope ignoring the approval or failing open; a
+loosened `wholesaleApproved` check; a lookup failure answering "approved" or not being
+cached; a 1-hour TTL; the email in the cache id; `price-access` off the client allowlist; an
+integration not exempt, or an unknown caller exempt; the exemption removed from the mode;
+order placement unguarded; quantity increases allowed over the cart-item API; multishipping
+dispatched; prices rendered while hidden; tier prices left beside "Price on request"; the vary
+plugin asking for guests or with a default of 1; the per-product layout handle on every page;
+the REST cart guard undeclared; a plugin in the global `etc/di.xml`; the B2B account price
+shown under "Price on request"; the attribute defaulting to Yes.
+
+The original build: 51 unit tests were added (85 → 136, 255 assertions), run against a real Magento 2.4.8-p5
 bootstrap. The guard was mutation-tested with **12 deliberate breaks: 12 caught, 0 survived,
 0 rejected as non-compiling.**
 
@@ -478,22 +611,26 @@ lookups a minute.
   or a request after a cache flush). Earlier revisions of this list claimed the header was
   commented out because of an upstream RLS defect; that was fixed upstream and the header
   has been sent since — see the comment in `Model/Api/Client.php`.
-- **Quote-only mode does not cover the Web API or GraphQL areas.** `UNVERIFIED against a
-  running store.` The guards are declared in `etc/frontend/di.xml`, so `webapi_rest`,
-  `webapi_soap` and `graphql` are not intercepted. Two consequences: adding items to a guest
-  cart via `POST /rest/V1/guest-carts/{cartId}/items` — an anonymous endpoint — would still
-  succeed, and Magento's own Luma checkout places its order over `webapi_rest`, so a crafted
-  REST call against a cart that predates the switch could still place an order. Those areas
-  are left open deliberately: the same endpoints carry the merchant's own integrations,
-  including TackQuote placing quote-accepted orders, and telling an admin/integration token
-  from an anonymous storefront caller needs `UserContextInterface`, which is only bound in
-  the webapi areas — so one plugin cannot serve both, and guessing wrong would break quote
-  conversion. A merchant who needs that surface closed should disable the anonymous
-  guest-cart endpoints in `webapi.xml`, which is a store-wide decision. The invariant that
-  holds unconditionally is the one the feature is sold on: **nothing new can enter a cart
-  from the storefront.**
-- **Quote-only mode and multishipping.** `Magento_Multishipping` (`multishipping/checkout`,
-  off by default) has its own checkout controller and is not guarded. UNVERIFIED.
+- **Quote-only mode in the API areas — what is still not refused.** GraphQL
+  `updateCartItems` sets a line's quantity on the item itself and does not go through
+  `CartItemRepositoryInterface` (`QuoteGraphQl/Model/Cart/UpdateCartItem.php:105-114`), so a
+  quantity increase there is not refused. That cart still cannot become an order:
+  `QuoteManagement::submit()` refuses it. UNVERIFIED on a running store, like the rest of the
+  API coverage.
+- **"Price on request" is a display setting, not a secret.** It replaces rendered price boxes
+  only. Prices still appear in machine-readable places: the configurable product's option
+  JSON, custom-option price labels ("+ $5.00"), the Open Graph `product:price:amount` meta
+  tag, product feeds, and the REST and GraphQL catalogue APIs. The WooCommerce plugin's
+  setting has the same scope.
+- **Per-product quote-only follows the product the shopper adds.** For a configurable, bundle
+  or grouped product that is the parent, so set the flag on the parent. A flag set only on a
+  child simple is honoured when that simple is added on its own, and at checkout (every cart
+  line is checked), but not when it is added through its parent.
+- **Approved-wholesale scope and email.** TackQuote matches the buyer by email address, and
+  Magento confirms an address only with *Require Emails Confirmation* on. Without it, a new
+  account typed with an approved buyer's address would get that buyer's cart. The approval
+  is read for at most 5 minutes from cache; revoking an approval takes that long to reach
+  the storefront.
 - **The registration policy can be up to 5 minutes stale**, bounded by the cron schedule in
   `etc/crontab.xml` rather than by the 1-hour cache TTL. A policy change in TackQuote takes
   that long to reach the storefront. **If Magento cron is not running the policy is never
@@ -710,7 +847,7 @@ magento-extension/                              (repository root)
 ├── i18n/en_US.csv                              Translation source strings
 │                                               (regenerate with i18n:collect-phrases)
 ├── etc/module.xml                              Module declaration + sequence
-├── etc/config.xml                              Defaults: every B2B display switch off
+├── etc/config.xml                              Defaults: B2B display + price-on-request off
 ├── etc/acl.xml                                 Admin ACL: dashboard tree + config resource
 ├── etc/crontab.xml                             Warms the registration policy every 5 min
 ├── etc/adminhtml/events.xml                    Flush the policy when settings are saved
@@ -718,9 +855,14 @@ magento-extension/                              (repository root)
 ├── etc/adminhtml/routes.xml                    Admin route tackquote/*
 ├── etc/adminhtml/system.xml                    Stores > Configuration > TackQuote fields
 ├── etc/frontend/routes.xml                     Storefront route tackquote/*
+├── etc/di.xml                                  Global: only the always-exempt fallback visitor
 ├── etc/frontend/di.xml                         QUOTE-ONLY GUARDS — frontend area only,
 │                                               which is what keeps the admin exempt
-├── etc/frontend/events.xml                     layout_load_before -> quote-only handles
+├── etc/webapi_rest/di.xml                      Quote-only cart + order guards for REST
+├── etc/webapi_soap/di.xml                      … for SOAP
+├── etc/graphql/di.xml                          … for GraphQL (admin/integration tokens exempt)
+├── etc/frontend/events.xml                     layout_load_before -> quote-only handles;
+│                                               multishipping predispatch -> refusal
 ├── Model/Config.php                            Reads scoped config (enable/url/key/labels)
 ├── Model/Api/Client.php                        HTTP client for /v1/integrations/magento/*
 ├── Model/Api/StorefrontClient.php              Read client for /v1/storefront/v1/* (X-Api-Key only)
@@ -739,9 +881,21 @@ magento-extension/                              (repository root)
 ├── Model/QuoteOnlyRules.php                    Quote-only scoping rule, pure functions
 ├── Model/QuoteOnlyMode.php                     "Is this visitor quote-only right now?"
 ├── Model/Config/Source/QuoteOnlyScope.php      "Applies to" dropdown options
+├── Model/QuoteOnly/VisitorContextInterface.php "Who is asking", bound per area
+├── Model/QuoteOnly/SessionVisitorContext.php   … storefront: the customer session
+├── Model/QuoteOnly/ApiVisitorContext.php       … REST/SOAP/GraphQL: UserContextInterface
+├── Model/QuoteOnly/NoVisitorContext.php        … everywhere else: always exempt
+├── Model/QuoteOnly/ProductFlag.php             Per-product `tackquote_quote_only` flag
+├── Model/QuoteOnly/WholesaleApproval.php       price-access read, 5-min cache, fails closed
+├── Setup/Patch/Data/AddQuoteOnlyProductAttribute.php  Creates the per-product attribute
 ├── Plugin/Quote/QuoteOnlyCartGuard.php         THE REFUSAL: Quote::addProduct()
 ├── Plugin/Checkout/QuoteOnlyExistingCartGuard.php  Pre-existing carts: no growth
 ├── Plugin/Checkout/QuoteOnlyCheckoutGuard.php  Refuses the checkout route
+├── Plugin/Quote/QuoteOnlySubmitGuard.php       Refuses order placement (QuoteManagement::submit)
+├── Plugin/Quote/QuoteOnlyCartItemRepositoryGuard.php  API: no quantity increase on a line
+├── Plugin/Pricing/QuoteOnlyPriceRender.php     "Price on request" / "Available on quote"
+├── Plugin/PageCache/WholesaleApprovalContext.php  Page-cache vary value for approved buyers
+├── Observer/QuoteOnlyMultishippingGuard.php    Refuses the multishipping route
 ├── Observer/QuoteOnlyLayoutHandle.php          Adds the quote-only layout handles
 ├── Block/QuoteOnlyNotice.php                   Cart-page "this store works by quote" panel
 ├── Block/RequestQuote.php                      Product-page trigger view model
@@ -807,6 +961,26 @@ magento-extension/                              (repository root)
   `QuotePayloadBuilderTest.php`, `ServerCapabilitiesTest.php`,
   `Test/Unit/Controller/Quote/UploadTest.php`, and `Test/Js/cart-seed.test.js` (run with
   `node`).
+- **Quote-only mode, WooCommerce 1.11.0 parity.**
+  - **Per-product quote-only:** a new product attribute, *Quote only (TackQuote)* (Yes/No,
+    default No, Product Details group), created by a data patch on `setup:upgrade`. A Yes
+    product is quote-only for every storefront visitor even while the store sells normally:
+    no Add to Cart on its page, "Available on quote" beside its price on tiles (whose Add to
+    Cart is hidden), quote buttons shown, and cart, checkout and API refusals.
+  - **"Price on request":** a new switch, off by default. For the shoppers the store-wide
+    mode applies to, catalogue price boxes show "Price on request" (and no account price or
+    volume table). Display only: the cart, admin and the quote request keep Magento's price.
+  - **"Everyone except approved wholesale accounts":** a new *Applies to* option. A signed-in
+    customer whose TackQuote wholesale application is approved keeps the cart; everyone else
+    is quote-only. Read from `GET /storefront/v1/price-access`, cached 5 minutes per
+    customer, failing closed; a page-cache vary value keeps an approved buyer's pages apart
+    from everyone else's.
+  - **REST, SOAP, GraphQL and multishipping are now guarded** (they were known limitations):
+    new cart lines, quantity increases over the cart-item API, order placement and the
+    multishipping route are refused for shoppers. The merchant's admin and integration
+    tokens — TackQuote's quote conversion included — are exempt.
+  - The admin Dashboard's *B2B features* card shows the quote-only settings. New phrases are
+    in `i18n/en_US.csv`.
 - **B2B display for signed-in customers** (off by default; four switches under
   *B2B Display*): the customer's TackQuote account price with the store price struck
   through, their volume pricing table, the order-limits notice and the buyer-group badge

@@ -51,11 +51,22 @@ final class QuoteOnlyRules
     public const SCOPE_GROUPS = 'groups';
 
     /**
+     * Everyone EXCEPT a signed-in customer whose TackQuote wholesale application is
+     * approved (`GET /storefront/v1/price-access` answers `{status: linked,
+     * wholesaleApproved: true}`). Guests, unknown buyers, unapproved buyers and every
+     * lookup failure are quote-only: see applies() and Model\QuoteOnly\WholesaleApproval.
+     */
+    public const SCOPE_UNAPPROVED = 'unapproved';
+
+    /** The product attribute that makes one product quote-only (Setup/Patch/Data). */
+    public const PRODUCT_ATTRIBUTE = 'tackquote_quote_only';
+
+    /**
      * @return string[]
      */
     public static function scopes(): array
     {
-        return [self::SCOPE_ALL, self::SCOPE_GUESTS, self::SCOPE_GROUPS];
+        return [self::SCOPE_ALL, self::SCOPE_GUESTS, self::SCOPE_GROUPS, self::SCOPE_UNAPPROVED];
     }
 
     /**
@@ -125,24 +136,28 @@ final class QuoteOnlyRules
     /**
      * The whole rule, in one place.
      *
-     * @param bool  $enabled         The merchant's explicit switch. Callers must ALSO have
-     *                               established that the module can actually reach TackQuote
-     *                               — see QuoteOnlyMode::isActive(), which refuses to
-     *                               enforce on an unconfigured store because enforcement
-     *                               without a working quote button is a dead storefront.
-     * @param string $scope          One of the SCOPE_* constants.
-     * @param int[] $groupIds        Selected customer groups, for SCOPE_GROUPS.
-     * @param bool  $isLoggedIn      Magento\Customer\Model\Session::isLoggedIn()
-     * @param int   $customerGroupId Magento\Customer\Model\Session::getCustomerGroupId() —
-     *                               used as-is, including 0 for a guest, because 0 is a real
-     *                               group here (fact (1) above).
+     * @param bool $enabled The merchant's explicit switch. Callers must ALSO have
+     *     established that the module can actually reach TackQuote — see
+     *     QuoteOnlyMode::isActive(), which refuses to enforce on an unconfigured store because
+     *     enforcement without a working quote button is a dead storefront.
+     * @param string $scope One of the SCOPE_* constants.
+     * @param int[] $groupIds Selected customer groups, for SCOPE_GROUPS.
+     * @param bool $isLoggedIn Whether the visitor is signed in.
+     * @param int $customerGroupId The visitor's customer group — used as-is, including 0 for a
+     *     guest, because 0 is a real group here (fact (1) above).
+     * @param bool $isApprovedWholesale For SCOPE_UNAPPROVED only: TackQuote answered that this
+     *     signed-in customer's wholesale application is approved. Callers pass FALSE for
+     *     anything else — no answer, an error, a guest — which is what makes the scope fail
+     *     closed (quote-only), like the WooCommerce plugin's 1.11.0 price gate.
+     * @return bool
      */
     public static function applies(
         bool $enabled,
         string $scope,
         array $groupIds,
         bool $isLoggedIn,
-        int $customerGroupId
+        int $customerGroupId,
+        bool $isApprovedWholesale = false
     ): bool {
         if (!$enabled) {
             return false;
@@ -158,9 +173,70 @@ final class QuoteOnlyRules
                 // a working store rather than a locked one.
                 return in_array($customerGroupId, self::normaliseGroups($groupIds), true);
 
+            case self::SCOPE_UNAPPROVED:
+                // Both halves are required: an approval answer for a visitor who is not
+                // signed in cannot be about them.
+                return !($isLoggedIn && $isApprovedWholesale);
+
             case self::SCOPE_ALL:
             default:
                 return true;
         }
+    }
+
+    /**
+     * The per-product switch, however Magento hands it over.
+     *
+     * A `boolean` EAV attribute is stored as int 0/1 in `catalog_product_entity_int`, but it
+     * reaches PHP as '1', 1, true, null (never set) or false (getAttributeRawValue() on a
+     * store where the attribute does not exist yet). Only an explicit 1 switches a product
+     * to quote-only; everything else leaves it purchasable, so a missing or half-installed
+     * attribute can never lock the catalogue.
+     *
+     * @param mixed $raw
+     */
+    public static function isFlagOn($raw): bool
+    {
+        if (is_bool($raw)) {
+            return $raw;
+        }
+        if (is_int($raw)) {
+            return $raw === 1;
+        }
+
+        return is_string($raw) && trim($raw) === '1';
+    }
+
+    /**
+     * Whether a TackQuote `price-access` answer says the buyer is an approved wholesale
+     * buyer. Strict: only `{status: "linked", wholesaleApproved: true}` (the boolean `true`,
+     * not a truthy string) is approval. The server's union is
+     * `anonymous | unlinked | linked{wholesaleApproved: boolean}`
+     * (tack apps/api/src/modules/storefront-core/storefront-results.ts:96-99), so anything
+     * else is a shape this module does not understand and is NOT approval.
+     *
+     * @param mixed $answer The decoded JSON object.
+     */
+    public static function isApprovedAnswer($answer): bool
+    {
+        return is_array($answer)
+            && ($answer['status'] ?? null) === 'linked'
+            && ($answer['wholesaleApproved'] ?? null) === true;
+    }
+
+    /**
+     * Whether prices give way to "Price on request" for this visitor.
+     *
+     * Only where the STORE-WIDE mode applies to them, never because of a single product:
+     * a per-product quote-only item keeps its price and gains an "Available on quote" label,
+     * which is the WooCommerce plugin's behaviour (1.10.0+).
+     *
+     * @param bool $storeWideModeActive QuoteOnlyMode::isActive() for this visitor.
+     * @param bool $hidePricesSwitch    The merchant's `quote_only/hide_prices` setting.
+     * @return bool
+     */
+    public static function hidesPrices(bool $storeWideModeActive, bool $hidePricesSwitch): bool
+    {
+        return $storeWideModeActive && $hidePricesSwitch;
     }
 }

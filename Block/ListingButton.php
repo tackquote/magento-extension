@@ -89,6 +89,27 @@ class ListingButton extends ItemBlock
     }
 
     /**
+     * Whether "Add to Quote" renders on THIS tile.
+     *
+     * Adds the per-product case to isEnabled(): a product quote-only by its own flag has its
+     * tile's Add to Cart hidden (request-quote.css, keyed off the "Available on quote" label
+     * Plugin\Pricing\QuoteOnlyPriceRender adds), so it gets the quote control instead — still
+     * only when the quote list exists for it to add to.
+     *
+     * @param Product $product
+     * @return bool
+     */
+    public function isEnabledFor(Product $product): bool
+    {
+        if ($this->isEnabled()) {
+            return true;
+        }
+
+        return $this->tackConfig->isAddToQuoteEnabled()
+            && $this->quoteOnlyMode->isProductQuoteOnly($product);
+    }
+
+    /**
      * Label for the "Add to Quote" control.
      *
      * @return string

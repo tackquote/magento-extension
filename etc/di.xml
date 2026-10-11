@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<!--
+  GLOBAL dependency configuration. Deliberately holds NO quote-only plugin: a guard declared
+  here would also run in adminhtml and refuse the merchant's own admin orders
+  (Test/Unit/Layout/QuoteOnlyLayoutTest asserts it).
+
+  Only the fallback visitor lives here: outside the frontend, Web API and GraphQL areas
+  (adminhtml, crontab, CLI) quote-only mode never applies, so anything that resolves the
+  visitor there gets the always-exempt one. Each storefront-facing area overrides this
+  preference in its own etc/<area>/di.xml.
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <preference for="TackQuote\Quotes\Model\QuoteOnly\VisitorContextInterface"
+                type="TackQuote\Quotes\Model\QuoteOnly\NoVisitorContext"/>
+</config>
