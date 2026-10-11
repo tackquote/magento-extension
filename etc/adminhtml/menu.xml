@@ -28,7 +28,7 @@
           the collision instead of fighting the theme with more CSS.
         -->
         <add id="TackQuote_Quotes::overview"
-             title="Dashboard"
+             title="Overview"
              translate="title"
              module="TackQuote_Quotes"
              sortOrder="10"

@@ -39,7 +39,8 @@
       "TackQuote\\Quotes\\Model\\": "Model/",
       "TackQuote\\Quotes\\Observer\\": "Observer/",
       "TackQuote\\Quotes\\Plugin\\": "Plugin/",
-      "TackQuote\\Quotes\\Setup\\": "Setup/"
+      "TackQuote\\Quotes\\Setup\\": "Setup/",
+      "TackQuote\\Quotes\\ViewModel\\": "ViewModel/"
     }
   },
   "autoload-dev": {

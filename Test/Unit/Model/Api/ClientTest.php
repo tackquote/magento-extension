@@ -21,6 +21,7 @@ use Psr\Log\LoggerInterface;
 use TackQuote\Quotes\Model\Api\Client;
 use TackQuote\Quotes\Model\Config;
 use TackQuote\Quotes\Model\QuoteCheckout\LandingUrl;
+use TackQuote\Quotes\Model\Api\PluginHeaders;
 
 /**
  * @covers \TackQuote\Quotes\Model\Api\Client
@@ -71,7 +72,7 @@ class ClientTest extends TestCase
     {
         // The real Json serializer: the point of several of these tests is what happens to
         // a body as it is parsed, and a mock would simply return whatever it was told.
-        return new Client($this->config, $this->curl, new Json(), $this->logger, $this->landing());
+        return new Client($this->config, $this->curl, new Json(), $this->logger, $this->landing(), $this->noPluginHeaders());
     }
 
     /**
@@ -83,6 +84,16 @@ class ClientTest extends TestCase
         $landing->method('headerValue')->willReturn($value);
 
         return $landing;
+    }
+
+    /**
+     * PluginHeaders with nothing to add, so these tests see exactly the headers they assert.
+     *
+     * @return PluginHeaders&MockObject
+     */
+    private function noPluginHeaders(): PluginHeaders
+    {
+        return $this->createConfiguredMock(PluginHeaders::class, ['get' => []]);
     }
 
     private function respondWith(int $status, string $body): void
@@ -250,7 +261,7 @@ class ClientTest extends TestCase
         $this->curl->expects(self::never())->method('get');
         $this->curl->expects(self::never())->method('post');
 
-        $result = (new Client($config, $this->curl, new Json(), $this->logger, $this->landing()))->testConnection();
+        $result = (new Client($config, $this->curl, new Json(), $this->logger, $this->landing(), $this->noPluginHeaders()))->testConnection();
 
         self::assertFalse($result['ok']);
     }

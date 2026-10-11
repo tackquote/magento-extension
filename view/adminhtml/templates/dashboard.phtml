@@ -1,6 +1,12 @@
 <?php
 /**
- * TackQuote admin dashboard.
+ * TackQuote admin Overview.
+ *
+ * One card per settings area in the WooCommerce plugin's tab order (Connection, Storefront,
+ * B2B pricing, Buyer groups, Forms, Orders, Help), reached from the tab row at the top. Each
+ * card shows what is switched on and links straight to its group in Stores > Configuration
+ * (Block\Adminhtml\Dashboard::getGroupUrl()); the links are left out for an admin without
+ * the configuration permission.
  *
  * CSP — the behaviour script goes out through SecureHtmlRenderer rather than as a literal
  * <script> tag, so Magento\Csp\Helper\InlineUtil can stamp it with the request nonce once a
@@ -10,7 +16,9 @@
  *
  * The endpoint and the three status strings travel out of PHP as data attributes and
  * mage/translate lookups respectively, so the script itself is a constant with no
- * server-side interpolation to escape.
+ * server-side interpolation to escape. The accent swatch is a hex colour validated by
+ * Model\Styling\StyleRules and checked again here, applied through renderStyleAsTag() so no
+ * inline style attribute is needed.
  *
  * @var \TackQuote\Quotes\Block\Adminhtml\Dashboard $block
  * @var \Magento\Framework\Escaper $escaper
@@ -23,6 +31,72 @@ $allOk = true;
 foreach ($checklist as $item) {
     $allOk = $allOk && $item['ok'];
 }
+$canConfigure = $block->canConfigure();
+
+$storefront = $block->getStorefrontRows();
+$pricing = $block->getB2bSwitches();
+$groups = $block->getGroupRuleRows();
+$forms = $block->getFormsRows();
+$orders = $block->getOrdersRows();
+
+/**
+ * An On/Off pill.
+ *
+ * @param bool $on
+ * @return string
+ */
+$pill = static function (bool $on) use ($escaper): string {
+    return $on
+        ? '<span class="tq-pill tq-pill--ok">' . $escaper->escapeHtml(__('On')) . '</span>'
+        : '<span class="tq-pill tq-pill--off">' . $escaper->escapeHtml(__('Off')) . '</span>';
+};
+
+/**
+ * A card heading with an "N of M on" count.
+ *
+ * @param string $id
+ * @param string $title
+ * @param array $rows
+ * @return string
+ */
+$head = static function (string $id, string $title, array $rows) use ($block, $escaper): string {
+    $on = $block->countOn($rows);
+    return '<div class="tq-card__head"><h2 class="tq-card__title" id="' . $escaper->escapeHtmlAttr($id . '-title') . '">'
+        . $escaper->escapeHtml($title) . '</h2><span class="tq-pill tq-pill--' . ($on > 0 ? 'ok' : 'off') . '">'
+        . $escaper->escapeHtml(__('%1 of %2 on', $on, count($rows))) . '</span></div>';
+};
+
+/**
+ * Rows of On/Off switches.
+ *
+ * @param array $rows
+ * @return string
+ */
+$switches = static function (array $rows) use ($escaper, $pill): string {
+    $html = '<dl class="tq-facts">';
+    foreach ($rows as $row) {
+        $html .= '<dt>' . $escaper->escapeHtml($row['label']) . '</dt><dd>' . $pill((bool) $row['on']) . '</dd>';
+    }
+    return $html . '</dl>';
+};
+
+/**
+ * "Configure" links to configuration groups: group id => link text.
+ *
+ * @param array $links
+ * @return string
+ */
+$foot = static function (array $links) use ($block, $escaper, $canConfigure): string {
+    if (!$canConfigure || $links === []) {
+        return '';
+    }
+    $html = '<div class="tq-card__foot">';
+    foreach ($links as $group => $label) {
+        $html .= '<a class="tq-link" href="' . $escaper->escapeUrl($block->getGroupUrl($group)) . '">'
+            . $escaper->escapeHtml($label) . '</a>';
+    }
+    return $html . '</div>';
+};
 ?>
 <div class="tq-admin">
     <div class="tq-admin__header">
@@ -36,9 +110,11 @@ foreach ($checklist as $item) {
             <button type="button" class="tq-btn tq-btn--secondary" id="tq-test-connection">
                 <?= $escaper->escapeHtml(__('Test connection')) ?>
             </button>
-            <a class="tq-btn tq-btn--primary" href="<?= $escaper->escapeUrl($block->getSettingsUrl()) ?>">
-                <?= $escaper->escapeHtml(__('Settings')) ?>
-            </a>
+            <?php if ($canConfigure): ?>
+                <a class="tq-btn tq-btn--primary" href="<?= $escaper->escapeUrl($block->getSettingsUrl()) ?>">
+                    <?= $escaper->escapeHtml(__('Settings')) ?>
+                </a>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -47,11 +123,21 @@ foreach ($checklist as $item) {
         <span class="tq-status__text">
             <?= $escaper->escapeHtml(
                 $allOk
-                    ? __('Ready — the quote button is live on your product pages.')
-                    : __('Not live yet — finish the steps below to show the quote button.')
+                    ? __('Ready: the quote button is live on your product pages.')
+                    : __('Not live yet. Finish the steps below to show the quote button.')
             ) ?>
         </span>
     </div>
+
+    <nav class="tq-tabs" aria-label="<?= $escaper->escapeHtmlAttr(__('TackQuote settings areas')) ?>">
+        <?php foreach ($block->getTabs() as $anchor => $label): ?>
+            <a class="tq-tabs__item" href="#<?= $escaper->escapeHtmlAttr($anchor) ?>"><?= $escaper->escapeHtml($label) ?></a>
+        <?php endforeach; ?>
+    </nav>
+
+    <p class="tq-scope-note">
+        <?= $escaper->escapeHtml(__('These are the Default Config settings. A website can override any of them: choose it in the scope switcher on the configuration page.')) ?>
+    </p>
 
     <div class="tq-grid">
         <?= $block->getChildHtml('connect_card') ?>
@@ -74,8 +160,8 @@ foreach ($checklist as $item) {
             </ul>
         </section>
 
-        <section class="tq-card">
-            <h2 class="tq-card__title"><?= $escaper->escapeHtml(__('Connection')) ?></h2>
+        <section class="tq-card" id="tq-card-connection" aria-labelledby="tq-card-connection-title">
+            <h2 class="tq-card__title" id="tq-card-connection-title"><?= $escaper->escapeHtml(__('Connection')) ?></h2>
             <dl class="tq-facts">
                 <dt><?= $escaper->escapeHtml(__('API base URL')) ?></dt>
                 <dd><code><?= $escaper->escapeHtml($block->getApiBaseUrl()) ?></code></dd>
@@ -98,51 +184,114 @@ foreach ($checklist as $item) {
                hidden
                role="status"
                aria-live="polite"></p>
+            <?= /* @noEscape */ $foot(['general' => (string) __('Connection settings')]) ?>
         </section>
 
-        <section class="tq-card">
-            <h2 class="tq-card__title"><?= $escaper->escapeHtml(__('B2B features')) ?></h2>
+        <section class="tq-card" id="tq-card-storefront" aria-labelledby="tq-card-storefront-title">
+            <?= /* @noEscape */ $head('tq-card-storefront', (string) __('Storefront'), $storefront) ?>
+            <?= /* @noEscape */ $switches($storefront) ?>
+
+            <h3 class="tq-card__subtitle"><?= $escaper->escapeHtml(__('Quote-only store')) ?></h3>
             <dl class="tq-facts">
-                <?php foreach ($block->getB2bSwitches() as $switch): ?>
-                    <dt><?= $escaper->escapeHtml($switch['label']) ?></dt>
-                    <dd>
-                        <?php if ($switch['on']): ?>
-                            <span class="tq-pill tq-pill--ok"><?= $escaper->escapeHtml(__('On')) ?></span>
-                        <?php else: ?>
-                            <span class="tq-pill tq-pill--warn"><?= $escaper->escapeHtml(__('Off')) ?></span>
-                        <?php endif; ?>
-                    </dd>
-                <?php endforeach; ?>
-                <?php foreach ($block->getGroupRuleRows() as $row): ?>
-                    <dt><?= $escaper->escapeHtml($row['label']) ?></dt>
-                    <dd>
-                        <?php if ($row['on']): ?>
-                            <span class="tq-pill tq-pill--ok"><?= $escaper->escapeHtml(__('On')) ?></span>
-                        <?php else: ?>
-                            <span class="tq-pill tq-pill--warn"><?= $escaper->escapeHtml(__('Off')) ?></span>
-                        <?php endif; ?>
-                    </dd>
-                <?php endforeach; ?>
                 <?php foreach ($block->getQuoteOnlyRows() as $row): ?>
                     <dt><?= $escaper->escapeHtml($row['label']) ?></dt>
                     <dd>
                         <?php if ($row['on'] === null): ?>
                             <?= $escaper->escapeHtml($row['value'] ?? '') ?>
-                        <?php elseif ($row['on']): ?>
-                            <span class="tq-pill tq-pill--ok"><?= $escaper->escapeHtml(__('On')) ?></span>
                         <?php else: ?>
-                            <span class="tq-pill tq-pill--warn"><?= $escaper->escapeHtml(__('Off')) ?></span>
+                            <?= /* @noEscape */ $pill((bool) $row['on']) ?>
                         <?php endif; ?>
                     </dd>
                 <?php endforeach; ?>
             </dl>
+
+            <h3 class="tq-card__subtitle"><?= $escaper->escapeHtml(__('Styling')) ?></h3>
+            <dl class="tq-facts">
+                <?php foreach ($block->getStylingRows() as $row): ?>
+                    <dt><?= $escaper->escapeHtml($row['label']) ?></dt>
+                    <dd>
+                        <?php if ($row['swatch'] !== '' && preg_match('/^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/', $row['swatch']) === 1): ?>
+                            <span class="tq-swatch" id="tq-swatch-accent" aria-hidden="true"></span>
+                            <?= /* @noEscape */ $secureRenderer->renderStyleAsTag(
+                                'background-color: ' . $row['swatch'],
+                                '#tq-swatch-accent'
+                            ) ?>
+                        <?php endif; ?>
+                        <?= $escaper->escapeHtml($row['value']) ?>
+                    </dd>
+                <?php endforeach; ?>
+            </dl>
+            <?= /* @noEscape */ $foot([
+                'storefront' => (string) __('Quote buttons'),
+                'quote_request' => (string) __('Quote page and attachments'),
+                'quote_only' => (string) __('Quote-only store'),
+                'styling' => (string) __('Styling'),
+            ]) ?>
+        </section>
+
+        <section class="tq-card" id="tq-card-pricing" aria-labelledby="tq-card-pricing-title">
+            <?= /* @noEscape */ $head('tq-card-pricing', (string) __('B2B pricing'), $pricing) ?>
+            <?= /* @noEscape */ $switches($pricing) ?>
             <p class="tq-card__note">
                 <?= $escaper->escapeHtml(
                     $block->isB2bLive()
-                        ? __('Shown to signed-in customers on product pages. Display only: the cart and checkout still charge Magento prices.')
+                        ? __('Shown to signed-in customers on product pages. The cart charges these prices only when "Account prices charged in cart" is on.')
                         : __('Needs TackQuote enabled and an API key before anything is shown.')
                 ) ?>
             </p>
+            <?= /* @noEscape */ $foot([
+                'b2b' => (string) __('What customers see'),
+                'b2b_checkout' => (string) __('Cart and checkout'),
+            ]) ?>
+        </section>
+
+        <section class="tq-card" id="tq-card-groups" aria-labelledby="tq-card-groups-title">
+            <?= /* @noEscape */ $head('tq-card-groups', (string) __('Buyer groups'), $groups) ?>
+            <?= /* @noEscape */ $switches($groups) ?>
+            <?php if (!$block->isB2bLive() && $block->countOn($groups) > 0): ?>
+                <p class="tq-card__note"><?= $escaper->escapeHtml(__('These need an API key before they take effect.')) ?></p>
+            <?php endif; ?>
+            <?= /* @noEscape */ $foot(['b2b_groups' => (string) __('Buyer group rules')]) ?>
+        </section>
+
+        <section class="tq-card" id="tq-card-forms" aria-labelledby="tq-card-forms-title">
+            <?= /* @noEscape */ $head('tq-card-forms', (string) __('Forms'), $forms) ?>
+            <?= /* @noEscape */ $switches($forms) ?>
+            <?= /* @noEscape */ $foot([
+                'forms' => (string) __('Application tabs'),
+                'net_terms' => (string) __('Pay on net terms'),
+            ]) ?>
+        </section>
+
+        <section class="tq-card" id="tq-card-orders" aria-labelledby="tq-card-orders-title">
+            <?= /* @noEscape */ $head('tq-card-orders', (string) __('Orders'), $orders) ?>
+            <?= /* @noEscape */ $switches($orders) ?>
+            <p class="tq-card__note">
+                <?= $escaper->escapeHtml(__('TackQuote reads this store\'s orders, products and stock through the Magento Admin REST API. Set that up in TackQuote under Settings > Integrations > Magento. The switch above is the only order setting in this module.')) ?>
+            </p>
+            <?= /* @noEscape */ $foot(['quote_checkout' => (string) __('Accepted quote checkout')]) ?>
+        </section>
+
+        <section class="tq-card" id="tq-card-help" aria-labelledby="tq-card-help-title">
+            <h2 class="tq-card__title" id="tq-card-help-title"><?= $escaper->escapeHtml(__('Help')) ?></h2>
+            <dl class="tq-facts">
+                <dt><?= $escaper->escapeHtml(__('Module version')) ?></dt>
+                <dd><?= $escaper->escapeHtml($block->getModuleVersion()) ?></dd>
+            </dl>
+            <ul class="tq-links">
+                <li>
+                    <a href="<?= $escaper->escapeUrl($block::DOCS_URL) ?>" target="_blank" rel="noopener noreferrer">
+                        <?= $escaper->escapeHtml(__('Setup guide')) ?>
+                        <span class="tq-sr"><?= $escaper->escapeHtml(__('(opens in a new tab)')) ?></span>
+                    </a>
+                </li>
+                <li>
+                    <a href="<?= $escaper->escapeUrl($block::SUPPORT_URL) ?>" target="_blank" rel="noopener noreferrer">
+                        <?= $escaper->escapeHtml(__('Support')) ?>
+                        <span class="tq-sr"><?= $escaper->escapeHtml(__('(opens in a new tab)')) ?></span>
+                    </a>
+                </li>
+            </ul>
         </section>
     </div>
 </div>

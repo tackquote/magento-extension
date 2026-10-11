@@ -37,6 +37,7 @@ namespace TackQuote\Quotes\Model\Forms;
 use Magento\Framework\HTTP\Client\CurlFactory;
 use Magento\Framework\Serialize\Serializer\Json;
 use Psr\Log\LoggerInterface;
+use TackQuote\Quotes\Model\Api\PluginHeaders;
 use TackQuote\Quotes\Model\Config;
 
 class AccountApiClient
@@ -70,21 +71,31 @@ class AccountApiClient
     private $logger;
 
     /**
+     * Informational headers on every request (Model\Api\PluginHeaders); never a credential.
+     *
+     * @var PluginHeaders
+     */
+    private $pluginHeaders;
+
+    /**
      * @param Config $config
      * @param CurlFactory $curlFactory
      * @param Json $json
      * @param LoggerInterface $logger
+     * @param PluginHeaders $pluginHeaders
      */
     public function __construct(
         Config $config,
         CurlFactory $curlFactory,
         Json $json,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        PluginHeaders $pluginHeaders
     ) {
         $this->config = $config;
         $this->curlFactory = $curlFactory;
         $this->json = $json;
         $this->logger = $logger;
+        $this->pluginHeaders = $pluginHeaders;
     }
 
     /**
@@ -274,7 +285,8 @@ class AccountApiClient
                 'X-Api-Key' => $apiKey,
                 'Accept' => 'application/json',
                 'User-Agent' => 'TackQuote-Magento2',
-            ]
+            ],
+            $this->pluginHeaders->get($storeId)
         ));
 
         try {

@@ -20,6 +20,7 @@ use Psr\Log\LoggerInterface;
 use TackQuote\Quotes\Model\Config;
 use TackQuote\Quotes\Model\Forms\AccountApiClient;
 use TackQuote\Quotes\Model\Forms\AccountIdentity;
+use TackQuote\Quotes\Model\Api\PluginHeaders;
 
 /**
  * @covers \TackQuote\Quotes\Model\Forms\AccountApiClient
@@ -68,7 +69,7 @@ class AccountApiClientTest extends TestCase
             return $curl;
         });
 
-        return new AccountApiClient($config, $factory, new Json(), $this->createMock(LoggerInterface::class));
+        return new AccountApiClient($config, $factory, new Json(), $this->createMock(LoggerInterface::class), $this->createConfiguredMock(PluginHeaders::class, ['get' => []]));
     }
 
     private function query(string $url): array

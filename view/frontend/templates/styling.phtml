@@ -1,0 +1,27 @@
+<?php
+/**
+ * The merchant's storefront styling (Stores > Configuration > TackQuote > Storefront: Styling),
+ * printed once in the page head.
+ *
+ * Nothing is printed when every setting is at its default. The CSS comes from
+ * Model\Styling\StyleRules::buildCss(): fixed rules plus a validated hex colour, a whole
+ * number of pixels and the merchant's custom CSS with every "<" removed, so the content can
+ * never end the <style> element. It goes out through SecureHtmlRenderer so Magento_Csp can
+ * hash it for style-src.
+ *
+ * @var \Magento\Framework\View\Element\Template $block
+ * @var \Magento\Framework\View\Helper\SecureHtmlRenderer $secureRenderer
+ * @package TackQuote_Quotes
+ */
+
+/** @var \TackQuote\Quotes\ViewModel\Styling $styling */
+$styling = $block->getData('styling_view_model');
+if (!$styling instanceof \TackQuote\Quotes\ViewModel\Styling) {
+    return;
+}
+$css = $styling->getInlineCss();
+if ($css === '') {
+    return;
+}
+?>
+<?= /* @noEscape */ $secureRenderer->renderTag('style', ['id' => 'tackquote-styling'], $css, false) ?>

@@ -91,9 +91,6 @@ class Config
     public const XML_PATH_INSTALL_ID = 'tackquote_quotes/identity/install_id';
 
     private const DEFAULT_API_BASE_URL = 'https://api.tackquote.com/v1';
-    private const DEFAULT_BUTTON_LABEL = 'Request a Quote';
-    private const DEFAULT_ADD_TO_QUOTE_LABEL = 'Add to Quote';
-    private const DEFAULT_CHECKOUT_LABEL = 'Request quote for these items';
 
     /**
      * @var ScopeConfigInterface
@@ -292,7 +289,8 @@ class Config
             $storeId
         );
 
-        return $value !== '' ? $value : self::DEFAULT_BUTTON_LABEL;
+        // The default is translated into the store's locale (i18n/*.csv); a merchant's own label is not.
+        return $value !== '' ? $value : (string) __('Request a Quote');
     }
 
     /**
@@ -328,7 +326,7 @@ class Config
             $storeId
         );
 
-        return $value !== '' ? $value : self::DEFAULT_ADD_TO_QUOTE_LABEL;
+        return $value !== '' ? $value : (string) __('Add to Quote');
     }
 
     /**
@@ -515,7 +513,7 @@ class Config
             $storeId
         );
 
-        return $value !== '' ? $value : self::DEFAULT_CHECKOUT_LABEL;
+        return $value !== '' ? $value : (string) __('Request quote for these items');
     }
 
     /**
