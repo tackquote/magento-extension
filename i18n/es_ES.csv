@@ -439,3 +439,6 @@
 "You have %1 in your cart and tried to add %2.","Tiene %1 en su carrito y ha intentado añadir %2."
 "You asked for %1.","Ha solicitado %1."
 "You have %1 in your cart.","Tiene %1 en su carrito."
+"Waiting for the first server check.","Esperando la primera comprobación del servidor."
+"Last server check failed: %1","La última comprobación del servidor falló: %1"
+"The last server check failed.","La última comprobación del servidor falló."

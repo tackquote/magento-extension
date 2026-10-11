@@ -28,6 +28,7 @@ namespace TackQuote\Quotes\ViewModel\Adminhtml;
 
 use Magento\Cron\Model\ResourceModel\Schedule\CollectionFactory;
 use Magento\Framework\View\Element\Block\ArgumentInterface;
+use Magento\Store\Model\StoreManagerInterface;
 use TackQuote\Quotes\Model\ServerCapabilities;
 
 class CronStatus implements ArgumentInterface
@@ -49,6 +50,11 @@ class CronStatus implements ArgumentInterface
     private $capabilities;
 
     /**
+     * @var StoreManagerInterface
+     */
+    private $storeManager;
+
+    /**
      * @var string|null|false False until read.
      */
     private $lastRun = false;
@@ -56,11 +62,51 @@ class CronStatus implements ArgumentInterface
     /**
      * @param CollectionFactory $scheduleCollectionFactory
      * @param ServerCapabilities $capabilities
+     * @param StoreManagerInterface $storeManager
      */
-    public function __construct(CollectionFactory $scheduleCollectionFactory, ServerCapabilities $capabilities)
-    {
+    public function __construct(
+        CollectionFactory $scheduleCollectionFactory,
+        ServerCapabilities $capabilities,
+        StoreManagerInterface $storeManager
+    ) {
         $this->scheduleCollectionFactory = $scheduleCollectionFactory;
         $this->capabilities = $capabilities;
+        $this->storeManager = $storeManager;
+    }
+
+    /**
+     * What the Overview says beside a switch that needs the server's capability list
+     * (attachments, target prices, the wholesale and net terms forms), or '' when the list is
+     * known.
+     *
+     * Read for the default store view, whose settings the Overview shows. While nothing is
+     * cached the storefront asks TackQuote itself, so this is usually short-lived; it exists so
+     * that a cold or failing check is visible instead of the features silently missing
+     * (devstore Q/A finding #2). Never calls TackQuote.
+     *
+     * @return string
+     */
+    public function getServerCheckNote(): string
+    {
+        try {
+            $store = $this->storeManager->getDefaultStoreView();
+            $storeId = $store !== null ? (int) $store->getId() : null;
+        } catch (\Exception $e) {
+            $storeId = null;
+        }
+        $state = $this->capabilities->state($storeId);
+        if ($state === ServerCapabilities::STATE_WAITING) {
+            return (string) __('Waiting for the first server check.');
+        }
+        if ($state === ServerCapabilities::STATE_FAILED) {
+            $failure = $this->capabilities->lastFailure();
+
+            return $failure !== null
+                ? (string) __('Last server check failed: %1', $failure['reason'])
+                : (string) __('The last server check failed.');
+        }
+
+        return '';
     }
 
     /**

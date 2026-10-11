@@ -55,6 +55,9 @@ $checklist[] = [
     ])),
 ];
 $canConfigure = $overview->canConfigure();
+// Beside a switched-on feature that needs the server's capability list while it is unknown
+// or failing ("Waiting for the first server check."), instead of the feature silently missing.
+$serverNote = $cron->getServerCheckNote();
 
 /**
  * A state badge that never wraps: the admin's grid-severity badges, or a neutral one for Off.
@@ -94,7 +97,13 @@ $title = function (string $id, string $title, ?array $rows = null) use ($overvie
  * @param string $labelledBy
  * @return string
  */
-$table = function (array $rows, string $labelledBy) use ($overview, $escaper, $state, $canConfigure): string {
+$table = function (array $rows, string $labelledBy) use (
+    $overview,
+    $escaper,
+    $state,
+    $canConfigure,
+    $serverNote
+): string {
     $html = '<table class="admin__table-secondary tq-overview-table" aria-labelledby="'
         . $escaper->escapeHtmlAttr($labelledBy) . '"><thead><tr>'
         . '<th scope="col" class="tq-overview-col-setting">' . $escaper->escapeHtml(__('Setting')) . '</th>'
@@ -102,7 +111,11 @@ $table = function (array $rows, string $labelledBy) use ($overview, $escaper, $s
         . '<th scope="col" class="tq-overview-col-action"><span class="tq-overview-sr">'
         . $escaper->escapeHtml(__('Settings')) . '</span></th></tr></thead><tbody>';
     foreach ($rows as $row) {
-        $html .= '<tr><th scope="row">' . $escaper->escapeHtml($row['label']) . '</th>';
+        $html .= '<tr><th scope="row">' . $escaper->escapeHtml($row['label']);
+        if (!empty($row['server']) && $row['on'] === true && $serverNote !== '') {
+            $html .= '<span class="tq-overview-row-note">' . $escaper->escapeHtml($serverNote) . '</span>';
+        }
+        $html .= '</th>';
         if ($row['on'] === null) {
             $swatch = '';
             if (($row['swatch'] ?? '') !== '' && $overview->isSwatch($row['swatch'])) {

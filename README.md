@@ -187,6 +187,11 @@ is built from the Magento admin's own components, following the Admin Design Pat
   cron has run" says *Last server check failed at <time>: <reason>* for a day, or until the
   next successful check of that store view (`Model/ServerCapabilities.php` `lastFailure()`).
   The cron job itself still reports success, so this line is where a failing ping shows.
+- **Features waiting for the server.** Target prices, attachments, the Wholesale and Net terms
+  tabs and Pay on net terms depend on TackQuote's capability list. While it is unknown for the
+  default store view, each of those rows that is switched on says *Waiting for the first
+  server check.*, or *Last server check failed: <reason>* after a failure, instead of the
+  feature silently missing from the storefront (`CronStatus::getServerCheckNote()`).
 - **Tabs**, one per settings area in the WooCommerce plugin's order, using the admin's
   horizontal tabs (`mage/backend/tabs` on `ul.tabs-horiz`, as on the core Dashboard). Only
   one area shows at a time; the widget provides the tab roles and keyboard handling.

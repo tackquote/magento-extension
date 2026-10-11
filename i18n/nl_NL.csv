@@ -439,3 +439,6 @@
 "You have %1 in your cart and tried to add %2.","U hebt er %1 in uw winkelwagen en probeerde er %2 toe te voegen."
 "You asked for %1.","U vroeg om %1."
 "You have %1 in your cart.","U hebt er %1 in uw winkelwagen."
+"Waiting for the first server check.","Wachten op de eerste servercontrole."
+"Last server check failed: %1","Laatste servercontrole mislukt: %1"
+"The last server check failed.","De laatste servercontrole is mislukt."
