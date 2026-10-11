@@ -21,6 +21,16 @@
  *
  * Anything else returns null, which means "Magento's own behaviour, untouched".
  *
+ * THE CART'S CURRENCY ON A NEW CART. Magento gives a quote its `quote_currency_code` only when
+ * the quote is first saved (Quote::beforeSave(), Magento_Quote Model/Quote.php:818-848, read in
+ * vendor 2.4.8-p5): the forced currency when one is set, else the store's current currency. A
+ * signed-in customer with no active cart gets a fresh, UNSAVED quote from
+ * Checkout\Model\Session::getQuote(), and the first Quote::addProduct() runs on it before
+ * Checkout\Model\Cart::save(). Reading only the stored code made that first add skip every
+ * check (devstore Q/A finding #39: qty 12 against a limit of 2 to 10 was accepted into an empty
+ * cart, every later add refused). So an empty code is resolved exactly the way beforeSave() will
+ * resolve it a moment later.
+ *
  * @package TackQuote_Quotes
  */
 
@@ -28,6 +38,7 @@ declare(strict_types=1);
 
 namespace TackQuote\Quotes\Model\Enforce;
 
+use Magento\Directory\Model\Currency;
 use Magento\Quote\Model\Quote;
 use TackQuote\Quotes\Model\Config;
 use TackQuote\Quotes\Model\QuoteOnly\VisitorContextInterface;
@@ -79,7 +90,7 @@ class Eligibility
         }
 
         $email = strtolower(trim($this->visitor->getCustomerEmail()));
-        $currency = strtoupper(trim((string) $quote->getQuoteCurrencyCode()));
+        $currency = $this->currency($quote);
         if ($email === '' || $currency === '') {
             return null;
         }
@@ -90,5 +101,32 @@ class Eligibility
             'email' => $email,
             'currency' => $currency,
         ];
+    }
+
+    /**
+     * The cart's currency: the stored code, or the one Quote::beforeSave() is about to store.
+     *
+     * @param Quote $quote
+     * @return string Upper-case ISO code, or '' when Magento has none either.
+     */
+    private function currency(Quote $quote): string
+    {
+        $code = strtoupper(trim((string) $quote->getQuoteCurrencyCode()));
+        if ($code !== '') {
+            return $code;
+        }
+
+        $forced = $quote->getData('forced_currency');
+        if ($forced instanceof Currency) {
+            return strtoupper(trim((string) $forced->getCode()));
+        }
+
+        try {
+            $store = $quote->getStore();
+        } catch (\Exception $e) {
+            return '';
+        }
+
+        return strtoupper(trim((string) $store->getCurrentCurrencyCode()));
     }
 }

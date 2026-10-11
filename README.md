@@ -992,8 +992,15 @@ are declared in `etc/frontend/di.xml` and the three Web API areas only).
   "You have 4 in your cart and tried to add 20.", or "You asked for 60." for a quantity
   change). Only the order submit, where the cart really holds it, says "You have 60 in your
   cart."
+- **A new cart is checked too.** The first product added to a brand-new cart is checked like
+  every other add, in the currency Magento is about to give the cart (the store's current
+  currency).
 - **Failure refuses nothing**: if TackQuote cannot be reached, the cart is not limited
-  (the WooCommerce plugin's rule). Answers are cached for 60 seconds per customer and SKU.
+  (the WooCommerce plugin's rule), and each unchecked SKU is logged at WARNING in
+  `var/log/system.log` with the SKU and the reason (for example "TackQuote answered HTTP
+  503"). An empty cache is not a failure: it
+  is filled by asking TackQuote before the cart change is decided. Answers are cached for 60
+  seconds per customer and SKU.
 
 ## Buyer group rules (signed-in customers)
 
@@ -1672,6 +1679,20 @@ magento-extension/                              (repository root)
 ```
 
 ## Changelog
+
+### Unreleased
+
+- **Order limits on a brand-new cart (devstore Q/A finding #39).** The first product added to a
+  signed-in customer's brand-new cart skipped the order-limit check: Magento gives a quote its
+  currency only when it first saves it (`Quote::beforeSave()`), and the add runs before that
+  save, so the cart had no currency and was treated as not enforceable. The cart's currency is
+  now resolved the way `beforeSave()` resolves it (a forced currency, else the store's current
+  currency), so qty 12 against a limit of 2 to 10 is refused on the first add as on every later
+  one (`OrderLimitNewCartTest`). The same applies to account prices, which read the same buyer.
+- **Order limits that are not checked are logged.** When TackQuote cannot answer (unreachable,
+  an HTTP error, a body that is not an answer, the store's 429 pause, or a lookup that failed in
+  the last 30 seconds) the cart is still not limited, as documented, and the SKU and the reason
+  are now logged at WARNING. A cold cache is never treated as a failure.
 
 ### 1.5.0 (2026-10-11)
 

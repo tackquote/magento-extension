@@ -16,8 +16,13 @@
  *
  * FAIL OPEN — any failure returns null and nothing is refused, the WooCommerce plugin's rule
  * for the same check (Tack_B2B_Notices::order_limit_violations(): "No answer: nothing is
- * blocked"). A limit is a policy the seller can still apply on the TackQuote side; refusing
- * every order while TackQuote is unreachable would stop the store selling.
+ * blocked") and the README's ("Failure refuses nothing"). A limit is a policy the seller can
+ * still apply on the TackQuote side; refusing every order while TackQuote is unreachable would
+ * stop the store selling. Only a real failure fails open, and every one is logged at WARNING
+ * with the SKU and the reason (the HTTP status, an unreadable body, the store-wide 429 pause, or
+ * a lookup that failed under FAILURE_BACKOFF_TTL ago), so an unchecked line is never silent.
+ * A COLD CACHE IS NOT A FAILURE: an empty cache asks TackQuote synchronously, before the cart
+ * change is decided.
  *
  * @package TackQuote_Quotes
  */
@@ -28,6 +33,7 @@ namespace TackQuote\Quotes\Model\Enforce;
 
 use Magento\Framework\App\CacheInterface;
 use Magento\Framework\Serialize\Serializer\Json;
+use Psr\Log\LoggerInterface;
 use TackQuote\Quotes\Model\Api\StorefrontClient;
 use TackQuote\Quotes\Model\B2bDisplay\DataProvider;
 
@@ -60,6 +66,11 @@ class OrderLimitProvider
     private $json;
 
     /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
+    /**
      * @var array<string, array|false>
      */
     private $memo = [];
@@ -68,12 +79,14 @@ class OrderLimitProvider
      * @param StorefrontClient $client
      * @param CacheInterface $cache
      * @param Json $json
+     * @param LoggerInterface $logger
      */
-    public function __construct(StorefrontClient $client, CacheInterface $cache, Json $json)
+    public function __construct(StorefrontClient $client, CacheInterface $cache, Json $json, LoggerInterface $logger)
     {
         $this->client = $client;
         $this->cache = $cache;
         $this->json = $json;
+        $this->logger = $logger;
     }
 
     /**
@@ -110,10 +123,15 @@ class OrderLimitProvider
             }
         }
 
-        if ($this->cache->load(self::V1_THROTTLED_PREFIX . $storeId) || $this->cache->load($key . '_failed')) {
-            $this->memo[$key] = false;
-
-            return null;
+        if ($this->cache->load(self::V1_THROTTLED_PREFIX . $storeId)) {
+            return $this->unchecked($key, $sku, 'TackQuote answered HTTP 429 and the store is pausing its lookups');
+        }
+        if ($this->cache->load($key . '_failed')) {
+            return $this->unchecked(
+                $key,
+                $sku,
+                sprintf('the last lookup failed less than %d seconds ago', self::FAILURE_BACKOFF_TTL)
+            );
         }
 
         $answer = $this->client->get(
@@ -131,9 +149,8 @@ class OrderLimitProvider
                 );
             }
             $this->cache->save('1', $key . '_failed', [DataProvider::CACHE_TAG], self::FAILURE_BACKOFF_TTL);
-            $this->memo[$key] = false;
 
-            return null;
+            return $this->unchecked($key, $sku, $this->failureReason($answer));
         }
 
         $data = $answer['data'];
@@ -141,6 +158,45 @@ class OrderLimitProvider
         $this->memo[$key] = $data;
 
         return $data;
+    }
+
+    /**
+     * Fail open for this request, and say so.
+     *
+     * @param string $key
+     * @param string $sku
+     * @param string $reason
+     * @return array|null Always null: there is no answer to enforce.
+     */
+    private function unchecked(string $key, string $sku, string $reason): ?array
+    {
+        $this->memo[$key] = false;
+        $this->logger->warning(sprintf(
+            'TackQuote order limits for SKU "%s" were not checked, so nothing was refused: %s.',
+            $sku,
+            $reason
+        ));
+
+        return null;
+    }
+
+    /**
+     * Why a lookup returned no answer, from StorefrontClient::get()'s result.
+     *
+     * @param array $answer
+     * @return string
+     */
+    private function failureReason(array $answer): string
+    {
+        $status = (int) ($answer['status'] ?? 0);
+        if ($status === 0) {
+            return 'TackQuote could not be reached or the store has no API key';
+        }
+        if ($status >= 200 && $status < 300) {
+            return sprintf('TackQuote answered HTTP %d with a body that is not an order-limits answer', $status);
+        }
+
+        return sprintf('TackQuote answered HTTP %d', $status);
     }
 
     /**

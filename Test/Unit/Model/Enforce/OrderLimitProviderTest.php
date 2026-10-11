@@ -13,6 +13,7 @@ namespace TackQuote\Quotes\Test\Unit\Model\Enforce;
 use Magento\Framework\App\CacheInterface;
 use Magento\Framework\Serialize\Serializer\Json;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use TackQuote\Quotes\Model\Api\StorefrontClient;
 use TackQuote\Quotes\Model\Enforce\OrderLimitProvider;
 
@@ -28,6 +29,9 @@ class OrderLimitProviderTest extends TestCase
 
     /** @var array<int, array> */
     private $calls = [];
+
+    /** @var string[] WARNING lines */
+    private $warnings = [];
 
     /** @var array */
     private $answer = ['ok' => true, 'status' => 200, 'data' => ['status' => 'limited', 'limits' => []]];
@@ -50,7 +54,12 @@ class OrderLimitProviderTest extends TestCase
             return true;
         });
 
-        return new OrderLimitProvider($client, $cache, new Json());
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->method('warning')->willReturnCallback(function ($message): void {
+            $this->warnings[] = (string) $message;
+        });
+
+        return new OrderLimitProvider($client, $cache, new Json(), $logger);
     }
 
     public function testItAsksTheNoticesRouteWithTheNoticesParameters(): void
@@ -82,6 +91,62 @@ class OrderLimitProviderTest extends TestCase
         self::assertNull($this->provider()->forSku(['customerId' => 9] + self::BUYER, 'B-2'));
         self::assertCount(1, $this->calls, 'a 429 pauses the store, shared with the product page');
         self::assertArrayHasKey('tackquote_b2b_throttled_2', $this->cacheData);
+    }
+
+    public function testAColdCacheAsksTackQuoteBeforeAnswering(): void
+    {
+        $this->answer = ['ok' => true, 'status' => 200, 'data' => ['status' => 'limited', 'limits' => [['min' => 2]]]];
+
+        $data = $this->provider()->forSku(self::BUYER, 'A-1');
+
+        self::assertSame(['status' => 'limited', 'limits' => [['min' => 2]]], $data);
+        self::assertCount(1, $this->calls, 'an empty cache is a synchronous lookup, never "no limits"');
+        self::assertSame([], $this->warnings);
+    }
+
+    /**
+     * @return array<string, array{0: array, 1: string}>
+     */
+    public static function failures(): array
+    {
+        return [
+            'unreachable or no key' => [['ok' => false, 'status' => 0], 'could not be reached'],
+            'server error' => [['ok' => false, 'status' => 503], 'HTTP 503'],
+            'throttled' => [['ok' => false, 'status' => 429], 'HTTP 429'],
+            'not an answer' => [['ok' => false, 'status' => 200], 'HTTP 200 with a body'],
+        ];
+    }
+
+    /**
+     * @dataProvider failures
+     */
+    public function testEveryFailureThatRefusesNothingIsLoggedWithTheSku(array $answer, string $reason): void
+    {
+        $this->answer = $answer;
+
+        self::assertNull($this->provider()->forSku(self::BUYER, 'A-1'));
+        self::assertCount(1, $this->warnings);
+        self::assertStringContainsString('SKU "A-1"', $this->warnings[0]);
+        self::assertStringContainsString('nothing was refused', $this->warnings[0]);
+        self::assertStringContainsString($reason, $this->warnings[0]);
+        self::assertStringNotContainsString('buyer@example.test', $this->warnings[0]);
+    }
+
+    public function testABackedOffLookupIsLoggedToo(): void
+    {
+        $this->answer = ['ok' => false, 'status' => 503];
+        $this->provider()->forSku(self::BUYER, 'A-1');
+        $this->provider()->forSku(self::BUYER, 'A-1');
+
+        self::assertCount(1, $this->calls);
+        self::assertCount(2, $this->warnings);
+        self::assertStringContainsString('failed less than 30 seconds ago', $this->warnings[1]);
+
+        $this->answer = ['ok' => false, 'status' => 429];
+        $this->provider()->forSku(self::BUYER, 'B-2');
+        $this->provider()->forSku(self::BUYER, 'C-3');
+        self::assertStringContainsString('SKU "C-3"', $this->warnings[3]);
+        self::assertStringContainsString('pausing its lookups', $this->warnings[3]);
     }
 
     public function testTheCacheIdCarriesNoEmail(): void
