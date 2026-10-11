@@ -1,0 +1,235 @@
+// /**
+//  * TackQuote admin styles: the Overview (TackQuote > Overview) and the TackQuote controls
+//  * in Stores > Configuration.
+//  *
+//  * The admin theme compiles every module's view/adminhtml/web/css/source/_module.less into
+//  * its own styles.css (Magento/backend web/css/styles.less, "@magento_import
+//  * 'source/_module.less'"), so these rules use the admin's LESS variables and inherit its
+//  * palette, type and spacing. Because that stylesheet is global, every rule is scoped under
+//  * a .tq-* class. Buttons, messages, tabs, page sections, tables and badges are the admin's
+//  * own classes (action-primary, message-*, tabs-horiz, admin__page-section*,
+//  * admin__table-secondary, grid-severity-*); this file only adds what they leave open.
+//  */
+
+//
+//  Variables
+//  _____________________________________________
+
+@tq-overview__label-column__width: 40%;
+@tq-overview__state-column__width: 9rem;
+@tq-overview__off__color: @color-brownie;
+@tq-overview__off__background: @color-white-fog2;
+
+//
+//  Common
+//  _____________________________________________
+
+.tq-overview__sr,
+.tq-connect--compact .tq-connect__sr {
+    .lib-visually-hidden();
+}
+
+//
+//  Overview
+//  _____________________________________________
+
+.tq-overview {
+    .messages {
+        margin-bottom: @indent__base;
+    }
+
+    .message[hidden] {
+        display: none;
+    }
+
+    //  Before mage/backend/tabs has run, show only the first panel (no flash of all seven)
+    .tq-overview__tabs:not(.ui-tabs) .tq-overview__panel + .tq-overview__panel {
+        display: none;
+    }
+
+    //  The tab panel border, as on the core Dashboard
+    .ui-tabs-panel {
+        border-top: 1px solid @color-gray68;
+    }
+
+    .admin__page-section {
+        margin-bottom: @indent__l;
+    }
+
+    .admin__page-section-title {
+        &:extend(.abs-clearfix all);
+    }
+}
+
+.tq-overview__scope {
+    color: @color-brownie;
+    margin: 0 0 @indent__base;
+}
+
+.tq-overview__count {
+    color: @color-brownie;
+    float: right;
+    white-space: nowrap;
+}
+
+.tq-overview__note {
+    color: @color-brownie;
+    margin: @indent__s 0 0;
+}
+
+.tq-overview__links {
+    margin: @indent__s 0 0;
+}
+
+//  Two items side by side in a section, stacked on small screens
+.tq-overview__columns {
+    display: grid;
+    gap: @indent__base @indent__l;
+    grid-template-columns: minmax(0, 1fr);
+}
+
+//
+//  Setting | state | link tables
+//  ---------------------------------------------
+
+.tq-overview__table {
+    table-layout: fixed;
+    width: 100%;
+
+    th[scope='row'] {
+        color: @color-very-dark-gray-black;
+        overflow-wrap: break-word;
+        width: @tq-overview__label-column__width;
+    }
+
+    .tq-overview__col-setting {
+        width: @tq-overview__label-column__width;
+    }
+
+    .tq-overview__col-state {
+        white-space: nowrap;
+        width: @tq-overview__state-column__width;
+    }
+
+    .tq-overview__col-action {
+        text-align: right;
+        white-space: nowrap;
+        width: 10rem;
+    }
+
+    //  Long values (URLs, the launcher summary) wrap between words only
+    .tq-overview__value {
+        overflow-wrap: break-word;
+        word-break: normal;
+
+        code {
+            overflow-wrap: anywhere;
+        }
+    }
+}
+
+//
+//  State badges: the admin's grid-severity badges, inline and never wrapped
+//  ---------------------------------------------
+
+.tq-overview__state {
+    &[class] {
+        display: inline-block;
+        white-space: nowrap;
+    }
+}
+
+.tq-overview__state--off {
+    background: @tq-overview__off__background;
+    border: 1px solid @color-gray68;
+    color: @tq-overview__off__color;
+    font-weight: bold;
+    line-height: 17px;
+    padding: 0 3px;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.tq-overview__swatch {
+    border: 1px solid @color-gray68;
+    display: inline-block;
+    height: 1.4rem;
+    margin-right: @indent__xs;
+    vertical-align: middle;
+    width: 1.4rem;
+}
+
+//
+//  Connect with TackQuote (Overview item and compact configuration form)
+//  _____________________________________________
+
+.tq-connect {
+    .tq-connect__state,
+    .tq-connect__intro {
+        margin: 0 0 @indent__s;
+    }
+
+    .tq-connect__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: @indent__s;
+        margin-bottom: @indent__s;
+
+        form {
+            margin: 0;
+        }
+    }
+
+    .tq-connect__more {
+        margin-top: @indent__s;
+
+        summary {
+            color: @link__color;
+            cursor: pointer;
+        }
+    }
+}
+
+//
+//  "Verify" result in Stores > Configuration > TackQuote (templates/system/config/test-connection.phtml)
+//  _____________________________________________
+
+.tq-config-result {
+    display: inline-block;
+    font-size: 1.2rem;
+    line-height: 1.6;
+    margin-left: @indent__s;
+    padding: @indent__xs @indent__s;
+    vertical-align: middle;
+
+    &[hidden] {
+        display: none;
+    }
+}
+
+.tq-config-result--pending {
+    background: @tq-overview__off__background;
+    color: @color-brownie;
+}
+
+.tq-config-result--ok {
+    background: @color-white-fog2;
+    border-left: 3px solid @color-green-apple;
+    color: @color-very-dark-gray-black;
+}
+
+.tq-config-result--error {
+    background: @color-white-fog2;
+    border-left: 3px solid @color-tomato-brick;
+    color: @color-very-dark-gray-black;
+}
+
+//
+//  Desktop
+//  _____________________________________________
+
+.media-width(@extremum, @break) when (@extremum = 'min') and (@break = @screen__m) {
+    .tq-overview__columns {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}

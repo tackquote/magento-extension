@@ -1,0 +1,44 @@
+<?php
+/**
+ * The Overview's page actions bar (container page.main.actions), laid out like the core
+ * Dashboard's "Reload Data" bar: Magento_Backend view/adminhtml/templates/dashboard/totalbar/
+ * refreshstatistics.phtml.
+ *
+ * One primary action, as the Admin Pattern Library asks: "Settings" opens the configuration
+ * section, so it is a link styled as the primary action. "Test connection" stays on this page
+ * and is a <button>; TackQuote_Quotes/js/test-connection posts it and writes the answer into
+ * the #tq-test-result message under the page title.
+ *
+ * @var \Magento\Backend\Block\Template $block
+ * @var \Magento\Framework\Escaper $escaper
+ * @package TackQuote_Quotes
+ */
+
+/** @var \TackQuote\Quotes\ViewModel\Adminhtml\Overview $overview */
+$overview = $block->getData('overview');
+$testInit = [
+    'TackQuote_Quotes/js/test-connection' => [
+        'url' => $overview->getTestConnectionUrl(),
+        'target' => '#tq-test-result',
+    ],
+];
+?>
+<div class="page-actions">
+    <div class="page-actions-inner">
+        <div class="page-actions-buttons">
+            <button type="button"
+                    id="tq-test-connection"
+                    class="action-secondary"
+                    title="<?= $escaper->escapeHtmlAttr(__('Test connection')) ?>"
+                    data-mage-init="<?= $escaper->escapeHtmlAttr(json_encode($testInit)) ?>">
+                <span><?= $escaper->escapeHtml(__('Test connection')) ?></span>
+            </button>
+            <?php if ($overview->canConfigure()): ?>
+                <a class="action-primary"
+                   href="<?= $escaper->escapeUrl($overview->getSettingsUrl()) ?>">
+                    <span><?= $escaper->escapeHtml(__('Settings')) ?></span>
+                </a>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>

@@ -163,35 +163,57 @@ token. Target prices travel on the quote request's lines (or in its note).
 ### Admin overview
 
 **TackQuote → Overview** (`Controller/Adminhtml/Dashboard/Index.php`,
-`Block/Adminhtml/Dashboard.php`, `view/adminhtml/templates/dashboard.phtml`) is laid out like
-the WooCommerce plugin's Overview tab: a row of tabs, then one card per settings area in the
-plugin's tab order. Each card shows what is switched on and ends with links that open the
-matching group of **Stores → Configuration → TackQuote**, already expanded (the URL fragment
-`#tackquote_quotes_<group>-link`, which Magento's configuration page expands on load). An admin
-without the configuration permission sees every card but no links.
+`ViewModel/Adminhtml/Overview.php`, `ViewModel/Adminhtml/CronStatus.php`,
+`view/adminhtml/templates/dashboard.phtml`, `view/adminhtml/templates/overview/actions.phtml`)
+is built from the Magento admin's own components, following the Admin Design Pattern Library:
 
-| Card | Shows | Links to |
+- **Page actions bar** (the standard `page-main-actions` bar, as on the core Dashboard):
+  **Settings** is the page's one primary action and opens **Stores → Configuration →
+  TackQuote**; **Test connection** is a secondary action and shows its answer as an admin
+  message under the page title.
+- **Status messages** (`message-success` / `message-warning`): whether the quote button is
+  live, and a warning while Magento cron has not yet run TackQuote's jobs. Until it has, the
+  quote form shows contact fields only: the company and custom fields from the TackQuote
+  registration settings, and the attachment control, appear after the first cron run.
+- **Tabs**, one per settings area in the WooCommerce plugin's order, using the admin's
+  horizontal tabs (`mage/backend/tabs` on `ul.tabs-horiz`, as on the core Dashboard). Only
+  one area shows at a time; the widget provides the tab roles and keyboard handling.
+- Inside each tab, `admin__page-section` blocks with the switches in an
+  `admin__table-secondary` table: setting, state (an admin badge that never wraps) and a
+  **Configure** link that opens the matching configuration group, already expanded (the URL
+  fragment `#tackquote_quotes_<group>-link`, which Magento's configuration page expands on
+  load). An admin without the configuration permission sees every setting but no links.
+
+| Tab | Shows | Links to |
 | --- | --- | --- |
-| Connect with TackQuote | How the store is connected; **Connect** and **Disconnect** | |
-| Setup | Checklist: TackQuote enabled, API key set, quote button on, each with the fix | |
-| Connection | API base URL, whether a key is saved, the button label; **Test connection** result | Connection |
-| Storefront | Quote buttons, quote list, listing buttons, quote page, cart button, target price, attachments; quote-only store; styling (accent color swatch, button style, launcher, custom CSS) | Quote buttons, Quote page and attachments, Quote-only store, Styling |
+| Connection | **Connect with TackQuote** (state, **Connect**, **Disconnect**); API base URL, whether a key is saved, the button label; the Setup checklist: TackQuote enabled, API key set, quote button on, Magento cron has run, each with the fix | Connection |
+| Storefront | Quote buttons and quote page (7 switches); quote-only store; styling (accent color swatch, button style, launcher, custom CSS) | Quote buttons, Quote page and attachments, Quote-only store, Styling |
 | B2B pricing | The four display switches and the two cart and checkout switches, "N of 6 on" | What customers see, Cart and checkout |
-| Buyer groups | The five buyer-group rule switches | Buyer groups: rules for signed-in customers |
+| Buyer groups | The five buyer-group rule switches | Buyer group rules |
 | Forms | Wholesale account tab, Net terms tab, Pay on net terms | Application tabs, Pay on net terms |
 | Orders | Accepted quote checkout on or off; where order, product and stock sync is set up (in TackQuote) | Accepted quote checkout |
 | Help | Module version, setup guide, support | |
 
 The switches are shown as the merchant set them at the default scope, even while the module
-cannot act on them yet (the Setup checklist and the card notes say why); a website can
+cannot act on them yet (the Setup checklist and the tab notes say why); a website can
 override any of them, and the page says so.
+
+"Magento cron has run" reads Magento_Cron's schedule collection (`cron_schedule`) for this
+module's two job codes (`etc/crontab.xml`). Magento keeps finished rows for the cron
+"success history" lifetime (60 minutes by default), so the step reads *To do* when cron has
+not run the jobs within that time, which is also when their cached data has run out.
+
+Styles live in `view/adminhtml/web/css/source/_module.less`, which the admin theme compiles
+into its own stylesheet, so the page uses the admin's colours, type and spacing. Behaviour is
+loaded through `data-mage-init` (`view/adminhtml/web/js/test-connection.js`,
+`connect-card.js`, `swatch.js`); the templates carry no inline script and no inline style.
 
 Screenshots for this section (captured during Q/A):
 
-- [ ] Overview, top: header, status banner, tab row, Connect and Setup cards
-- [ ] Overview: Storefront card with an accent color set
-- [ ] Overview: B2B pricing, Buyer groups and Forms cards
-- [ ] Stores → Configuration → TackQuote opened from a card link (group expanded)
+- [ ] Overview, Connection tab: page actions bar, status message, tabs, Connect, details, Setup
+- [ ] Overview: Storefront tab with an accent color set
+- [ ] Overview: B2B pricing, Buyer groups, Forms, Orders and Help tabs
+- [ ] Stores → Configuration → TackQuote opened from a Configure link (group expanded)
 - [ ] Storefront: styling group with a refused accent color message
 - [ ] Storefront: a product page and the quote list launcher with an accent color, outlined
   buttons and the launcher bottom left
@@ -1495,7 +1517,8 @@ magento-extension/                              (repository root)
 ├── Block/QuotePage.php                         The full quote page (/tackquote/quote)
 ├── Block/CartQuoteButton.php                   Cart page: "Request a quote for your cart"
 ├── Block/B2bDisplay.php                        Product-page B2B placeholder (no customer data)
-├── Block/Adminhtml/Dashboard.php               Overview cards, deep links, setup checklist
+├── ViewModel/Adminhtml/Overview.php            Overview tabs, rows, deep links, setup checklist
+├── ViewModel/Adminhtml/CronStatus.php          Whether Magento cron has run the module's jobs
 ├── Block/Adminhtml/System/Config/TestConnection.php   Inline config-screen test button
 ├── Block/Adminhtml/ConnectCard.php             Connect card: state, Connect, Disconnect
 ├── Block/Adminhtml/System/Config/ConnectButton.php    Compact Connect card in the config screen
@@ -1546,19 +1569,39 @@ magento-extension/                              (repository root)
 │   ├── web/js/b2b-display.js                   Fills the B2B placeholder (text only)
 │   └── web/css/request-quote.css               Storefront styles
 └── view/adminhtml/
-    ├── layout/tackquote_dashboard_index.xml    Overview layout
-    ├── layout/adminhtml_system_config_edit.xml Loads the config-screen control stylesheet
-    ├── templates/dashboard.phtml               Overview markup + test-connection JS
+    ├── layout/tackquote_dashboard_index.xml    Overview layout (page actions + content)
+    ├── templates/dashboard.phtml               Overview: messages, tabs, sections, tables
+    ├── templates/overview/actions.phtml        Overview page actions: Settings, Test connection
     ├── templates/system/config/test-connection.phtml   Config-screen button markup
     ├── templates/connect-card.phtml            Connect card (Overview + compact config)
-    ├── web/css/dashboard.css                   Admin Overview styles
-    └── web/css/config-test-connection.css      "Verify" result pill (was an inline <style>)
+    ├── web/js/test-connection.js               Overview Test connection (data-mage-init)
+    ├── web/js/connect-card.js                  Connect / Disconnect posts and confirmation
+    ├── web/js/swatch.js                        Paints the accent color swatch
+    └── web/css/source/_module.less             Admin styles (compiled into the admin theme)
 ```
 
 ## Changelog
 
 ### Unreleased
 
+- **Admin Overview rebuilt on the Magento Admin Design Pattern Library.**
+  - Real tabs (`mage/backend/tabs`, the core Dashboard's horizontal tabs) replace the anchor
+    row and the seven cards; only one area shows at a time, so no half-empty cards.
+  - The standard page actions bar with **Settings** as the one primary action and **Test
+    connection** as a secondary one; status and test results are admin `message` components.
+  - Switches are shown in `admin__table-secondary` tables (setting, state, Configure link) in
+    `admin__page-section` blocks. State badges are the admin's own and never wrap; long values
+    wrap between words only.
+  - Styles moved to `view/adminhtml/web/css/source/_module.less` with the admin LESS
+    variables: Magento's orange primary and grey secondary buttons, no custom palette.
+    `dashboard.css`, `config-test-connection.css` and the layout that loaded it are removed.
+  - Inline scripts replaced by RequireJS modules loaded with `data-mage-init`.
+  - Data moved from `Block/Adminhtml/Dashboard.php` (removed) to
+    `ViewModel/Adminhtml/Overview.php`.
+  - New Setup step and warning: **Magento cron has run**. Until cron has run TackQuote's
+    jobs, the Overview says that the quote form's company and custom fields and its
+    attachment control appear after the first cron run (`ViewModel/Adminhtml/CronStatus.php`).
+  - No configuration path changed.
 - **Admin Overview, styling and seven languages** (WooCommerce 1.11.0 parity).
   - **Overview** (TackQuote → Overview, was Dashboard): a tab row and one card per settings
     area in the WooCommerce plugin's order (Connection, Storefront, B2B pricing, Buyer groups,

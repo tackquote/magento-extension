@@ -5,7 +5,7 @@
  *
  * Passed to templates through layout XML (`view/frontend/layout/default.xml`) rather than
  * injected into Block\QuoteList, so the blocks' constructors stay as they are. The admin
- * Overview reads the same values through Block\Adminhtml\Dashboard.
+ * Overview reads the same values through ViewModel\Adminhtml\Overview.
  *
  * Every value goes through Model\Styling\StyleRules on the way out, so a value written
  * around the admin form (config:set, a database import) is validated too.
