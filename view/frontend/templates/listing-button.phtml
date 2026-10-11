@@ -9,7 +9,7 @@
 
 $product = $block->getProduct();
 
-if (!$block->isEnabled() || !$product) {
+if (!$product || !$block->isEnabledFor($product)) {
     return;
 }
 

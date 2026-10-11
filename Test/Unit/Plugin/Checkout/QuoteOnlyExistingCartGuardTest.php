@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace TackQuote\Quotes\Test\Unit\Plugin\Checkout;
 
 use Magento\Checkout\Model\Cart;
+use Magento\Framework\DataObject;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Quote\Model\Quote;
 use Magento\Quote\Model\Quote\Item;
@@ -41,13 +42,15 @@ class QuoteOnlyExistingCartGuardTest extends TestCase
     /**
      * A cart holding one line of the given quantity.
      */
-    private function cartHoldingQty(float $qty): void
+    private function cartHoldingQty(float $qty, int $productId = 0): void
     {
         $item = $this->getMockBuilder(Item::class)
             ->disableOriginalConstructor()
             ->onlyMethods(['getQty'])
             ->getMock();
         $item->method('getQty')->willReturn($qty);
+        // getProductId() is DataObject magic on a quote item; set the data it reads.
+        $item->setData('product_id', $productId);
 
         $quote = $this->getMockBuilder(Quote::class)
             ->disableOriginalConstructor()
@@ -126,11 +129,62 @@ class QuoteOnlyExistingCartGuardTest extends TestCase
     public function testANormalStoreCanStillRaiseQuantities(): void
     {
         $this->mode->method('isActive')->willReturn(false);
+        $this->cartHoldingQty(1.0, 5);
 
         $this->guard()->beforeUpdateItems($this->cart, [7 => ['qty' => '10000']]);
         $this->guard()->beforeUpdateItem($this->cart, 7, ['qty' => 3]);
         $this->guard()->beforeAddOrderItem($this->cart, new \stdClass());
 
         self::assertTrue(true, 'with the mode off nothing is refused');
+    }
+
+    public function testRaisingAQuoteOnlyProductsLineIsRefusedInNormalMode(): void
+    {
+        // Per-product: the line's product was flagged after it entered the cart.
+        $this->mode->method('isActive')->willReturn(false);
+        $this->mode->method('isProductIdQuoteOnly')->willReturnCallback(static function (int $id): bool {
+            return $id === 9;
+        });
+        $this->cartHoldingQty(1.0, 9);
+
+        $this->expectException(LocalizedException::class);
+
+        $this->guard()->beforeUpdateItems($this->cart, [7 => ['qty' => '3']]);
+    }
+
+    public function testLoweringAQuoteOnlyProductsLineIsAllowed(): void
+    {
+        $this->mode->method('isActive')->willReturn(false);
+        $this->mode->method('isProductIdQuoteOnly')->willReturn(true);
+        $this->cartHoldingQty(5.0, 9);
+
+        $this->guard()->beforeUpdateItems($this->cart, [7 => ['qty' => '1']]);
+        $this->guard()->beforeUpdateItems($this->cart, [7 => ['remove' => '1']]);
+
+        self::assertTrue(true);
+    }
+
+    public function testReconfiguringAQuoteOnlyProductsLineIsRefusedInNormalMode(): void
+    {
+        $this->mode->method('isActive')->willReturn(false);
+        $this->mode->method('isProductIdQuoteOnly')->willReturn(true);
+        $this->cartHoldingQty(1.0, 9);
+
+        $this->expectException(LocalizedException::class);
+
+        $this->guard()->beforeUpdateItem($this->cart, 7, ['qty' => 1]);
+    }
+
+    public function testReorderingAQuoteOnlyProductIsRefusedInNormalMode(): void
+    {
+        $this->mode->method('isActive')->willReturn(false);
+        $this->mode->method('isProductIdQuoteOnly')->willReturnCallback(static function (int $id): bool {
+            return $id === 9;
+        });
+        $orderItem = new DataObject(['product_id' => 9]);
+
+        $this->expectException(LocalizedException::class);
+
+        $this->guard()->beforeAddOrderItem($this->cart, $orderItem);
     }
 }

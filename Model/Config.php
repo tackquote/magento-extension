@@ -29,6 +29,7 @@ class Config
     private const XML_PATH_QUOTE_ONLY_ENABLED = 'tackquote_quotes/quote_only/enabled';
     private const XML_PATH_QUOTE_ONLY_SCOPE = 'tackquote_quotes/quote_only/applies_to';
     private const XML_PATH_QUOTE_ONLY_GROUPS = 'tackquote_quotes/quote_only/customer_groups';
+    private const XML_PATH_QUOTE_ONLY_HIDE_PRICES = 'tackquote_quotes/quote_only/hide_prices';
 
     // B2B display on the product page (account price, volume table, order-limit notice,
     // buyer-group badge). Every switch defaults to 0 in etc/config.xml.
@@ -295,6 +296,25 @@ class Config
     {
         return (string) $this->scopeConfig->getValue(
             self::XML_PATH_QUOTE_ONLY_GROUPS,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
+    }
+
+    /**
+     * The merchant's "Price on request" switch, as stored. Off by default (etc/config.xml).
+     *
+     * Raw on purpose, like isQuoteOnlyEnabled(): whether prices are actually hidden for the
+     * visitor in front of you is QuoteOnlyMode::shouldHidePrices(), which also requires the
+     * store-wide mode to apply to them.
+     *
+     * @param int|null $storeId
+     * @return bool
+     */
+    public function isQuoteOnlyHidePrices(?int $storeId = null): bool
+    {
+        return (bool) $this->scopeConfig->isSetFlag(
+            self::XML_PATH_QUOTE_ONLY_HIDE_PRICES,
             ScopeInterface::SCOPE_STORE,
             $storeId
         );

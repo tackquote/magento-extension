@@ -28,6 +28,7 @@ use TackQuote\Quotes\Controller\B2b\Display;
 use TackQuote\Quotes\Model\B2bDisplay\DataProvider;
 use TackQuote\Quotes\Model\B2bDisplay\Presenter;
 use TackQuote\Quotes\Model\Config;
+use TackQuote\Quotes\Model\QuoteOnlyMode;
 
 /**
  * @covers \TackQuote\Quotes\Controller\B2b\Display
@@ -60,6 +61,9 @@ class DisplayTest extends TestCase
 
     /** @var Presenter&MockObject */
     private $presenter;
+
+    /** @var QuoteOnlyMode&MockObject */
+    private $quoteOnly;
 
     /** @var array|null What the controller answered. */
     private $answered;
@@ -99,6 +103,8 @@ class DisplayTest extends TestCase
         $this->provider->method('get')->willReturn(DataProvider::EMPTY_RESULT);
         $this->presenter = $this->createMock(Presenter::class);
         $this->presenter->method('present')->willReturn(self::PRESENTED);
+
+        $this->quoteOnly = $this->createMock(QuoteOnlyMode::class);
     }
 
     private function controller(): Display
@@ -128,7 +134,8 @@ class DisplayTest extends TestCase
             $this->repository,
             $this->config,
             $this->provider,
-            $this->presenter
+            $this->presenter,
+            $this->quoteOnly
         );
     }
 
@@ -285,6 +292,34 @@ class DisplayTest extends TestCase
         $this->repository->method('getById')->willReturn($this->product);
         $this->provider->expects($this->once())->method('get')
             ->with(1, 42, 'buyer@example.test', 'SKU-1', 'USD', [Config::B2B_ORDER_LIMITS, Config::B2B_BUYER_GROUP])
+            ->willReturn(DataProvider::EMPTY_RESULT);
+
+        $this->controller()->execute();
+    }
+
+    public function testWherePricesAreOnRequestNoAccountPriceOrLadderIsAskedFor(): void
+    {
+        // Quote-only "Price on request" hides the catalogue price for this customer; an
+        // account price or a volume table beside it would put the numbers back.
+        $this->signedIn();
+        $this->product->method('getTypeId')->willReturn('simple');
+        $this->repository->method('getById')->willReturn($this->product);
+        $this->quoteOnly->method('shouldHidePrices')->willReturn(true);
+        $this->provider->expects($this->once())->method('get')
+            ->with(1, 42, 'buyer@example.test', 'SKU-1', 'USD', [Config::B2B_ORDER_LIMITS, Config::B2B_BUYER_GROUP])
+            ->willReturn(DataProvider::EMPTY_RESULT);
+
+        $this->controller()->execute();
+    }
+
+    public function testASimpleProductWithVisiblePricesAsksForEverySwitchedOnFeature(): void
+    {
+        $this->signedIn();
+        $this->product->method('getTypeId')->willReturn('simple');
+        $this->repository->method('getById')->willReturn($this->product);
+        $this->quoteOnly->method('shouldHidePrices')->willReturn(false);
+        $this->provider->expects($this->once())->method('get')
+            ->with(1, 42, 'buyer@example.test', 'SKU-1', 'USD', null)
             ->willReturn(DataProvider::EMPTY_RESULT);
 
         $this->controller()->execute();

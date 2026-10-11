@@ -36,6 +36,10 @@ class QuoteOnlyScope implements OptionSourceInterface
                 'value' => QuoteOnlyRules::SCOPE_GROUPS,
                 'label' => __('Selected customer groups'),
             ],
+            [
+                'value' => QuoteOnlyRules::SCOPE_UNAPPROVED,
+                'label' => __('Everyone except approved wholesale accounts'),
+            ],
         ];
     }
 }

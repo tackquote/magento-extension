@@ -12,6 +12,12 @@
  *   quantity-breaks  ?sku=&buyerEmail=&currency=            -> QuantityBreakResult
  *   order-limits     ?sku=&buyerEmail=                      -> OrderLimitsNoticeResult
  *   buyer-group      ?buyerEmail=                           -> BuyerGroupResult
+ *   price-access     ?buyerEmail=                           -> PriceAccessResult
+ *
+ * `price-access` (StorefrontV1Controller::priceAccess, storefront-v1.controller.ts:211-220,
+ * `@Throttle` 60/min, `Cache-Control: private, no-store`) is read by quote-only mode's
+ * "except approved wholesale accounts" scope through Model\QuoteOnly\WholesaleApproval, not
+ * by the B2B display.
  *
  * AUTHENTICATION — the store's TackQuote API key in `X-Api-Key` and NOTHING in
  * `Authorization`. On these routes `Authorization` is a platform token (Wix), and
@@ -56,6 +62,7 @@ class StorefrontClient
     public const ROUTE_QUANTITY_BREAKS = 'quantity-breaks';
     public const ROUTE_ORDER_LIMITS = 'order-limits';
     public const ROUTE_BUYER_GROUP = 'buyer-group';
+    public const ROUTE_PRICE_ACCESS = 'price-access';
 
     /** The only routes this client will call. Anything else is refused before any I/O. */
     private const ROUTES = [
@@ -63,6 +70,7 @@ class StorefrontClient
         self::ROUTE_QUANTITY_BREAKS,
         self::ROUTE_ORDER_LIMITS,
         self::ROUTE_BUYER_GROUP,
+        self::ROUTE_PRICE_ACCESS,
     ];
 
     private const PATH_PREFIX = '/storefront/v1/';

@@ -47,17 +47,28 @@
  * vendor/magento/module-customer/etc/frontend/di.xml:23-26. A runtime area check could be
  * got wrong or removed; a file that is never loaded in adminhtml cannot be.
  *
- * KNOWN LIMIT, stated rather than papered over: the Web API areas (`webapi_rest`,
- * `webapi_soap`) and `graphql` are NOT guarded, and Magento's own Luma checkout places its
- * order through `webapi_rest`. Adding items to a guest cart over REST
- * (`POST /rest/V1/guest-carts/{cartId}/items`) is an anonymous endpoint and would therefore
- * still succeed. Guarding those areas would need UserContextInterface to tell an admin or
- * integration token from an anonymous storefront caller — that interface is only bound in
- * the webapi areas, so the same plugin cannot serve both — and getting it wrong would break
- * quote conversion. This is UNVERIFIED against a running store and is documented in
- * README.md; a merchant who needs the REST surface closed should disable the anonymous
- * guest-cart endpoints in `webapi.xml`, which is a store-wide decision, not this module's to
- * make.
+ * THE WEB API AND GRAPHQL. This plugin is now ALSO declared in
+ * etc/webapi_rest/di.xml, etc/webapi_soap/di.xml and etc/graphql/di.xml, because every cart
+ * path there funnels into the same method:
+ *
+ *   REST/SOAP  POST /V1/carts/mine/items, POST /V1/guest-carts/{id}/items
+ *              -> CartItemRepositoryInterface::save (GuestCartItemRepository::save delegates
+ *                 to it, GuestCartItemRepository.php:61-66) -> CartItemPersister::save, which
+ *                 calls $quote->addProduct() for a new line (CartItemPersister.php:98).
+ *   GraphQL    addProductsToCart -> Magento\Quote\Model\Cart\AddProductsToCart, which calls
+ *              $cart->addProduct() (AddProductsToCart.php:163); the older per-type mutations
+ *              reach the same method.
+ *              (All line numbers Magento 2.4.8.)
+ *
+ * What stops it from refusing the merchant's own integrations there is the caller's TYPE,
+ * read through Magento\Authorization\Model\UserContextInterface by
+ * Model\QuoteOnly\ApiVisitorContext: an admin or integration token — and TackQuote's
+ * OAuth-signed quote conversion, which is typed as an integration — is exempt; a customer
+ * token, a customer session, or an anonymous caller is not. The admin area itself still
+ * loads none of these files.
+ *
+ * PER-PRODUCT. A product whose own `tackquote_quote_only` attribute is Yes is refused too,
+ * whether or not the store-wide mode is on (QuoteOnlyMode::appliesToProduct()).
  *
  * @package TackQuote_Quotes
  */
@@ -107,21 +118,28 @@ class QuoteOnlyCartGuard
         $request = null,
         $processMode = null
     ): void {
-        $this->refuse();
+        if ($this->quoteOnlyMode->isActive()) {
+            $this->refuseStore();
+        }
+
+        if ($this->quoteOnlyMode->isProductQuoteOnly($product)) {
+            throw new LocalizedException(
+                __(
+                    '%1 is available on quote only. Add it to your quote list and request a price.',
+                    (string) $product->getName()
+                )
+            );
+        }
     }
 
     /**
-     * The refusal itself.
+     * The store-wide refusal.
      *
      * @return void
      * @throws LocalizedException
      */
-    private function refuse(): void
+    private function refuseStore(): void
     {
-        if (!$this->quoteOnlyMode->isActive()) {
-            return;
-        }
-
         throw new LocalizedException(
             __(
                 'This store is quote-only. Add the products you need to your quote list and '

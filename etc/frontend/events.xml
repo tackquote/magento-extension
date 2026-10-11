@@ -17,4 +17,16 @@
         <observer name="tackquote_quote_only_layout_handles"
                   instance="TackQuote\Quotes\Observer\QuoteOnlyLayoutHandle"/>
     </event>
+
+    <!--
+      Multishipping ("Check Out with Multiple Addresses") has its own route and controllers.
+      The front controller dispatches controller_action_predispatch_<route id> before every
+      action (FrontController::dispatchPreDispatchEvents()); an event, unlike a plugin, names
+      no class of the optional Magento_Multishipping module, so it is inert when the module
+      is absent.
+    -->
+    <event name="controller_action_predispatch_multishipping">
+        <observer name="tackquote_quote_only_multishipping_guard"
+                  instance="TackQuote\Quotes\Observer\QuoteOnlyMultishippingGuard"/>
+    </event>
 </config>

@@ -24,16 +24,16 @@
  * intercepting it is both precise and self-explanatory. It is a concrete, non-final public
  * `execute()`, which is what Magento's interception requires.
  *
- * KNOWN LIMIT, and it is a real one. Magento's Luma checkout places the order over REST
- * (`POST /rest/V1/guest-carts/{id}/payment-information`), which runs in the `webapi_rest`
- * area — this plugin is declared in `etc/frontend/di.xml` only, so it does not fire there.
- * A crafted REST call against a cart that predates the switch could therefore still place an
- * order. That surface is left open for the same reason the cart guard leaves it open: the
- * same endpoints carry the merchant's own integrations, including TackQuote placing
- * quote-accepted orders, and telling those apart needs UserContextInterface, which is only
- * bound in the webapi areas. UNVERIFIED against a running store; documented in README.md.
- * The invariant that holds unconditionally is the one the feature is sold on: nothing new
- * can enter a cart.
+ * THE ORDER ITSELF. Magento's Luma checkout places the order over REST
+ * (`POST /rest/V1/guest-carts/{id}/payment-information`), in the `webapi_rest` area where
+ * this controller plugin does not run. That conversion is refused by
+ * Plugin\Quote\QuoteOnlySubmitGuard, declared for the frontend and API areas, which tells
+ * the merchant's own integrations (TackQuote's quote conversion included) apart from a
+ * shopper through UserContextInterface. This plugin stays, because refusing at the page is
+ * what gives the shopper an explanation instead of a failed payment step.
+ *
+ * PER-PRODUCT. A cart holding a product whose own `tackquote_quote_only` flag is Yes is
+ * refused too, with its own message, even when the store-wide mode is off.
  *
  * @package TackQuote_Quotes
  */
@@ -43,6 +43,7 @@ declare(strict_types=1);
 namespace TackQuote\Quotes\Plugin\Checkout;
 
 use Magento\Checkout\Controller\Index\Index as CheckoutIndex;
+use Magento\Checkout\Model\Session as CheckoutSession;
 use Magento\Framework\Controller\Result\RedirectFactory;
 use Magento\Framework\Message\ManagerInterface as MessageManager;
 use TackQuote\Quotes\Model\QuoteOnlyMode;
@@ -65,18 +66,26 @@ class QuoteOnlyCheckoutGuard
     private $messageManager;
 
     /**
+     * @var CheckoutSession
+     */
+    private $checkoutSession;
+
+    /**
      * @param QuoteOnlyMode $quoteOnlyMode
      * @param RedirectFactory $redirectFactory
      * @param MessageManager $messageManager
+     * @param CheckoutSession $checkoutSession Injected as a Proxy (etc/frontend/di.xml).
      */
     public function __construct(
         QuoteOnlyMode $quoteOnlyMode,
         RedirectFactory $redirectFactory,
-        MessageManager $messageManager
+        MessageManager $messageManager,
+        CheckoutSession $checkoutSession
     ) {
         $this->quoteOnlyMode = $quoteOnlyMode;
         $this->redirectFactory = $redirectFactory;
         $this->messageManager = $messageManager;
+        $this->checkoutSession = $checkoutSession;
     }
 
     /**
@@ -92,14 +101,32 @@ class QuoteOnlyCheckoutGuard
      */
     public function aroundExecute(CheckoutIndex $subject, callable $proceed)
     {
-        if (!$this->quoteOnlyMode->isActive()) {
+        if ($this->quoteOnlyMode->isActive()) {
+            $this->messageManager->addErrorMessage(
+                __('This store is quote-only. Request a quote for your items and we will send you a price.')
+            );
+
+            return $this->redirectFactory->create()->setPath('checkout/cart');
+        }
+
+        try {
+            $cart = $this->checkoutSession->getQuote();
+        } catch (\Exception $e) {
+            // Core's own checkout cannot load this cart either and handles that itself.
             return $proceed();
         }
 
-        $this->messageManager->addErrorMessage(
-            __('This store is quote-only. Request a quote for your items and we will send you a price.')
-        );
+        if ($this->quoteOnlyMode->cartHasQuoteOnlyProduct($cart)) {
+            $this->messageManager->addErrorMessage(
+                __(
+                    'Your basket holds a product that is available on quote only. Remove it, or '
+                    . 'request a quote for it, before checking out.'
+                )
+            );
 
-        return $this->redirectFactory->create()->setPath('checkout/cart');
+            return $this->redirectFactory->create()->setPath('checkout/cart');
+        }
+
+        return $proceed();
     }
 }
