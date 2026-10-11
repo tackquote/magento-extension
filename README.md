@@ -487,6 +487,15 @@ Pasting a key keeps working exactly as before.
    TackQuote when Connect issued it, then removes it from this store. A pasted key is only
    removed from this store; revoke it in TackQuote yourself.
 
+**The return route keeps its secret key.** With *Add Secret Key to URLs* on (Magento's
+default), the return route must carry `key/<secret>/` or Magento sends the browser to the
+Dashboard and the one-time code is lost. Magento's backend URL model is shared and keeps its
+"no secret key" switch from one `getUrl()` call to the next unless the call passes route
+parameters, so `Model/Connect/StoreInfo.php` builds the return route FIRST with the key
+switched on (`turnOnSecretKey()`), then the key-less Admin address, then switches the key back
+on. Passing `['_nosecret' => false]` does not help: Magento tests that parameter with
+`isset()`, so it turns the key off. `Test/Unit/Model/Connect/StoreInfoTest.php` pins it.
+
 **What is sent to TackQuote:** this store's base URL, its Admin address, the store name, the
 module and Magento versions, the store locale, the random state and the code challenge. No
 customer, order or product data.
