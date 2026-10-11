@@ -22,6 +22,12 @@
             <resource id="Magento_Backend::admin">
                 <resource id="TackQuote_Quotes::tackquote" title="TackQuote" translate="title" sortOrder="45">
                     <resource id="TackQuote_Quotes::overview" title="Dashboard" translate="title" sortOrder="10"/>
+                    <!--
+                      Connect with TackQuote / Disconnect. Writes or removes the API key, so the
+                      controllers ALSO require TackQuote_Quotes::config (their _isAllowed()): a
+                      dashboard-only role can see the connection state but cannot change it.
+                    -->
+                    <resource id="TackQuote_Quotes::connect" title="Connect with TackQuote" translate="title" sortOrder="20"/>
                 </resource>
                 <resource id="Magento_Backend::stores">
                     <resource id="Magento_Backend::stores_settings">

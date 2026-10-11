@@ -25,6 +25,19 @@ class Config
     private const XML_PATH_SHOW_ON_LISTING = 'tackquote_quotes/storefront/show_on_listing';
     private const XML_PATH_CHECKOUT_LABEL = 'tackquote_quotes/storefront/checkout_button_label';
 
+    // "Connect with TackQuote": how the saved default-scope key arrived, and when.
+    // Written only by Model\Connect\KeyStore. KEY_SHA256 is the SHA-256 of the key Connect
+    // saved: a key pasted later no longer matches it, so it reads as pasted with no observer
+    // and no reliance on how the obscured field reports "changed".
+    public const XML_PATH_CONNECTED_VIA = 'tackquote_quotes/general/connected_via';
+    public const XML_PATH_CONNECTED_AT = 'tackquote_quotes/general/connected_at';
+    public const XML_PATH_CONNECTED_KEY_SHA256 = 'tackquote_quotes/general/connected_key_sha256';
+
+    /** The saved key came from "Connect with TackQuote". */
+    public const VIA_CONNECT = 'connect';
+    /** The saved key was pasted (or saved before Connect existed). */
+    public const VIA_KEY = 'key';
+
     // Quote-only / B2B catalog mode (1.3.0).
     private const XML_PATH_QUOTE_ONLY_ENABLED = 'tackquote_quotes/quote_only/enabled';
     private const XML_PATH_QUOTE_ONLY_SCOPE = 'tackquote_quotes/quote_only/applies_to';
@@ -146,6 +159,73 @@ class Config
         // for it. Falling back to the raw value keeps those installs working rather than
         // silently treating a valid key as absent.
         return trim($stored);
+    }
+
+    /**
+     * The configuration path of the API key, for the Connect writer (KeyStore).
+     *
+     * @return string
+     */
+    public static function apiKeyPath(): string
+    {
+        return self::XML_PATH_API_KEY;
+    }
+
+    /**
+     * How the DEFAULT-scope key arrived: VIA_CONNECT, VIA_KEY, or '' when no key
+     * is saved. VIA_CONNECT only while the saved key is still the one Connect
+     * saved (its SHA-256 matches the record); a key pasted afterwards, or saved
+     * before Connect existed, reads as VIA_KEY.
+     *
+     * @return string
+     */
+    public function getConnectedVia(): string
+    {
+        $key = $this->getDefaultApiKey();
+        if ($key === '') {
+            return '';
+        }
+        $default = ScopeConfigInterface::SCOPE_TYPE_DEFAULT;
+        $via = (string) $this->scopeConfig->getValue(self::XML_PATH_CONNECTED_VIA, $default);
+        $recorded = (string) $this->scopeConfig->getValue(self::XML_PATH_CONNECTED_KEY_SHA256, $default);
+
+        return $via === self::VIA_CONNECT && $recorded !== '' && hash_equals($recorded, hash('sha256', $key))
+            ? self::VIA_CONNECT
+            : self::VIA_KEY;
+    }
+
+    /**
+     * Unix time of the last successful Connect, or 0.
+     *
+     * @return int
+     */
+    public function getConnectedAt(): int
+    {
+        return (int) $this->scopeConfig->getValue(
+            self::XML_PATH_CONNECTED_AT,
+            ScopeConfigInterface::SCOPE_TYPE_DEFAULT
+        );
+    }
+
+    /**
+     * The DEFAULT-scope API key, decrypted: the one Connect writes and
+     * Disconnect clears. A website-scope key, where set, overrides it on that
+     * website's storefront (README, Known limitations).
+     *
+     * @return string
+     */
+    public function getDefaultApiKey(): string
+    {
+        $stored = (string) $this->scopeConfig->getValue(
+            self::XML_PATH_API_KEY,
+            ScopeConfigInterface::SCOPE_TYPE_DEFAULT
+        );
+        if ($stored === '') {
+            return '';
+        }
+        $decrypted = trim((string) $this->encryptor->decrypt($stored));
+
+        return $decrypted !== '' ? $decrypted : trim($stored);
     }
 
     /**
