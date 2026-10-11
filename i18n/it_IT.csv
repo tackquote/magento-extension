@@ -433,3 +433,4 @@
 "%1 available.","%1 disponibile."
 "Last server check failed at %1: %2","L'ultimo controllo del server non è riuscito il %1: %2"
 "Magento cron has not run TackQuote's jobs yet. The storefront asks TackQuote itself when nothing is cached, but without cron your registration settings and the server's capabilities are not kept fresh.","Il cron di Magento non ha ancora eseguito le attività di TackQuote. Il negozio interroga TackQuote da solo quando non c'è nulla in cache, ma senza cron le impostazioni di registrazione e le funzioni del server non vengono mantenute aggiornate."
+"Your account is still being linked to our quoting system. Please try again in a few minutes.","Il tuo account è ancora in fase di collegamento al nostro sistema di preventivi. Riprova tra qualche minuto."

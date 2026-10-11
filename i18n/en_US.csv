@@ -435,3 +435,4 @@
 "%1 available.","%1 available."
 "Last server check failed at %1: %2","Last server check failed at %1: %2"
 "Magento cron has not run TackQuote's jobs yet. The storefront asks TackQuote itself when nothing is cached, but without cron your registration settings and the server's capabilities are not kept fresh.","Magento cron has not run TackQuote's jobs yet. The storefront asks TackQuote itself when nothing is cached, but without cron your registration settings and the server's capabilities are not kept fresh."
+"Your account is still being linked to our quoting system. Please try again in a few minutes.","Your account is still being linked to our quoting system. Please try again in a few minutes."

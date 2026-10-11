@@ -887,6 +887,12 @@ as another platform's id). Credit is only ever shown for a customer you linked i
 which approving their application from this store does; an email alone never spends a credit
 line. Every value comes from the customer record Magento holds, never from the form.
 
+A wholesale or net terms application is sent only with the Magento identity. Without it
+(a server that does not list `customerIdentity`, or an install without its ID) the store
+refuses the submission with "Your account is still being linked to our quoting system. Please
+try again in a few minutes." rather than filing it under the email alone, where the account
+tab could never find it again.
+
 ### Failure and caching
 
 The form definition is cached 5 minutes (60 seconds after a failure). The net terms standing

@@ -112,6 +112,17 @@ class ApplicationSubmitter
         if (!$who->isSignedIn()) {
             return $this->error((string) __('Please sign in to your account to apply.'));
         }
+        if (!$who->carriesCustomerId()) {
+            // Without the Magento identity TackQuote files the application under the email
+            // alone, and the status read (GET wholesale-application, which asks by identity)
+            // can never find it again: the tab would keep offering the form to someone already
+            // under review (devstore Q/A finding #4). Model\ServerCapabilities now asks for the
+            // identity capability when its cache is cold, so this is rare; refuse rather than
+            // file something the customer cannot see.
+            return $this->error((string) __(
+                'Your account is still being linked to our quoting system. Please try again in a few minutes.'
+            ));
+        }
         $fields = (array) ($form['fields'] ?? []);
         $collected = $this->definition->collectAnswers($fields, $posted);
         if ($collected['error'] !== null) {
@@ -122,11 +133,6 @@ class ApplicationSubmitter
         $picked = $this->definition->pickFiles($fields, $values, $files);
         if ($picked['error'] !== null) {
             return $this->error($picked['error']);
-        }
-        if ($picked['wanted'] !== [] && !$who->carriesCustomerId()) {
-            // TackQuote binds an application file to the applicant's platform identity; an
-            // email alone cannot hold one (the upload route answers 401).
-            return $this->error((string) __('Files cannot be attached from this store yet. Please contact us.'));
         }
 
         // Every file is checked before anything is sent.

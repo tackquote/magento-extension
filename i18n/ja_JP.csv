@@ -433,3 +433,4 @@
 "%1 available.","利用可能額 %1。"
 "Last server check failed at %1: %2","前回のサーバー確認 (%1) に失敗しました: %2"
 "Magento cron has not run TackQuote's jobs yet. The storefront asks TackQuote itself when nothing is cached, but without cron your registration settings and the server's capabilities are not kept fresh.","Magento の cron がまだ TackQuote のジョブを実行していません。キャッシュが空のときはストアが自ら TackQuote に問い合わせますが、cron がないと登録設定とサーバーの機能情報は最新に保たれません。"
+"Your account is still being linked to our quoting system. Please try again in a few minutes.","お客様のアカウントは現在、見積もりシステムと連携中です。数分後にもう一度お試しください。"

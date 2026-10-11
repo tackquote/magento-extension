@@ -150,6 +150,39 @@ class ApplicationSubmitterTest extends TestCase
         self::assertSame('error', $out['kind']);
     }
 
+    /**
+     * Mutation (applied, red, restored): drop the carriesCustomerId() guard in
+     * submitWholesale() -> this test (the application is posted without the identity).
+     */
+    public function testAnApplicationWithoutTheMagentoIdentityIsNotSent(): void
+    {
+        $this->client->expects($this->never())->method('uploadWholesaleFile');
+        $this->client->expects($this->never())->method('submitWholesale');
+        $form = (new FormDefinition())->normalise(['fields' => [
+            ['key' => 'companyName', 'type' => 'text', 'label' => 'Company', 'required' => true],
+        ]]);
+
+        $out = $this->submitter()->submitWholesale('trade', $form, ['companyName' => 'Acme'], [], $this->who(false));
+
+        self::assertSame([
+            'kind' => 'error',
+            'message' => 'Your account is still being linked to our quoting system. Please try again in a few minutes.',
+        ], $out);
+    }
+
+    public function testTheSameApplicationWithTheIdentityIsSent(): void
+    {
+        $this->client->expects($this->once())->method('submitWholesale')
+            ->willReturn(['ok' => true, 'status' => 201, 'data' => ['status' => 'pending', 'message' => '']]);
+        $form = (new FormDefinition())->normalise(['fields' => [
+            ['key' => 'companyName', 'type' => 'text', 'label' => 'Company', 'required' => true],
+        ]]);
+
+        $out = $this->submitter()->submitWholesale('trade', $form, ['companyName' => 'Acme'], [], $this->who());
+
+        self::assertSame('pending', $out['kind']);
+    }
+
     public function testAFailedUploadSubmitsNothing(): void
     {
         $this->goodFile();
