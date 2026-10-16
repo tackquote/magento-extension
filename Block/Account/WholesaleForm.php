@@ -199,7 +199,9 @@ class WholesaleForm extends Template
      */
     public function renderField(array $field): string
     {
-        return $this->renderer->render($field, null, $this->filesAllowed());
+        $form = $this->getForm();
+
+        return $this->renderer->render($field, null, $this->filesAllowed(), $form['calendar'] ?? null);
     }
 
     /**

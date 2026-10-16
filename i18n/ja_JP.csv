@@ -243,6 +243,7 @@
 "Please select","選択してください"
 "Sign in to your account to attach files.","ファイルを添付するにはアカウントにログインしてください。"
 "PDF, JPEG or PNG, up to %1 MB.","PDF、JPEG、PNG、最大 %1 MB。"
+"Dates follow the seller's calendar (%1). Today there is %2.","日付は販売者のカレンダー（%1）に従います。販売者の地域の今日は%2です。"
 "%1 must be ticked.","%1 にチェックを入れてください。"
 "%1 is required.","%1 は必須です。"
 "%1 is too long.","%1 が長すぎます。"

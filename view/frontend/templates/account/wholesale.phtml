@@ -49,7 +49,7 @@ if ($state === ApplicationStatus::APPROVED): ?>
     <form class="form tackquote-application__form"
           action="<?= $escaper->escapeUrl($block->getActionUrl()) ?>"
           method="post"<?= $block->hasFileField() ? ' enctype="multipart/form-data"' : '' ?>
-          data-mage-init='{"validation":{}}'>
+          data-mage-init='{"validation":{},"TackQuote_Quotes/js/seller-calendar":{}}'>
         <?= $block->getBlockHtml('formkey') ?>
         <input type="hidden" name="tack_slug" value="<?= $escaper->escapeHtmlAttr($block->getSlug()) ?>"/>
         <fieldset class="fieldset">
