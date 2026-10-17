@@ -161,6 +161,54 @@ class FieldRendererTest extends TestCase
     }
 
     /**
+     * "No dates in the past" follows the SELLER's calendar. A day far from this machine's
+     * own today proves the min comes from the calendar, not from gmdate().
+     */
+    public function testAPastDatesRefusedFieldUsesTheSellersToday(): void
+    {
+        $form = (new FormDefinition())->normalise([
+            'fields' => [['key' => 'start', 'type' => 'date', 'label' => 'Start', 'min' => 'today']],
+            'calendar' => ['timeZone' => 'America/Argentina/Buenos_Aires', 'today' => '2031-03-04'],
+        ]);
+        $html = $this->renderer()->render($form['fields'][0], null, true, $form['calendar']);
+
+        self::assertMatchesRegularExpression(
+            '/<input type="date"[^>]*name="tack_sf\[start\]"[^>]*min="2031-03-04"/',
+            $html
+        );
+        self::assertStringContainsString(
+            'data-tq-seller-zone="America&#x2F;Argentina&#x2F;Buenos_Aires" data-tq-seller-today="2031-03-04"',
+            $html
+        );
+        self::assertStringContainsString(
+            '<div class="note tq-seller-calendar" id="tq-sf-start-calendar" hidden="hidden">'
+            . 'Dates follow the seller&#039;s calendar (Buenos Aires). Today there is '
+            . '<span class="tq-seller-day">2031-03-04</span>.</div>',
+            $html
+        );
+    }
+
+    public function testWithoutACalendarAPastDatesRefusedFieldKeepsThisStoresToday(): void
+    {
+        $field = $this->field(['key' => 'start', 'type' => 'date', 'label' => 'Start', 'min' => 'today']);
+        $html = $this->renderer()->render($field);
+
+        self::assertStringContainsString('min="' . gmdate('Y-m-d') . '"', $html);
+        self::assertStringNotContainsString('data-tq-seller', $html);
+        self::assertStringNotContainsString('tq-seller-calendar', $html);
+    }
+
+    public function testADateFieldThatAllowsPastDatesGetsNoMinAndNoHint(): void
+    {
+        $field = $this->field(['key' => 'since', 'type' => 'date', 'label' => 'Since']);
+        $calendar = ['timeZone' => 'Asia/Kolkata', 'today' => '2031-03-04'];
+        $html = $this->renderer()->render($field, null, true, $calendar);
+
+        self::assertStringNotContainsString('min=', $html);
+        self::assertStringNotContainsString('tq-seller', $html);
+    }
+
+    /**
      * Magento's real Escaper, with the two collaborators it would otherwise fetch from the
      * ObjectManager (not booted in a unit test): the Laminas escaper and an inline
      * translator that is off, as on a storefront.

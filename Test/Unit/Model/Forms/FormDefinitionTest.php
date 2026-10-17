@@ -120,4 +120,53 @@ class FormDefinitionTest extends TestCase
         self::assertNull($picked['error']);
         self::assertSame(['cert'], array_keys($picked['wanted']));
     }
+
+    public function testNormaliseKeepsTheSellersCalendar(): void
+    {
+        $form = (new FormDefinition())->normalise([
+            'fields' => [['key' => 'start', 'type' => 'date', 'min' => 'today']],
+            'calendar' => ['timeZone' => 'Asia/Kolkata', 'today' => '2031-03-04'],
+        ]);
+
+        self::assertSame(['timeZone' => 'Asia/Kolkata', 'today' => '2031-03-04'], $form['calendar']);
+    }
+
+    /**
+     * @return array<string, array{0: mixed}>
+     */
+    public static function unusableCalendars(): array
+    {
+        return [
+            'absent (an older TackQuote server)' => [null],
+            'not an object' => ['Asia/Kolkata'],
+            'an impossible day' => [['timeZone' => 'Asia/Kolkata', 'today' => '2031-02-30']],
+            'a day with a time' => [['timeZone' => 'Asia/Kolkata', 'today' => '2031-03-04T00:00:00Z']],
+            'a zone that is not an IANA name' => [['timeZone' => '"><script>x</script>', 'today' => '2031-03-04']],
+            'a zone that is not a string' => [['timeZone' => 5, 'today' => '2031-03-04']],
+        ];
+    }
+
+    /**
+     * @dataProvider unusableCalendars
+     * @param mixed $calendar
+     */
+    public function testAnUnusableCalendarIsIgnored($calendar): void
+    {
+        $raw = ['fields' => [['key' => 'start', 'type' => 'date', 'min' => 'today']]];
+        if ($calendar !== null) {
+            $raw['calendar'] = $calendar;
+        }
+
+        self::assertNull((new FormDefinition())->normalise($raw)['calendar']);
+    }
+
+    public function testOneAndThreePartZonesAreAccepted(): void
+    {
+        $definition = new FormDefinition();
+
+        self::assertNotNull($definition->calendar(['calendar' => ['timeZone' => 'UTC', 'today' => '2031-03-04']]));
+        self::assertNotNull(
+            $definition->calendar(['calendar' => ['timeZone' => 'America/Indiana/Knox', 'today' => '2031-03-04']])
+        );
+    }
 }

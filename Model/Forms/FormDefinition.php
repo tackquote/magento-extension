@@ -80,7 +80,43 @@ class FormDefinition
             'description' => is_string($raw['description'] ?? null) ? $raw['description'] : '',
             'successMessage' => is_string($raw['successMessage'] ?? null) ? $raw['successMessage'] : '',
             'fields' => $fields,
+            'calendar' => $this->calendar($raw),
         ];
+    }
+
+    /**
+     * The seller's calendar the server sent with the definition, or null.
+     *
+     * TackQuote adds `calendar: {timeZone, today}` to a definition with a "No dates in the
+     * past" date field: the seller's IANA zone and their today (`YYYY-MM-DD`), the day the
+     * server refuses earlier dates against (tack `tenant-today.ts`). An older server sends
+     * none, and anything malformed is ignored: the field then falls back to this store's
+     * own today, as before.
+     *
+     * @param array $raw The definition as TackQuote sent it.
+     * @return array{timeZone: string, today: string}|null
+     */
+    public function calendar(array $raw): ?array
+    {
+        $calendar = $raw['calendar'] ?? null;
+        if (!is_array($calendar)) {
+            return null;
+        }
+        $zone = $calendar['timeZone'] ?? null;
+        $today = $calendar['today'] ?? null;
+        if (!is_string($zone) || !is_string($today) || strlen($zone) > 64) {
+            return null;
+        }
+        // An IANA name: `Asia/Kolkata`, `America/Argentina/Buenos_Aires`, `UTC`, `Etc/GMT+5`.
+        if (preg_match('#^[A-Za-z][A-Za-z0-9_+\-]*(/[A-Za-z0-9_+\-]+){0,2}$#', $zone) !== 1) {
+            return null;
+        }
+        if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $today, $m) !== 1
+            || !checkdate((int) $m[2], (int) $m[3], (int) $m[1])) {
+            return null;
+        }
+
+        return ['timeZone' => $zone, 'today' => $today];
     }
 
     /**

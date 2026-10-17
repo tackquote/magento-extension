@@ -886,6 +886,15 @@ method under *Pay on Net Terms (checkout)*:
   (optionally `slug="..."`). On a CMS page the block renders only the form, which is the same
   for every visitor, so the page cache never holds anyone's state; submitting needs a signed-in
   customer.
+
+  A date field set to "No dates in the past" follows the **seller's** calendar, because
+  TackQuote refuses a date before the seller's today in the seller's time zone (Settings >
+  General in TackQuote). TackQuote sends that zone and day with the form (`calendar:
+  {timeZone, today}`); the field's earliest day is the seller's today, and
+  `view/frontend/web/js/seller-calendar.js` keeps it on the seller's day while the page is open
+  and shows "Dates follow the seller's calendar (Kolkata). Today there is Oct 17, 2026." when
+  the shopper's own date differs. A TackQuote server that sends no calendar leaves the field
+  as before (this store's UTC today). TackQuote still checks every date on submit.
 - **Net terms tab** (My Account). The customer's approved terms, credit limit and available
   credit, a "being reviewed" or "not approved" notice, or the application form (legal name,
   phone, tax ID, billing address, requested limit and terms, three trade references, notes).
@@ -1332,6 +1341,7 @@ scripts/check-standards.sh           # the same, failing on ANY error or warning
 vendor/bin/phpunit -c Test/Unit/phpunit.xml
 node Test/Js/cart-seed.test.js       # the cart-page mapper; plain Node, no dependencies
 node Test/Js/buyer-prefill.test.js   # the signed-in prefill's one-time section reload
+node Test/Js/seller-calendar.test.js # "No dates in the past" on the seller's calendar
 ```
 
 The module is held to the Magento coding standard with **zero errors and zero warnings**;
@@ -1664,6 +1674,7 @@ magento-extension/                              (repository root)
 │   │                                           quote page, cart copy, attachments
 │   ├── web/js/cart-seed.js                     Cart items -> quote-list rows (pure; Test/Js)
 │   ├── web/js/buyer-prefill.js                 When to reload the prefill section (Test/Js)
+│   ├── web/js/seller-calendar.js               Seller's-today min + hint on date fields (Test/Js)
 │   ├── web/js/b2b-display.js                   Fills the B2B placeholder (text only)
 │   └── web/css/source/_module.less             Storefront styles (LESS, theme variables)
 └── view/adminhtml/
@@ -1679,6 +1690,16 @@ magento-extension/                              (repository root)
 ```
 
 ## Changelog
+
+### Unreleased
+
+- **"No dates in the past" follows the seller's calendar.** A wholesale application date field
+  with that rule now starts on the seller's today (the day TackQuote checks against, sent with
+  the form as `calendar`), not this store's UTC day, so a shopper west of the seller can no
+  longer pick a day TackQuote then refuses. A hint under the field says so when the shopper's
+  own date differs (new RequireJS component `TackQuote_Quotes/js/seller-calendar`, on the
+  form's `data-mage-init`). Translated in all eight languages (machine-assisted). An older
+  TackQuote server without `calendar` gets exactly the old field.
 
 ### 1.5.2 (2026-10-11)
 
