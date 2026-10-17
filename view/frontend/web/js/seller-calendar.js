@@ -97,12 +97,20 @@ define([], function () {
                 if (label) {
                     label.textContent = dayLabel(today, doc.documentElement && doc.documentElement.lang);
                 }
-                described = (input.getAttribute('aria-describedby') || '').split(' ').filter(Boolean);
+            }
+            // A hidden node named by aria-describedby is still announced: link it only while shown.
+            described = (input.getAttribute('aria-describedby') || '').split(' ').filter(function (id) {
+                return id && id !== hint.id;
+            });
 
-                if (described.indexOf(hint.id) === -1) {
-                    described.push(hint.id);
-                    input.setAttribute('aria-describedby', described.join(' '));
-                }
+            if (differs) {
+                described.push(hint.id);
+            }
+
+            if (described.length) {
+                input.setAttribute('aria-describedby', described.join(' '));
+            } else {
+                input.removeAttribute('aria-describedby');
             }
         });
     }

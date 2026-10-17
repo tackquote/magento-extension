@@ -46,6 +46,9 @@ El.prototype.getAttribute = function (k) {
 El.prototype.setAttribute = function (k, v) {
   this.attrs[k] = String(v);
 };
+El.prototype.removeAttribute = function (k) {
+  delete this.attrs[k];
+};
 El.prototype.hasAttribute = function (k) {
   return k in this.attrs;
 };
@@ -153,6 +156,17 @@ check("the hint stays hidden when the buyer's date is the seller's", () => {
   assert.equal(p.hint.hidden, true);
   assert.equal(p.input.min, '2026-10-17');
   assert.equal(p.input.getAttribute('aria-describedby'), null);
+});
+
+check('a hint hidden again (the days now agree) is unlinked from aria-describedby, other ids kept', () => {
+  const page = render(KOLKATA, '2026-10-17');
+  page.input.setAttribute('aria-describedby', 'tq-sf-start-help tq-sf-start-calendar');
+  const p = run(page, NOW, 'Asia/Kolkata');
+  assert.equal(p.hint.hidden, true);
+  assert.equal(p.input.getAttribute('aria-describedby'), 'tq-sf-start-help');
+  const q = render(KOLKATA, '2026-10-17');
+  q.input.setAttribute('aria-describedby', 'tq-sf-start-calendar');
+  assert.equal(run(q, NOW, 'Asia/Kolkata').input.getAttribute('aria-describedby'), null);
 });
 
 check("a page left open past the seller's midnight moves to the seller's new day", () => {

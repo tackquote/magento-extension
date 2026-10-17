@@ -161,11 +161,6 @@ class FieldRendererTest extends TestCase
     }
 
     /**
-     * Magento's real Escaper, with the two collaborators it would otherwise fetch from the
-     * ObjectManager (not booted in a unit test): the Laminas escaper and an inline
-     * translator that is off, as on a storefront.
-     */
-    /**
      * "No dates in the past" follows the SELLER's calendar. A day far from this machine's
      * own today proves the min comes from the calendar, not from gmdate().
      */
@@ -213,6 +208,11 @@ class FieldRendererTest extends TestCase
         self::assertStringNotContainsString('tq-seller', $html);
     }
 
+    /**
+     * Magento's real Escaper, with the two collaborators it would otherwise fetch from the
+     * ObjectManager (not booted in a unit test): the Laminas escaper and an inline
+     * translator that is off, as on a storefront.
+     */
     private function escaper(): Escaper
     {
         $escaper = new Escaper();
