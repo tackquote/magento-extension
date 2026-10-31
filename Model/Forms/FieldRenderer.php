@@ -64,9 +64,10 @@ class FieldRenderer
      * @param mixed $value A refilled answer, or null.
      * @param bool $filesAllowed Whether this form may take files now (signed in, server
      *                           accepts them). False renders a note instead of an input.
+     * @param array|null $calendar The seller's calendar (FormDefinition::calendar()), or null.
      * @return string
      */
-    public function render(array $field, $value = null, bool $filesAllowed = true): string
+    public function render(array $field, $value = null, bool $filesAllowed = true, ?array $calendar = null): string
     {
         $key = (string) $field['key'];
         $type = (string) $field['type'];
@@ -114,7 +115,8 @@ class FieldRenderer
 
         return '<div' . $attrs . '>'
             . '<label class="label" for="' . $id . '"><span>' . $label . '</span></label>'
-            . '<div class="control">' . $this->control($field, $id, $value, $filesAllowed) . $help . '</div>'
+            . '<div class="control">' . $this->control($field, $id, $value, $filesAllowed, $calendar) . $help
+            . $this->calendarHint($field, $id, $calendar) . '</div>'
             . '</div>';
     }
 
@@ -125,9 +127,10 @@ class FieldRenderer
      * @param string $id
      * @param mixed $value
      * @param bool $filesAllowed
+     * @param array|null $calendar
      * @return string
      */
-    private function control(array $field, string $id, $value, bool $filesAllowed): string
+    private function control(array $field, string $id, $value, bool $filesAllowed, ?array $calendar = null): string
     {
         $key = $this->escaper->escapeHtmlAttr((string) $field['key']);
         $type = (string) $field['type'];
@@ -169,14 +172,63 @@ class FieldRenderer
             default:
                 $input = self::INPUT_TYPES[$type] ?? 'text';
                 $extra = $input === 'email' ? ' autocomplete="email"' : '';
-                if ($type === 'date' && ($field['min'] ?? null) === 'today') {
-                    $extra .= ' min="' . gmdate('Y-m-d') . '"';
+                if ($this->pastDatesRefused($field)) {
+                    // "No dates in the past" means the SELLER's today, the day the server refuses
+                    // earlier dates against. An older TackQuote server sends no calendar: then
+                    // this store's UTC today, as before.
+                    $extra .= ' min="' . $this->escaper->escapeHtmlAttr($calendar['today'] ?? gmdate('Y-m-d')) . '"';
+                    if ($calendar !== null) {
+                        $extra .= ' data-tq-seller-zone="' . $this->escaper->escapeHtmlAttr($calendar['timeZone']) . '"'
+                            . ' data-tq-seller-today="' . $this->escaper->escapeHtmlAttr($calendar['today']) . '"';
+                    }
                 }
 
                 return '<input type="' . $input . '" id="' . $id . '" name="tack_sf[' . $key . ']"'
                     . ' value="' . $this->escaper->escapeHtmlAttr($text) . '"'
                     . ' maxlength="' . FormDefinition::MAX_TEXT . '"' . $extra . $required . '/>';
         }
+    }
+
+    /**
+     * Whether a field is a date field with "No dates in the past".
+     *
+     * @param array $field
+     * @return bool
+     */
+    private function pastDatesRefused(array $field): bool
+    {
+        return ($field['type'] ?? null) === 'date' && ($field['min'] ?? null) === 'today';
+    }
+
+    /**
+     * The hint under a "No dates in the past" field.
+     *
+     * Rendered hidden: only the browser knows the shopper's own date, so
+     * `TackQuote_Quotes/js/seller-calendar` shows it when that date differs from the
+     * seller's today. The same sentence as TackQuote's hosted form.
+     *
+     * @param array $field
+     * @param string $id
+     * @param array|null $calendar
+     * @return string
+     */
+    private function calendarHint(array $field, string $id, ?array $calendar): string
+    {
+        if ($calendar === null || !$this->pastDatesRefused($field)) {
+            return '';
+        }
+        $parts = explode('/', $calendar['timeZone']);
+        $city = str_replace('_', ' ', (string) end($parts));
+        $text = (string) __('Dates follow the seller\'s calendar (%1). Today there is %2.', $city, '%TACKDAY%');
+
+        // The script writes the day in the shopper's language; the ISO date is the fallback.
+        return '<div class="note tq-seller-calendar" id="' . $id . '-calendar" hidden="hidden">'
+            . str_replace(
+                '%TACKDAY%',
+                '<span class="tq-seller-day">' . $this->escaper->escapeHtml($calendar['today']) . '</span>',
+                $this->escaper->escapeHtml($text)
+            )
+            . '</div>';
     }
 
     /**

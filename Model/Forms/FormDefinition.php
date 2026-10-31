@@ -11,7 +11,8 @@
  * Tack_Storefront_Forms::collect_answers()/coerce_answer()/is_shown(), so the two stores
  * build the same payload from the same form.
  *
- * Pure: no I/O, no Magento runtime, fully unit-testable.
+ * Pure: no I/O, no Magento runtime, fully unit-testable. The one clock read (calendar()'s
+ * seller's today) takes an optional `$now`.
  *
  * @package TackQuote_Quotes
  */
@@ -19,6 +20,11 @@
 declare(strict_types=1);
 
 namespace TackQuote\Quotes\Model\Forms;
+
+use DateTimeImmutable;
+use DateTimeInterface;
+use DateTimeZone;
+use Exception;
 
 class FormDefinition
 {
@@ -80,7 +86,103 @@ class FormDefinition
             'description' => is_string($raw['description'] ?? null) ? $raw['description'] : '',
             'successMessage' => is_string($raw['successMessage'] ?? null) ? $raw['successMessage'] : '',
             'fields' => $fields,
+            // The day as the server sent it: the normalised form is cached, so the block
+            // re-derives the seller's today from it at render time (calendar()).
+            'calendar' => $this->validCalendar($raw),
         ];
+    }
+
+    /**
+     * The seller's calendar the server sent with the definition, or null.
+     *
+     * TackQuote adds `calendar: {timeZone, today}` to a definition with a "No dates in the
+     * past" date field: the seller's IANA zone and their today (`YYYY-MM-DD`), the day the
+     * server refuses earlier dates against (tack `tenant-today.ts`). An older server sends
+     * none, and anything malformed is ignored: the field then falls back to this store's
+     * own today, as before.
+     *
+     * `today` is re-derived here, at render time, from the zone and this store's clock:
+     * WholesaleFormSource caches a definition for up to 5 minutes (and a CMS page may sit in
+     * the full-page cache), so the day the server sent can be yesterday's once the seller's
+     * midnight has passed. The derived day is clamped to the sent day and the day after it
+     * (anything outside that is a wrong store clock), and the sent day is used as it is when
+     * PHP does not know the zone.
+     *
+     * @param array $raw The definition as TackQuote sent it.
+     * @param DateTimeInterface|null $now The current moment (tests); null for the store clock.
+     * @return array{timeZone: string, today: string}|null
+     */
+    public function calendar(array $raw, ?DateTimeInterface $now = null): ?array
+    {
+        $calendar = $this->validCalendar($raw);
+
+        return $calendar === null
+            ? null
+            : ['timeZone' => $calendar['timeZone'], 'today' => $this->sellerToday(
+                $calendar['timeZone'],
+                $calendar['today'],
+                $now
+            )];
+    }
+
+    /**
+     * The calendar exactly as the server sent it, validated, or null.
+     *
+     * @param array $raw
+     * @return array{timeZone: string, today: string}|null
+     */
+    private function validCalendar(array $raw): ?array
+    {
+        $calendar = $raw['calendar'] ?? null;
+        if (!is_array($calendar)) {
+            return null;
+        }
+        $zone = $calendar['timeZone'] ?? null;
+        $today = $calendar['today'] ?? null;
+        if (!is_string($zone) || !is_string($today) || strlen($zone) > 64) {
+            return null;
+        }
+        // An IANA name: `Asia/Kolkata`, `America/Argentina/Buenos_Aires`, `UTC`, `Etc/GMT+5`.
+        if (preg_match('#^[A-Za-z][A-Za-z0-9_+\-]*(/[A-Za-z0-9_+\-]+){0,2}$#', $zone) !== 1) {
+            return null;
+        }
+        if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $today, $m) !== 1
+            || !checkdate((int) $m[2], (int) $m[3], (int) $m[1])) {
+            return null;
+        }
+
+        return ['timeZone' => $zone, 'today' => $today];
+    }
+
+    /**
+     * The seller's today in `$zone` by this store's clock, clamped to [`$sent`, `$sent` + 1].
+     *
+     * `$sent` when PHP does not know the zone.
+     *
+     * @param string $zone An IANA zone that passed calendar()'s check.
+     * @param string $sent The valid `YYYY-MM-DD` day the server sent.
+     * @param DateTimeInterface|null $now The current moment; null for the store clock.
+     * @return string
+     */
+    private function sellerToday(string $zone, string $sent, ?DateTimeInterface $now): string
+    {
+        try {
+            $tz = new DateTimeZone($zone);
+            $moment = $now !== null
+                ? new DateTimeImmutable('@' . $now->getTimestamp())
+                : new DateTimeImmutable('now');
+            $live = $moment->setTimezone($tz)->format('Y-m-d');
+            $next = (new DateTimeImmutable($sent, new DateTimeZone('UTC')))->modify('+1 day')->format('Y-m-d');
+        } catch (Exception $e) {
+            // An unknown zone: DateInvalidTimeZoneException on PHP 8.3+, Exception before; both extend Exception.
+            return $sent;
+        }
+        // Same-length ISO days compare correctly as strings.
+        if ($live < $sent) {
+            return $sent;
+        }
+
+        return $live > $next ? $next : $live;
     }
 
     /**

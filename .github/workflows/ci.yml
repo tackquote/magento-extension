@@ -3,8 +3,13 @@ name: CI
 # Lint every PHP file and run the tests that can run without a live store.
 #
 # Test/Unit bootstraps from Magento's own dev/tests/unit/framework/bootstrap.php,
-# so it can only run inside a Magento installation. Here: lint and a composer.json
-# validation only.
+# so it can only run inside a Magento installation. Here: lint, a composer.json
+# validation, and the plain-Node storefront script tests (Test/Js, no dependencies).
+#
+# The Magento2 phpcs standard (scripts/check-standards.sh) is NOT run here: it comes from
+# require-dev, and `composer install` resolves `require` too, whose magento/* packages live
+# on repo.magento.com (keys required) or a Mage-OS mirror this composer.json does not name,
+# so the install cannot complete in CI. Run check-standards.sh locally before a release.
 
 on:
   push:
@@ -35,6 +40,19 @@ jobs:
 
       - name: Validate composer.json
         run: composer validate --no-check-publish --no-check-lock
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Storefront script tests (Test/Js)
+        run: |
+          set -e
+          for t in Test/Js/*.test.js; do
+            echo "== $t"
+            node "$t"
+          done
 
       - name: Build release artifact(s)
         run: bash scripts/package.sh dist
