@@ -170,6 +170,7 @@ class FormDefinitionTest extends TestCase
             $definition->calendar(['calendar' => ['timeZone' => 'America/Indiana/Knox', 'today' => '2031-03-04']])
         );
     }
+
     /**
      * The seller's today is re-derived at render time from the zone and the store clock,
      * clamped to [sent, sent + 1 day].

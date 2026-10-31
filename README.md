@@ -901,12 +901,11 @@ method under *Pay on Net Terms (checkout)*:
 
   **The fallback is deliberately not symmetric.** A TackQuote server that sends no calendar
   (an older server, or a malformed one) leaves the field exactly as before: `min` is this
-  store's UTC today, the script does nothing and there is no hint. That UTC day can differ
-  from the seller's today in either direction: for a seller east of UTC it can still be
-  yesterday (the field offers a day TackQuote refuses on submit), and for a seller west of UTC
-  it can already be tomorrow (the field blocks the seller's today). The module cannot correct
-  this without the seller's zone, so it keeps the old behaviour rather than guess, and
-  TackQuote's refusal on submit names the problem.
+  store's UTC today, the script does nothing and there is no hint. Without a calendar
+  TackQuote accepts dates from the day before UTC's today, so the field never offers a day it
+  refuses; but for a seller west of UTC, UTC's today can already be the seller's tomorrow, and
+  the field then blocks the seller's own today. The module cannot correct this without the
+  seller's zone, so it keeps the old behaviour rather than guess.
 - **Net terms tab** (My Account). The customer's approved terms, credit limit and available
   credit, a "being reviewed" or "not approved" notice, or the application form (legal name,
   phone, tax ID, billing address, requested limit and terms, three trade references, notes).
