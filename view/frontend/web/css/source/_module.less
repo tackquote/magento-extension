@@ -57,11 +57,16 @@
     //  would stop matching the moment the modal opens. The not() exclusions are
     //  load-bearing. The dialog container itself carries `hidden` to prevent the form
     //  flashing inline before JS runs; quote-app.js removes it once the widget owns it.
+    //
+    //  The seller-calendar hint under a 'No dates in the past' field is a lib `.note`, which
+    //  Blank/Luma give a display value; without this rule it showed while `hidden`.
+    //  js/seller-calendar.js also sets the inline display, for themes without this file.
     //  -----------------------------------------------------------------------
     .tackquote-app [hidden]:not([data-role='tackquote-modal']),
     .tackquote-modal-popup [hidden]:not([data-role='tackquote-modal']),
     [data-role='tackquote-modal'] [hidden],
     .tackquote-page [hidden],
+    .tackquote-application .tq-seller-calendar[hidden],
     .tackquote-b2b[hidden] {
         display: none !important;
     }

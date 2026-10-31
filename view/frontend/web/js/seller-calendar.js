@@ -69,14 +69,51 @@ define([], function () {
         }
     }
 
+    /** The ISO day after `day` (`YYYY-MM-DD`). */
+    function nextDay(day) {
+        var p = day.split('-'),
+            d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2] + 1)),
+            pad = function (n) {
+                return (n < 10 ? '0' : '') + n;
+            };
+
+        return d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate());
+    }
+
+    /**
+     * The seller's today by this device's clock, kept between the day the server sent and
+     * the day after it. A device clock set wrong must not move the earliest day: earlier
+     * would let the shopper pick a day TackQuote refuses, later would refuse a valid one.
+     * The day after covers a page left open past the seller's midnight.
+     */
+    function sellerToday(zone, sent, now) {
+        var valid = DAY.test(sent) ? sent : null,
+            live = dayIn(zone, now),
+            next;
+
+        if (!valid) {
+            return live;
+        }
+        // Same-length ISO days compare correctly as strings.
+        if (!live || live < valid) {
+            return valid;
+        }
+        next = nextDay(valid);
+
+        return live > next ? next : live;
+    }
+
     /** Apply the seller's calendar to every such field inside `root`, at `now`. */
     function apply(root, now) {
         var doc = root.ownerDocument || document,
             inputs = root.querySelectorAll('input[data-tq-seller-today]');
 
         Array.prototype.forEach.call(inputs, function (input) {
-            var sent = input.getAttribute('data-tq-seller-today'),
-                today = dayIn(input.getAttribute('data-tq-seller-zone'), now) || (DAY.test(sent) ? sent : null),
+            var today = sellerToday(
+                    input.getAttribute('data-tq-seller-zone'),
+                    input.getAttribute('data-tq-seller-today'),
+                    now
+                ),
                 hint, differs, label, described;
 
             if (!today) {
@@ -90,6 +127,9 @@ define([], function () {
             }
             differs = today !== localDay(now);
             hint.hidden = !differs;
+            // Lib `.note` gets a display value (.lib-icon-font) that outranks the UA `[hidden]`
+            // rule; _module.less enforces it too, and the inline style does not lose.
+            hint.style.display = differs ? '' : 'none';
 
             if (differs) {
                 label = hint.querySelector('.tq-seller-day');

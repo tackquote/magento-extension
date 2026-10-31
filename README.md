@@ -893,8 +893,20 @@ method under *Pay on Net Terms (checkout)*:
   {timeZone, today}`); the field's earliest day is the seller's today, and
   `view/frontend/web/js/seller-calendar.js` keeps it on the seller's day while the page is open
   and shows "Dates follow the seller's calendar (Kolkata). Today there is Oct 17, 2026." when
-  the shopper's own date differs. A TackQuote server that sends no calendar leaves the field
-  as before (this store's UTC today). TackQuote still checks every date on submit.
+  the shopper's own date differs. The block re-derives the seller's today when it renders
+  (the definition is cached for 5 minutes), and both the block and the script keep it between
+  the day TackQuote sent and the day after, so a wrong store or device clock can neither block
+  the seller's today nor offer a day TackQuote refuses. TackQuote still checks every date on
+  submit.
+
+  **The fallback is deliberately not symmetric.** A TackQuote server that sends no calendar
+  (an older server, or a malformed one) leaves the field exactly as before: `min` is this
+  store's UTC today, the script does nothing and there is no hint. That UTC day can differ
+  from the seller's today in either direction: for a seller east of UTC it can still be
+  yesterday (the field offers a day TackQuote refuses on submit), and for a seller west of UTC
+  it can already be tomorrow (the field blocks the seller's today). The module cannot correct
+  this without the seller's zone, so it keeps the old behaviour rather than guess, and
+  TackQuote's refusal on submit names the problem.
 - **Net terms tab** (My Account). The customer's approved terms, credit limit and available
   credit, a "being reviewed" or "not approved" notice, or the application form (legal name,
   phone, tax ID, billing address, requested limit and terms, three trade references, notes).
@@ -1698,8 +1710,11 @@ magento-extension/                              (repository root)
   the form as `calendar`), not this store's UTC day, so a shopper west of the seller can no
   longer pick a day TackQuote then refuses. A hint under the field says so when the shopper's
   own date differs (new RequireJS component `TackQuote_Quotes/js/seller-calendar`, on the
-  form's `data-mage-init`). Translated in all eight languages (machine-assisted). An older
-  TackQuote server without `calendar` gets exactly the old field.
+  form's `data-mage-init`). Translated in all eight languages (machine-assisted). The day is
+  re-derived when the block renders and kept between the day TackQuote sent and the day after
+  (store and browser), so a wrong clock cannot move it further. The hint is hidden reliably
+  on Blank/Luma, whose `.note` display used to outrank `hidden`. An older TackQuote server
+  without `calendar` gets exactly the old field (see the README on that asymmetry).
 
 ### 1.5.2 (2026-10-11)
 

@@ -200,8 +200,10 @@ class WholesaleForm extends Template
     public function renderField(array $field): string
     {
         $form = $this->getForm();
+        // The seller's today now, not when the cached definition was fetched.
+        $calendar = $form !== null ? $this->definition->calendar($form) : null;
 
-        return $this->renderer->render($field, null, $this->filesAllowed(), $form['calendar'] ?? null);
+        return $this->renderer->render($field, null, $this->filesAllowed(), $calendar);
     }
 
     /**
