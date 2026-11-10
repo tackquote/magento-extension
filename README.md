@@ -1322,7 +1322,8 @@ redirect. The token is never put in a redirect target or a log line.
 - **The Overview shows the default scope.** A website-level override is applied on that
   website's storefront but is not shown on the Overview; the configuration page's scope
   switcher shows it.
-- No Magento Marketplace listing or Packagist publication (see Installation).
+- Published on the [Adobe Commerce Marketplace](https://commercemarketplace.adobe.com/tackquote-module-quotes.html)
+  (free); not on Packagist (see Installation).
 
 ## Requirements
 
@@ -1379,11 +1380,37 @@ so the suite has to be run from inside a Magento installation, not from this dir
 
 ## Installation
 
-Distribution authority: the public GitHub release asset is
-[`tack-magento2.zip`](https://github.com/tackquote/magento-extension/releases/latest/download/tack-magento2.zip).
-It is built by `scripts/package.sh` (see *Building the release zip* below); this repository
-is build/source only. No Magento Marketplace or Packagist listing
-is claimed.
+There are two supported ways to install the module. Both give the same module; pick one.
+
+### Recommended: Adobe Commerce Marketplace (Composer)
+
+TackQuote is listed, free, on the Adobe Commerce Marketplace:
+<https://commercemarketplace.adobe.com/tackquote-module-quotes.html>. "Buy" it there (at no
+cost) with the Marketplace account that owns your store's `repo.magento.com` access keys, then
+install it with Composer as Adobe documents
+(<https://experienceleague.adobe.com/en/docs/commerce-operations/installation-guide/tutorials/extensions>).
+The store's root `composer.json` must list the `https://repo.magento.com/` repository, and
+Composer asks for the public key as the username and the private key as the password.
+
+```bash
+composer require tackquote/module-quotes
+bin/magento module:enable TackQuote_Quotes --clear-static-content
+bin/magento setup:upgrade
+bin/magento setup:di:compile
+bin/magento cache:flush
+```
+
+A Composer install updates with `composer update tackquote/module-quotes` followed by the same
+`setup:upgrade`, `setup:di:compile` and cache steps. The Marketplace publishes a version only
+after Adobe's review, so it can trail the newest GitHub release by a few days.
+
+### Alternative: GitHub release zip (app/code)
+
+The public GitHub release asset is
+[`tack-magento2.zip`](https://github.com/tackquote/magento-extension/releases/latest/download/tack-magento2.zip),
+built by `scripts/package.sh` (see *Building the release zip* below). Use it when the store
+does not install from the Marketplace. Do not mix the two: remove `app/code/TackQuote/Quotes`
+before switching a store to the Composer package, or the module is registered twice.
 
 The zip's top-level directory is `TackQuote/Quotes/`, so unzip it **into `app/code`**
 (not into `app/code/TackQuote/Quotes`) — that produces
@@ -1416,7 +1443,8 @@ Developer and default mode serve static files on demand, so they skip this step.
 The path-repository and copy-from-checkout options below are for maintainers working
 from a checkout of this repository, not for merchant distribution.
 
-This module is **not published to Packagist or the Magento Marketplace**.
+Merchants install from the Marketplace or the release zip above. The module is not published
+to Packagist.
 
 ### Option A — path repository (maintainers / local staging)
 
@@ -1702,7 +1730,7 @@ magento-extension/                              (repository root)
 
 ## Changelog
 
-### Unreleased
+### 1.5.3 (2026-11-11)
 
 - **"No dates in the past" follows the seller's calendar.** A wholesale application date field
   with that rule now starts on the seller's today (the day TackQuote checks against, sent with
@@ -1714,6 +1742,10 @@ magento-extension/                              (repository root)
   (store and browser), so a wrong clock cannot move it further. The hint is hidden reliably
   on Blank/Luma, whose `.note` display used to outrank `hidden`. An older TackQuote server
   without `calendar` gets exactly the old field (see the README on that asymmetry).
+- **Installation docs: the Adobe Commerce Marketplace is the primary install.** The module is
+  listed, free, at <https://commercemarketplace.adobe.com/tackquote-module-quotes.html>; the
+  README now leads with the Marketplace Composer install and keeps the GitHub release zip
+  (`app/code`) as the alternative. No code change from this item.
 
 ### 1.5.2 (2026-10-11)
 
